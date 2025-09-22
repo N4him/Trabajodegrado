@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "603404428888",
+    "project_id": "tg-app-1350b",
+    "storage_bucket": "tg-app-1350b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:603404428888:android:0ce6f45ac3509ef01b0c2d",
+        "android_client_info": {
+          "package_name": "com.example.my_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCChmY9typNLlNvWBSIxvRH46fbcDZOKOU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
