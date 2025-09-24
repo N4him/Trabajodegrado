@@ -23,31 +23,49 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return RepositoryProvider(
-      create: (context) => UserRepository(),
-      child: MaterialApp(
-        title: 'Flutter BLoC App',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          visualDensity: VisualDensity.adaptivePlatformDensity,
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<UserRepository>(
+          create: (context) => UserRepository(),
         ),
-        home: BlocProvider(
-          create: (context) => SplashBloc()..add(StartSplash()),
-          child: SplashScreen(),
+         RepositoryProvider<AuthRepository>(
+      create: (context) => AuthRepository(),
+    ),
+      ],
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<SplashBloc>(
+            create: (context) => SplashBloc()..add(StartSplash()),
+          ),
+          BlocProvider<LoginBloc>(
+            create: (context) => LoginBloc(
+              authRepository: context.read<AuthRepository>(),
+            ),
+          ),
+          // Puedes agregar más blocs aquí según lo necesites
+        ],
+        child: MaterialApp(
+          title: 'Flutter BLoC App',
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+            visualDensity: VisualDensity.adaptivePlatformDensity,
+          ),
+          home: SplashScreen(),
+          routes: {
+            '/onboarding': (context) => OnboardingScreen(),
+            '/login': (context) => LoginScreen(),
+            '/home': (context) => HomeScreen(),
+            '/register': (context) => RegisterScreen(),
+            '/library': (context) => LibraryScreen(),
+
+
+          },
+          debugShowCheckedModeBanner: false,
         ),
-        routes: {
-          '/onboarding': (context) => OnboardingScreen(),
-          '/login': (context) => BlocProvider(
-                create: (context) => LoginBloc(authRepository: AuthRepository()),
-                child: LoginScreen(),
-              ),
-          '/home': (context) => HomeScreen(),
-          '/register': (context) => RegisterScreen(),
-          '/library': (context) => LibraryScreen(),
-        },
-        debugShowCheckedModeBanner: false,
       ),
     );
   }

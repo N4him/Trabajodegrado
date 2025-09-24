@@ -16,6 +16,7 @@ class RegisterRepository {
     required String email,
     required String password,
     required String displayName,
+    required String gender, // 👈 obligatorio
   }) async {
     final result = await _authService.createUserWithEmailAndPassword(
       email: email,
@@ -31,10 +32,16 @@ class RegisterRepository {
       );
     }
 
+    // 👇 Aquí generamos automáticamente la URL
+    final avatarUrl =
+        "https://avatar.iran.liara.run/public/$gender?username=$displayName";
+
     await _saveUserDataToFirestore(
       userId: user.uid,
       email: email,
       displayName: displayName,
+      photoUrl: avatarUrl,
+      gender: gender,
     );
 
     return user;
@@ -44,15 +51,18 @@ class RegisterRepository {
     required String userId,
     required String email,
     required String displayName,
+    required String photoUrl,
+    required String gender,
   }) async {
     try {
       await _firestore.collection('users').doc(userId).set({
         'email': email,
         'displayName': displayName,
+        'photoUrl': photoUrl,
         'points': 0,
         'level': 1,
-        'photoUrl': null,
         'createdAt': FieldValue.serverTimestamp(),
+        'gender': gender,
       });
     } catch (e) {
       await _cleanupAuthUser();

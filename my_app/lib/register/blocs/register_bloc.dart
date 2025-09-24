@@ -14,25 +14,27 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
     on<RegisterSubmitted>(_onRegisterSubmitted);
   }
 
-  Future<void> _onRegisterSubmitted(
-      RegisterSubmitted event, Emitter<RegisterState> emit) async {
-    emit(RegisterLoading());
+Future<void> _onRegisterSubmitted(
+    RegisterSubmitted event, Emitter<RegisterState> emit) async {
+  emit(RegisterLoading());
 
-    try {
-      final user = await _repository.registerUser(
-        email: event.email,
-        password: event.password,
-        displayName: event.name,
-      );
-      emit(RegisterSuccess(user: user));
-    } on FirebaseAuthException catch (e) {
-      emit(RegisterFailure(error: _getAuthErrorMessage(e.code)));
-    } on FirebaseException catch (e) {
-      emit(RegisterFailure(error: 'Error al guardar datos: ${e.message}'));
-    } catch (e) {
-      emit(RegisterFailure(error: e.toString()));
-    }
+  try {
+    final user = await _repository.registerUser(
+      email: event.email,
+      password: event.password,
+      displayName: event.name,
+      gender: event.gender,
+    );
+    emit(RegisterSuccess(user: user));
+  } on FirebaseAuthException catch (e) {
+    emit(RegisterFailure(error: _getAuthErrorMessage(e.code)));
+  } on FirebaseException catch (e) {
+    emit(RegisterFailure(error: 'Error al guardar datos: ${e.message}'));
+  } catch (e) {
+    emit(RegisterFailure(error: e.toString()));
   }
+}
+
 
   String _getAuthErrorMessage(String errorCode) {
     switch (errorCode) {

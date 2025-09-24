@@ -1,8 +1,12 @@
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:my_app/data/repositories/user_repository.dart';
+import 'package:my_app/profile/bloc/profile_bloc.dart';
+import 'package:my_app/profile/bloc/profile_event.dart';
 import '../home/home_screen.dart';
 import '../configuration/configuration_screen.dart';
-import '../profile/profile_screen.dart';
+import '../profile/presentation/profile_screen.dart';
 
 class CustomNavigationBar extends StatefulWidget {
   final int initialIndex;
@@ -21,11 +25,16 @@ class CustomNavigationBar extends StatefulWidget {
 class _CustomNavigationBarState extends State<CustomNavigationBar> {
   late int _currentIndex;
 
-  final List<Widget> _screens = [
-    const SettingsScreen(),
-    const HomeContent(),
-    const ProfileScreen(),
-  ];
+final List<Widget> _screens = [
+  const SettingsScreen(),
+  const HomeContent(),
+  BlocProvider(
+    create: (context) =>
+        ProfileBloc(userRepository: context.read<UserRepository>())
+          ..add(LoadProfile()),
+    child: const ProfileScreen(),
+  ),
+];
 
   @override
   void initState() {
