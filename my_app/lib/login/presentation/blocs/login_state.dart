@@ -1,5 +1,6 @@
+// lib/features/login/presentation/bloc/login_state.dart
 import 'package:equatable/equatable.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../../domain/entities/user_entity.dart'; // <-- usar entidad
 
 abstract class LoginState extends Equatable {
   @override
@@ -11,7 +12,7 @@ class LoginInitial extends LoginState {}
 class LoginLoading extends LoginState {}
 
 class LoginSuccess extends LoginState {
-  final User user;
+  final UserEntity user; // <-- cambiar a UserEntity
 
   LoginSuccess({required this.user});
 

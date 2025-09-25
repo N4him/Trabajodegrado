@@ -1,29 +1,23 @@
+// lib/features/login/presentation/bloc/login_bloc.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:my_app/login/data/auth_repository.dart';
-
 import 'login_event.dart';
 import 'login_state.dart';
+import '../../domain/usecases/login_user.dart';
 
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
-  final AuthRepository _authRepository;
+  final LoginUser loginUser;
 
-  LoginBloc({required AuthRepository authRepository})
-      : _authRepository = authRepository,
-        super(LoginInitial()) {
+  LoginBloc({required this.loginUser}) : super(LoginInitial()) {
     on<LoginSubmitted>(_onLoginSubmitted);
-    on<LoginReset>(_onLoginReset);
+    on<LoginReset>((event, emit) => emit(LoginInitial()));
   }
 
   Future<void> _onLoginSubmitted(
       LoginSubmitted event, Emitter<LoginState> emit) async {
     emit(LoginLoading());
-
     try {
-      final user = await _authRepository.signIn(
-        email: event.email,
-        password: event.password,
-      );
-
+      final user =
+          await loginUser(email: event.email, password: event.password);
       if (user != null) {
         emit(LoginSuccess(user: user));
       } else {
@@ -32,9 +26,5 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     } catch (e) {
       emit(LoginFailure(error: e.toString()));
     }
-  }
-
-  void _onLoginReset(LoginReset event, Emitter<LoginState> emit) {
-    emit(LoginInitial());
   }
 }

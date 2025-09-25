@@ -1,10 +1,12 @@
+import '../../domain/entities/profile_entity.dart';
+
 abstract class ProfileState {}
 
 class ProfileLoading extends ProfileState {}
 
 class ProfileLoaded extends ProfileState {
-  final Map<String, dynamic> userData;
-  ProfileLoaded(this.userData);
+  final ProfileEntity profile;
+  ProfileLoaded(this.profile);
 }
 
 class ProfileError extends ProfileState {

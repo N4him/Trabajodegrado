@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../../domain/entities/user_entity.dart';
 
 abstract class RegisterState extends Equatable {
   @override
@@ -7,18 +7,15 @@ abstract class RegisterState extends Equatable {
 }
 
 class RegisterInitial extends RegisterState {}
-
 class RegisterLoading extends RegisterState {}
-
 class RegisterSuccess extends RegisterState {
-  final User user;
+  final UserEntity user;
 
   RegisterSuccess({required this.user});
 
   @override
   List<Object?> get props => [user];
 }
-
 class RegisterFailure extends RegisterState {
   final String error;
 

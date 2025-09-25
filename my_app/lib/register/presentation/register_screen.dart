@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:my_app/register/data/register_repository.dart';
-import '../blocs/register_bloc.dart';
-import '../blocs/register_event.dart';
-import '../blocs/register_state.dart';
+import 'package:my_app/main.dart';
+import 'package:my_app/register/domain/usecases/register_user.dart';
+import 'blocs/register_bloc.dart';
+import 'blocs/register_event.dart';
+import 'blocs/register_state.dart';
 
 class RegisterScreen extends StatelessWidget {
   const RegisterScreen({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => RegisterBloc(
-        repository: RegisterRepository(),
-      ),
-      child: _RegisterScreenBody(),
-    );
-  }
+@override
+Widget build(BuildContext context) {
+  return BlocProvider(
+    create: (_) => RegisterBloc(
+      registerUser: getIt<RegisterUser>(), // ✅ caso de uso inyectado
+    ),
+    child: _RegisterScreenBody(),
+  );
+}
+
 }
 
 class _RegisterScreenBody extends StatefulWidget {
