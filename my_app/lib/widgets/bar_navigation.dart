@@ -1,9 +1,5 @@
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:my_app/data/repositories/user_repository.dart';
-import 'package:my_app/profile/presentation/bloc/profile_bloc.dart';
-import 'package:my_app/profile/presentation/bloc/profile_event.dart';
 import '../home/home_screen.dart';
 import '../configuration/configuration_screen.dart';
 import '../profile/presentation/profile_screen.dart';

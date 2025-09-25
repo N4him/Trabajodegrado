@@ -70,10 +70,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
       if (profile.photoUrl != null) {
         updateData['photoUrl'] = profile.photoUrl;
       }
-      if (profile.gender != null) {
-        updateData['gender'] = profile.gender;
-      }
-      if (profile.points != null) {
+      updateData['gender'] = profile.gender;
+          if (profile.points != null) {
         updateData['points'] = profile.points;
       }
       if (profile.level != null) {
