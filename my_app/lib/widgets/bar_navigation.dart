@@ -28,7 +28,7 @@ class _CustomNavigationBarState extends State<CustomNavigationBar> {
 final List<Widget> _screens = [
   const SettingsScreen(),
   const HomeContent(),
-  const ProfileScreen(), // Bloc ya provisto en MultiBlocProvider
+   ProfileScreen(), // Bloc ya provisto en MultiBlocProvider
 ];
 
 

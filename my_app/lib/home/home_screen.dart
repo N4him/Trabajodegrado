@@ -17,8 +17,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 1;
-   late Widget _currentScreen;
-
+  late Widget _currentScreen;
 
   @override
   void initState() {
@@ -59,6 +58,7 @@ class _HomeContentState extends State<HomeContent> {
   Timer? _timer;
   int _currentCarouselIndex = 0;
   String userName = ""; // valor por defecto
+  String? photo; // valor por defecto
 
   // Lista de cards del carousel
   final List<Map<String, dynamic>> _carouselItems = [
@@ -81,22 +81,13 @@ class _HomeContentState extends State<HomeContent> {
       'color': Color(0xFFFFBE0B),
     },
   ];
-    Future<void> _loadUserName() async {
-    final userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId != null) {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
-      setState(() {
-        userName = doc.data()?['displayName'] ?? "Usuario";
-      });
-    }
-  }
+
+
   @override
   void initState() {
     super.initState();
     _startAutoSlide();
-    _loadUserName();
   }
-  
 
   void _startAutoSlide() {
     _timer = Timer.periodic(Duration(seconds: 10), (timer) {
@@ -105,7 +96,7 @@ class _HomeContentState extends State<HomeContent> {
       } else {
         _currentCarouselIndex = 0;
       }
-      
+
       _pageController.animateToPage(
         _currentCarouselIndex,
         duration: Duration(milliseconds: 300),
@@ -121,254 +112,247 @@ class _HomeContentState extends State<HomeContent> {
     super.dispose();
   }
 
-@override
-Widget build(BuildContext context) {
-
-  return SingleChildScrollView(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: 
-      [
-        Container(
-          padding: EdgeInsets.only(left: 16, right: 16, top: 40, bottom: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(30),
-              bottomRight: Radius.circular(30),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                blurRadius: 10,
-                offset: Offset(0, 5),
-              ),
-            ],
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Container(
+        padding: EdgeInsets.only(left: 16, right: 16, top: 40, bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(30),
+            bottomRight: Radius.circular(30),
           ),
-          child: 
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              BlocBuilder<ProfileBloc, ProfileState>(
-                builder: (context, state) {
-                  String userName = "Usuario"; // valor por defecto
-                  if (state is ProfileLoaded) {
-                    userName = state.profile.name; // ProfileEntity
-                  }
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              blurRadius: 10,
+              offset: Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            BlocBuilder<ProfileBloc, ProfileState>(
+              builder: (context, state) {
+                if (state is ProfileLoaded) {
+                  userName = state.profile.name;
+                  photo = state.profile.photoUrl;
+                  // ProfileEntity
+                }
 
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.start, // alinea a la izquierda
-                    crossAxisAlignment: CrossAxisAlignment.center, // centra verticalmente
-                    children: [
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.grey[200],
-                        child: Icon(Icons.person, color: Colors.grey[600], size: 35),
-                      ),
-                      SizedBox(width: 21), // espacio entre avatar y texto
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Hola,',
-                            style: TextStyle(
-                              fontSize: 25,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          Text(
-                            userName,
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  );
-                },
-              ),
-              SizedBox(height: 20),
-              // Carousel Container
-              SizedBox(
-                width: double.infinity,
-                height: 170,
-                child: Stack(
+                return Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment.start, // alinea a la izquierda
+                  crossAxisAlignment:
+                      CrossAxisAlignment.center, // centra verticalmente
                   children: [
-                    PageView.builder(
-                      controller: _pageController,
-                      onPageChanged: (index) {
-                        setState(() {
-                          _currentCarouselIndex = index;
-                        });
-                      },
-                      itemCount: _carouselItems.length,
-                      itemBuilder: (context, index) {
-                        final item = _carouselItems[index];
-                        return Container(
-                          margin: EdgeInsets.symmetric(horizontal: 4),
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: item['color'],
-                            borderRadius: BorderRadius.circular(15),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.2),
-                                blurRadius: 8,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(
-                                  item['icon'],
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                              ),
-                              SizedBox(width: 16),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    item['title'],
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    item['subtitle'],
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.9),
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundImage: NetworkImage(photo ?? ''),
                     ),
-                    // Indicadores de página
-                    Positioned(
-                      bottom: 12,
-                      left: 0,
-                      right: 0,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: _carouselItems.asMap().entries.map((entry) {
-                          return Container(
-                            width: 8,
-                            height: 8,
-                            margin: EdgeInsets.symmetric(horizontal: 4),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _currentCarouselIndex == entry.key
-                                  ? Colors.white
-                                  : Colors.white.withOpacity(0.4),
-                            ),
-                          );
-                        }).toList(),
-                      ),
+                    SizedBox(width: 21), // espacio entre avatar y texto
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hola,',
+                          style: TextStyle(
+                            fontSize: 25,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        Text(
+                          userName,
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      
-    
-  
-
-
-            Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                );
+              },
+            ),
+            SizedBox(height: 20),
+            // Carousel Container
+            SizedBox(
+              width: double.infinity,
+              height: 170,
+              child: Stack(
                 children: [
+                  PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentCarouselIndex = index;
+                      });
+                    },
+                    itemCount: _carouselItems.length,
+                    itemBuilder: (context, index) {
+                      final item = _carouselItems[index];
+                      return Container(
+                        margin: EdgeInsets.symmetric(horizontal: 4),
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: item['color'],
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                item['icon'],
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                            SizedBox(width: 16),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  item['title'],
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  item['subtitle'],
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  // Indicadores de página
+                  Positioned(
+                    bottom: 12,
+                    left: 0,
+                    right: 0,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: _carouselItems.asMap().entries.map((entry) {
+                        return Container(
+                          width: 8,
+                          height: 8,
+                          margin: EdgeInsets.symmetric(horizontal: 4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _currentCarouselIndex == entry.key
+                                ? Colors.white
+                                : Colors.white.withOpacity(0.4),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Columna izquierda con Lecciones y Comunidad
                 SizedBox(
-  width: MediaQuery.of(context).size.width * 0.4,
-  child: InkWell(
-    onTap: () {
-      Navigator.of(context).pushNamed('/library');
-    },
-    borderRadius: BorderRadius.circular(20), // Para que el ripple se vea bien
-    child: Ink(
-      decoration: BoxDecoration(
-        color: Color(0xFFFF6B6B),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            blurRadius: 10,
-            offset: Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Container(
-        height: 320,
-        padding: EdgeInsets.all(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                Icons.book,
-                color: Colors.white,
-                size: 30,
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Biblioteca',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
+                  width: MediaQuery.of(context).size.width * 0.4,
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.of(context).pushNamed('/library');
+                    },
+                    borderRadius: BorderRadius.circular(
+                        20), // Para que el ripple se vea bien
+                    child: Ink(
+                      decoration: BoxDecoration(
+                        color: Color(0xFFFF6B6B),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            blurRadius: 10,
+                            offset: Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Container(
+                        height: 320,
+                        padding: EdgeInsets.all(20),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.book,
+                                color: Colors.white,
+                                size: 30,
+                              ),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Biblioteca',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  '12 nuevas',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.8),
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
-                  '12 nuevas',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    ),
-  ),
-),
                 SizedBox(width: 16),
                 // Columna derecha con Progreso y Retos
                 Expanded(
@@ -564,12 +548,9 @@ Widget build(BuildContext context) {
                 ),
               ),
             ),
-                ],
-              ),
-            ),
-          ]
-       ) 
-      );
-    
+          ],
+        ),
+      ),
+    ]));
   }
 }

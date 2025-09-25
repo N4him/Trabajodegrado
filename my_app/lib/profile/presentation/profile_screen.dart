@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_app/profile/presentation/bloc/profile_bloc.dart';
-import 'package:my_app/profile/presentation/bloc/profile_event.dart';
 import 'package:my_app/profile/presentation/bloc/profile_state.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -20,7 +19,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     super.initState();
     _tabController = TabController(length: 1, vsync: this);
     // Cargar datos cuando se inicia la pantalla
-    context.read<ProfileBloc>().add(LoadProfile());
   }
 
   @override
@@ -40,10 +38,10 @@ class _ProfileScreenState extends State<ProfileScreen>
             return Center(child: Text(state.message));
           } else if (state is ProfileLoaded) {
             final profile = state.profile; // ahora es ProfileEntity
-  final userName = profile.name;
-  final level = profile.level;
-  final points = profile.points;
-  final photoUrl = profile.photoUrl ?? 'https://avatar.iran.liara.run/public/46';
+            final userName = profile.name;
+            final level = profile.level;
+            final points = profile.points;
+            final photoUrl = profile.photoUrl ?? '';
 
             return SingleChildScrollView(
               child: Column(
@@ -139,7 +137,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                               const SizedBox(height: 24),
                               Row(
                                 children: [
-
                                   const SizedBox(width: 8),
                                   Text(
                                     'Lv. $level',
@@ -153,7 +150,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(10),
                                       child: LinearProgressIndicator(
-                                        value:00,
+                                        value: 10 /
+                                            100, // Ejemplo: 60 de 100 puntos
                                         backgroundColor: Colors.grey[200],
                                         valueColor:
                                             const AlwaysStoppedAnimation<Color>(
@@ -224,7 +222,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                           child: TabBarView(
                             controller: _tabController,
                             children: [
-                              _buildStatsTab(points, level),
+                              _buildStatsTab(points!, level!),
                             ],
                           ),
                         ),
@@ -241,7 +239,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildStatsTab(int? points, int? level) {
+  Widget _buildStatsTab(int points, int level) {
     return Center(
       child: Text(
         'Puntos: $points\nNivel: $level',
