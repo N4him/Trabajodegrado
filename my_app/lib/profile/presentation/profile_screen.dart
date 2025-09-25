@@ -112,7 +112,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 ? state.profile 
                 : (state as ProfileUpdating).profile;
             
-            final userName = profile.name ?? 'Usuario';
+            final userName = profile.name;
             final level = profile.level ?? 1;
             final points = profile.points ?? 0;
             final photoUrl = profile.photoUrl ?? '';
