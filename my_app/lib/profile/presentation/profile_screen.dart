@@ -187,6 +187,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     final level = profile.level ?? 1;
     final points = profile.points ?? 0;
     final photoUrl = profile.photoUrl ?? '';
+    final gender = profile.gender ?? 'boy'; // Obtener gender del perfil
 
     return Stack(
       children: [
@@ -204,9 +205,9 @@ class _ProfileScreenState extends State<ProfileScreen>
             child: Column(
               children: [
                 const SizedBox(height: 40),
-                _buildProfileAvatar(photoUrl, userName, isUpdating),
+                _buildProfileAvatar(photoUrl, userName, isUpdating, gender),
                 const SizedBox(height: 16),
-                _buildProfileInfo(userName),
+                _buildProfileInfo(userName, gender), // Pasar gender
                 const SizedBox(height: 24),
                 _buildProgressBar(level, points),
               ],
@@ -218,8 +219,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildProfileAvatar(
-      String photoUrl, String userName, bool isUpdating) {
+  Widget _buildProfileAvatar(String photoUrl, String userName, bool isUpdating, String gender) {
     return SizedBox(
       width: 120,
       height: 120,
@@ -228,14 +228,13 @@ class _ProfileScreenState extends State<ProfileScreen>
         children: [
           CircleAvatar(
             radius: 60,
-            backgroundImage:
-                photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+            backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
             child: photoUrl.isEmpty
                 ? Icon(Icons.person, size: 60, color: Colors.grey[400])
                 : null,
           ),
           if (isUpdating) _buildAvatarLoadingOverlay(),
-          _buildEditButton(userName, photoUrl, isUpdating),
+          _buildEditButton(userName, photoUrl, isUpdating, gender),
         ],
       ),
     );
@@ -262,12 +261,12 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildEditButton(String userName, String photoUrl, bool isUpdating) {
+  Widget _buildEditButton(String userName, String photoUrl, bool isUpdating, String gender) {
     return Positioned(
       bottom: 0,
       right: 0,
       child: GestureDetector(
-        onTap: isUpdating ? null : () => _showEditDialog(userName, photoUrl),
+        onTap: isUpdating ? null : () => _showEditDialog(userName, photoUrl, gender),
         child: Container(
           decoration: BoxDecoration(
             color: isUpdating ? Colors.grey[300] : Colors.white,
@@ -290,16 +289,25 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  void _showEditDialog(String userName, String photoUrl) {
+  void _showEditDialog(String userName, String photoUrl, String gender) {
     EditProfileDialog.show(
       context,
       currentName: userName,
       currentPhotoUrl: photoUrl,
+      gender: gender, // Pasar el gender al diálogo
       onSave: _handleProfileUpdate,
     );
   }
 
-  Widget _buildProfileInfo(String userName) {
+  Widget _buildProfileInfo(String userName, String gender) {
+    // Determinar el título basado en el género
+    String title = 'Experto';
+    if (gender.toLowerCase() == 'boy' || gender.toLowerCase() == 'male') {
+      title = 'Experto';
+    } else if (gender.toLowerCase() == 'girl' || gender.toLowerCase() == 'female') {
+      title = 'Experta';
+    }
+
     return Column(
       children: [
         Text(
@@ -310,8 +318,51 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
         const SizedBox(height: 4),
         Text(
-          'Experto',
+          title,
           style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+        ),
+        // Mostrar género como información adicional
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: gender.toLowerCase() == 'boy' || gender.toLowerCase() == 'male'
+                ? Colors.blue.withOpacity(0.1)
+                : Colors.pink.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: gender.toLowerCase() == 'boy' || gender.toLowerCase() == 'male'
+                  ? Colors.blue.withOpacity(0.3)
+                  : Colors.pink.withOpacity(0.3),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                gender.toLowerCase() == 'boy' || gender.toLowerCase() == 'male'
+                    ? Icons.male
+                    : Icons.female,
+                size: 16,
+                color: gender.toLowerCase() == 'boy' || gender.toLowerCase() == 'male'
+                    ? Colors.blue[700]
+                    : Colors.pink[700],
+              ),
+              const SizedBox(width: 4),
+              Text(
+                gender.toLowerCase() == 'boy' || gender.toLowerCase() == 'male'
+                    ? 'Masculino'
+                    : 'Femenino',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: gender.toLowerCase() == 'boy' || gender.toLowerCase() == 'male'
+                      ? Colors.blue[700]
+                      : Colors.pink[700],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -384,6 +435,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget _buildTabSection(dynamic profile) {
     final points = profile.points ?? 0;
     final level = profile.level ?? 1;
+    final gender = profile.gender ?? 'boy'; // Obtener gender para stats
 
     return SizedBox(
       height: 500,
@@ -402,7 +454,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildStatsTab(points, level),
+                _buildStatsTab(points, level, gender),
               ],
             ),
           ),
@@ -411,7 +463,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildStatsTab(int points, int level) {
+  Widget _buildStatsTab(int points, int level, String gender) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -427,6 +479,8 @@ class _ProfileScreenState extends State<ProfileScreen>
             title: 'Nivel Actual',
             value: 'Nivel $level',
           ),
+          const SizedBox(height: 16),
+          _buildGenderCard(gender), // Nueva tarjeta para mostrar gender
           const SizedBox(height: 16),
           _buildProgressCard(points, level),
         ],
@@ -470,6 +524,50 @@ class _ProfileScreenState extends State<ProfileScreen>
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF7C4DFF),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGenderCard(String gender) {
+    final isMale = gender.toLowerCase() == 'boy' || gender.toLowerCase() == 'male';
+    
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            Icon(
+              isMale ? Icons.male : Icons.female,
+              color: isMale ? Colors.blue[700] : Colors.pink[700],
+              size: 30,
+            ),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Género',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                Text(
+                  isMale ? 'Masculino' : 'Femenino',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: isMale ? Colors.blue[700] : Colors.pink[700],
                   ),
                 ),
               ],
