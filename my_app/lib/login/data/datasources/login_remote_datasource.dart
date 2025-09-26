@@ -12,8 +12,15 @@ class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
 
   @override
   Future<User> login({required String email, required String password}) async {
-    final result = await firebaseAuth.signInWithEmailAndPassword(
-        email: email, password: password);
-    return result.user!;
+    try {
+      final result = await firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      return result.user!;
+    } on FirebaseAuthException catch (e) {
+      // 👇 relanzamos el error para que el Bloc lo pueda mapear
+      throw e;
+    }
   }
 }

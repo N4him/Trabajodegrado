@@ -1,5 +1,7 @@
 // lib/features/login/presentation/bloc/login_bloc.dart
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:my_app/core/di/error/firebase_error_mapper.dart';
 import 'login_event.dart';
 import 'login_state.dart';
 import '../../domain/usecases/login_user.dart';
@@ -13,18 +15,37 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   }
 
   Future<void> _onLoginSubmitted(
-      LoginSubmitted event, Emitter<LoginState> emit) async {
+    LoginSubmitted event,
+    Emitter<LoginState> emit,
+  ) async {
     emit(LoginLoading());
+
     try {
-      final user =
-          await loginUser(email: event.email, password: event.password);
-      if (user != null) {
-        emit(LoginSuccess(user: user));
-      } else {
+      print('Attempting login with email: ${event.email}'); // Debug
+      
+      final user = await loginUser(
+        email: event.email,
+        password: event.password,
+      );
+
+      print('Login successful for user: ${user?.uid}'); // Debug
+      
+      if (user == null) {
         emit(LoginFailure(error: 'Error al iniciar sesión'));
+        return;
       }
+
+      emit(LoginSuccess(user: user));
+    } on FirebaseAuthException catch (e) {
+      print('FirebaseAuthException: ${e.code} - ${e.message}'); // Debug
+      
+      // Usar el mapeador para convertir el código de error a un mensaje amigable
+      final userFriendlyMessage = FirebaseErrorMapper.toMessage(e.code);
+      emit(LoginFailure(error: userFriendlyMessage));
+      
     } catch (e) {
-      emit(LoginFailure(error: e.toString()));
+      print('General exception: $e'); // Debug
+      emit(LoginFailure(error: 'Ocurrió un error inesperado'));
     }
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:my_app/register/domain/usecases/register_user.dart';
+import 'package:my_app/widgets/custom_snackbar.dart';
 import 'blocs/register_bloc.dart';
 import 'blocs/register_event.dart';
 import 'blocs/register_state.dart';
@@ -137,15 +138,9 @@ class _RegisterScreenBodyState extends State<_RegisterScreenBody> {
           if (state is RegisterSuccess) {
             Navigator.of(context).pushReplacementNamed('/home');
           } else if (state is RegisterFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.error),
-                backgroundColor: Colors.red,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+            CustomSnackBar.showError(
+              context: context,
+              message: state.error,
             );
           }
         },
@@ -221,15 +216,6 @@ class _RegisterScreenBodyState extends State<_RegisterScreenBody> {
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF2D2D2D),
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          SizedBox(height: 6),
-                          Text(
-                            'Regístrate para comenzar',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF9E9E9E),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -412,19 +398,13 @@ class _RegisterScreenBodyState extends State<_RegisterScreenBody> {
                                     icon: Icons.female_rounded,
                                     color: Color(0xFFE91E63),
                                   ),
-                                  _buildGenderOption(
-                                    value: "other",
-                                    label: "Otro",
-                                    icon: Icons.transgender_rounded,
-                                    color: Color(0xFF9C27B0),
-                                  ),
                                 ],
                               ),
                               if (_selectedGenero == null)
                                 Padding(
                                   padding: const EdgeInsets.only(top: 8),
                                   child: Text(
-                                    'Por favor selecciona tu género',
+                                    'Selecciona tu género',
                                     style: TextStyle(
                                       color: Colors.red.shade600,
                                       fontSize: 12,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_app/login/presentation/blocs/login_state.dart';
 import 'package:my_app/login/presentation/blocs/login_event.dart';
+import 'package:my_app/widgets/custom_snackbar.dart'; // ← Importar CustomSnackBar
 import '../blocs/login_bloc.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -24,6 +25,24 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  // Método para validar y hacer login
+  void _handleLogin() {
+    if (_formKey.currentState!.validate()) {
+      context.read<LoginBloc>().add(
+        LoginSubmitted(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        ),
+      );
+    } else {
+      // Mostrar advertencia si la validación falla
+      CustomSnackBar.showWarning(
+        context: context,
+        message: 'Por favor, completa todos los campos correctamente',
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,15 +51,15 @@ class _LoginScreenState extends State<LoginScreen> {
           if (state is LoginSuccess) {
             Navigator.of(context).pushReplacementNamed('/home');
           } else if (state is LoginFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.error),
-                backgroundColor: Colors.red,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+            // ✅ AQUÍ ESTÁ EL CAMBIO PRINCIPAL - Usar CustomSnackBar.showError
+            CustomSnackBar.showError(
+              context: context,
+              message: state.error,
+              actionLabel: 'Reintentar',
+              onActionPressed: () {
+                // Limpiar el estado y permitir reintentar
+                context.read<LoginBloc>().add(LoginReset());
+              },
             );
           }
         },
@@ -50,7 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Color(0xFF9C88FF), // Morado claro como en la imagen
+                Color(0xFF9C88FF),
                 Color(0xFFB8A9FF),
                 Color(0xFFD4BBFF),
                 Color(0xFFE8D5FF),
@@ -64,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Ilustración/Avatar como en la imagen
+                    // Ilustración/Avatar
                     Container(
                       height: 120,
                       width: 120,
@@ -89,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
 
-                    // Card principal del login - Extendida
+                    // Card principal del login
                     Container(
                       width: 380,
                       padding: EdgeInsets.all(32),
@@ -232,11 +251,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               alignment: Alignment.centerLeft,
                               child: TextButton(
                                 onPressed: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Función próximamente disponible'),
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
+                                  CustomSnackBar.showInfo(
+                                    context: context,
+                                    message: 'Función próximamente disponible',
                                   );
                                 },
                                 child: Text(
@@ -272,18 +289,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ],
                                   ),
                                   child: ElevatedButton(
-                                    onPressed: state is LoginLoading
-                                        ? null
-                                        : () {
-                                            if (_formKey.currentState!.validate()) {
-                                              context.read<LoginBloc>().add(
-                                                    LoginSubmitted(
-                                                      email: _emailController.text.trim(),
-                                                      password: _passwordController.text,
-                                                    ),
-                                                  );
-                                            }
-                                          },
+                                    onPressed: state is LoginLoading ? null : _handleLogin,
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.transparent,
                                       shadowColor: Colors.transparent,
@@ -314,7 +320,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             SizedBox(height: 32),
 
-                            // Separador y botones de redes sociales DENTRO de la card
+                            // Separador y botones de redes sociales
                             Text(
                               'Or continue with',
                               style: TextStyle(
@@ -333,11 +339,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   icon: Icons.facebook,
                                   color: Color(0xFF1877F2),
                                   onTap: () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Facebook login próximamente'),
-                                        behavior: SnackBarBehavior.floating,
-                                      ),
+                                    CustomSnackBar.showInfo(
+                                      context: context,
+                                      message: 'Facebook login próximamente',
                                     );
                                   },
                                 ),
@@ -346,11 +350,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   icon: Icons.g_mobiledata,
                                   color: Color(0xFFDB4437),
                                   onTap: () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Google login próximamente'),
-                                        behavior: SnackBarBehavior.floating,
-                                      ),
+                                    CustomSnackBar.showInfo(
+                                      context: context,
+                                      message: 'Google login próximamente',
                                     );
                                   },
                                 ),
@@ -359,52 +361,46 @@ class _LoginScreenState extends State<LoginScreen> {
                                   icon: Icons.apple,
                                   color: Color(0xFF000000),
                                   onTap: () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Apple login próximamente'),
-                                        behavior: SnackBarBehavior.floating,
-                                      ),
+                                    CustomSnackBar.showInfo(
+                                      context: context,
+                                      message: 'Apple login próximamente',
                                     );
                                   },
                                 ),
                               ],
-                              
                             ),
-                            // Registro - FUERA de la card
-                                                    SizedBox(height: 25),
+                            SizedBox(height: 25),
 
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "¿No tienes cuenta? ",
-                          style: TextStyle(
-                            color: Colors.black.withOpacity(0.8),
-                            fontSize: 14,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).pushNamed('/register');
-                          },
-                          child: Text(
-                            "Regístrate",
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                            // Registro
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  "¿No tienes cuenta? ",
+                                  style: TextStyle(
+                                    color: Colors.black.withOpacity(0.8),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.of(context).pushNamed('/register');
+                                  },
+                                  child: Text(
+                                    "Regístrate",
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
+                          ],
                         ),
-                      ],
-                    ), ],
-                          
-                        ),
-                        
                       ),
-                      
                     ),
-
                   ],
                 ),
               ),
