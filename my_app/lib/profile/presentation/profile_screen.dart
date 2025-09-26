@@ -322,48 +322,6 @@ class _ProfileScreenState extends State<ProfileScreen>
           style: TextStyle(fontSize: 16, color: Colors.grey[600]),
         ),
         // Mostrar género como información adicional
-        const SizedBox(height: 4),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            color: gender.toLowerCase() == 'boy' || gender.toLowerCase() == 'male'
-                ? Colors.blue.withOpacity(0.1)
-                : Colors.pink.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: gender.toLowerCase() == 'boy' || gender.toLowerCase() == 'male'
-                  ? Colors.blue.withOpacity(0.3)
-                  : Colors.pink.withOpacity(0.3),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                gender.toLowerCase() == 'boy' || gender.toLowerCase() == 'male'
-                    ? Icons.male
-                    : Icons.female,
-                size: 16,
-                color: gender.toLowerCase() == 'boy' || gender.toLowerCase() == 'male'
-                    ? Colors.blue[700]
-                    : Colors.pink[700],
-              ),
-              const SizedBox(width: 4),
-              Text(
-                gender.toLowerCase() == 'boy' || gender.toLowerCase() == 'male'
-                    ? 'Masculino'
-                    : 'Femenino',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: gender.toLowerCase() == 'boy' || gender.toLowerCase() == 'male'
-                      ? Colors.blue[700]
-                      : Colors.pink[700],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }
@@ -480,8 +438,6 @@ class _ProfileScreenState extends State<ProfileScreen>
             value: 'Nivel $level',
           ),
           const SizedBox(height: 16),
-          _buildGenderCard(gender), // Nueva tarjeta para mostrar gender
-          const SizedBox(height: 16),
           _buildProgressCard(points, level),
         ],
       ),
@@ -524,50 +480,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF7C4DFF),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGenderCard(String gender) {
-    final isMale = gender.toLowerCase() == 'boy' || gender.toLowerCase() == 'male';
-    
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Icon(
-              isMale ? Icons.male : Icons.female,
-              color: isMale ? Colors.blue[700] : Colors.pink[700],
-              size: 30,
-            ),
-            const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Género',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                Text(
-                  isMale ? 'Masculino' : 'Femenino',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: isMale ? Colors.blue[700] : Colors.pink[700],
                   ),
                 ),
               ],
