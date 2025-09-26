@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/forum/screen_forum.dart';
 
 import '../splash/splash_screen.dart';
 import '../onboarding/onboarding_screen.dart';
@@ -14,6 +15,7 @@ class AppRouter {
   static const String register = '/register';
   static const String home = '/home';
   static const String library = '/library';
+  static const String foro = '/foro';
 
   static Map<String, WidgetBuilder> routes = {
     splash: (_) => SplashScreen(),
@@ -22,5 +24,6 @@ class AppRouter {
     register: (_) => RegisterScreen(),
     home: (_) => HomeScreen(),
     library: (_) => LibraryScreen(),
+    foro: (_) => ForumsScreen(), // Placeholder for ForoScreen
   };
 }
