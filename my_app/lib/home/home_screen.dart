@@ -87,7 +87,7 @@ class _HomeContentState extends State<HomeContent> {
   void _startAutoSlide() {
     _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
       if (!mounted || !_pageController.hasClients) return;
-      
+
       if (_currentCarouselIndex < _carouselItems.length - 1) {
         _currentCarouselIndex++;
       } else {
@@ -218,7 +218,8 @@ class _HomeContentState extends State<HomeContent> {
               });
             },
             itemCount: _carouselItems.length,
-            itemBuilder: (context, index) => _buildCarouselItem(_carouselItems[index]),
+            itemBuilder: (context, index) =>
+                _buildCarouselItem(_carouselItems[index]),
           ),
           _buildCarouselIndicators(),
         ],

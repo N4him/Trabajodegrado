@@ -31,10 +31,10 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   void _handleProfileUpdate(String name, String? password, String photoUrl) {
     context.read<ProfileBloc>().add(UpdateProfile(
-      name: name,
-      password: password,
-      photoUrl: photoUrl,
-    ));
+          name: name,
+          password: password,
+          photoUrl: photoUrl,
+        ));
   }
 
   @override
@@ -137,10 +137,10 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildProfileContent(ProfileState state) {
-    final profile = state is ProfileLoaded 
-        ? state.profile 
+    final profile = state is ProfileLoaded
+        ? state.profile
         : (state as ProfileUpdating).profile;
-    
+
     final isUpdating = state is ProfileUpdating;
 
     return RefreshIndicator(
@@ -164,7 +164,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Future<void> _handleRefresh() async {
     final completer = Completer<void>();
-    
+
     // Escuchar cambios de estado para completar el refresh
     late StreamSubscription subscription;
     subscription = context.read<ProfileBloc>().stream.listen((state) {
@@ -178,7 +178,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     // Disparar el evento de carga
     context.read<ProfileBloc>().add(LoadProfile());
-    
+
     return completer.future;
   }
 
@@ -218,7 +218,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildProfileAvatar(String photoUrl, String userName, bool isUpdating) {
+  Widget _buildProfileAvatar(
+      String photoUrl, String userName, bool isUpdating) {
     return SizedBox(
       width: 120,
       height: 120,
@@ -227,9 +228,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         children: [
           CircleAvatar(
             radius: 60,
-            backgroundImage: photoUrl.isNotEmpty 
-                ? NetworkImage(photoUrl)
-                : null,
+            backgroundImage:
+                photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
             child: photoUrl.isEmpty
                 ? Icon(Icons.person, size: 60, color: Colors.grey[400])
                 : null,
@@ -304,20 +304,14 @@ class _ProfileScreenState extends State<ProfileScreen>
       children: [
         Text(
           userName.isNotEmpty ? userName : 'Usuario',
-          style: const TextStyle(
-            fontSize: 28, 
-            fontWeight: FontWeight.bold
-          ),
+          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
           overflow: TextOverflow.ellipsis,
           maxLines: 1,
         ),
         const SizedBox(height: 4),
         Text(
           'Experto',
-          style: TextStyle(
-            fontSize: 16, 
-            color: Colors.grey[600]
-          ),
+          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
         ),
       ],
     );
@@ -325,7 +319,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Widget _buildProgressBar(int level, int points) {
     final progress = (points % 100) / 100;
-    
+
     return Row(
       children: [
         const SizedBox(width: 8),
@@ -343,9 +337,8 @@ class _ProfileScreenState extends State<ProfileScreen>
             child: LinearProgressIndicator(
               value: progress,
               backgroundColor: Colors.grey[200],
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                Color(0xFF7C4DFF)
-              ),
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(Color(0xFF7C4DFF)),
               minHeight: 8,
             ),
           ),
@@ -524,9 +517,8 @@ class _ProfileScreenState extends State<ProfileScreen>
               child: LinearProgressIndicator(
                 value: progress,
                 backgroundColor: Colors.grey[200],
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  Color(0xFF7C4DFF)
-                ),
+                valueColor:
+                    const AlwaysStoppedAnimation<Color>(Color(0xFF7C4DFF)),
                 minHeight: 8,
               ),
             ),

@@ -378,36 +378,6 @@ class _LoginScreenContentState extends State<LoginScreenContent> {
     );
   }
 
-  Widget _buildSocialButton({
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Icon(
-          icon,
-          color: color,
-          size: 24,
-        ),
-      ),
-    );
-  }
-
   Widget _buildRegisterLink() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -433,13 +403,6 @@ class _LoginScreenContentState extends State<LoginScreenContent> {
           ),
         ),
       ],
-    );
-  }
-
-  void _showSocialLoginMessage(String platform) {
-    CustomSnackBar.showInfo(
-      context: context,
-      message: '$platform login próximamente',
     );
   }
 }
