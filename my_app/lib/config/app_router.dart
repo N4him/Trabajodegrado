@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/forum/screen_forum.dart';
+import 'package:my_app/library/presentation/book_detail_page.dart';
 
 import '../splash/splash_screen.dart';
 import '../onboarding/onboarding_screen.dart';
@@ -16,6 +17,8 @@ class AppRouter {
   static const String home = '/home';
   static const String library = '/library';
   static const String foro = '/foro';
+    static const String bookDetail = '/book-detail'; // 👈 nueva ruta
+
 
   static Map<String, WidgetBuilder> routes = {
     splash: (_) => SplashScreen(),
@@ -23,7 +26,11 @@ class AppRouter {
     login: (_) => LoginScreen(),
     register: (_) => RegisterScreen(),
     home: (_) => HomeScreen(),
-    library: (_) => LibraryScreen(),
+    library: (_) => LibraryPage(),
     foro: (_) => ForumsScreen(), // Placeholder for ForoScreen
+     bookDetail: (context) {
+      final bookId = ModalRoute.of(context)!.settings.arguments as String;
+      return BookDetailPage(bookId: bookId);
+    },
   };
 }

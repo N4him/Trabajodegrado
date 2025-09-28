@@ -2,6 +2,13 @@
 import 'package:get_it/get_it.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:my_app/library/data/datasources/library_remote_datasource.dart';
+import 'package:my_app/library/data/datasources/library_remote_datasource_impl.dart';
+import 'package:my_app/library/data/repositories/library_repository_impl.dart';
+import 'package:my_app/library/domain/repositories/library_repository.dart';
+import 'package:my_app/library/domain/usescases/get_book_by_id.dart';
+import 'package:my_app/library/domain/usescases/get_books.dart';
+import 'package:my_app/library/presentation/blocs/library_bloc.dart';
 
 // Login imports
 import '../../login/data/datasources/login_remote_datasource.dart';
@@ -21,7 +28,7 @@ import '../../register/presentation/blocs/register_bloc.dart';
 import '../../profile/data/repositories/profile_repository_impl.dart';
 import '../../profile/domain/repositories/profile_repository.dart';
 import '../../profile/presentation/bloc/profile_bloc.dart';
-
+final sl = GetIt.instance;
 final getIt = GetIt.instance;
 
 Future<void> setupDI() async {
@@ -30,14 +37,26 @@ Future<void> setupDI() async {
   // ==============================================
   getIt.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
   getIt.registerLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
+  getIt.registerFactory(
+    () => LibraryBloc(getBooks: getIt()),
+    
+  );
 
+  getIt.registerLazySingleton(() => GetBooks(getIt()));
+  getIt.registerLazySingleton(() => GetBookById(getIt()));
   // ==============================================
   // DATA SOURCES
   // ==============================================
   getIt.registerLazySingleton<LoginRemoteDataSource>(
     () => LoginRemoteDataSourceImpl(firebaseAuth: getIt()),
   );
-  
+  getIt.registerLazySingleton<LibraryRepository>(
+    () => LibraryRepositoryImpl(remoteDataSource: getIt()),
+  );
+
+    getIt.registerLazySingleton<LibraryRemoteDataSource>(
+    () => LibraryRemoteDataSourceImpl(firestore: getIt()),
+  );
   getIt.registerLazySingleton<RegisterRemoteDataSource>(
     () => RegisterRemoteDataSourceImpl(
       firebaseAuth: getIt(),
