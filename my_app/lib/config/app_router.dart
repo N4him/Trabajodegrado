@@ -7,7 +7,7 @@ import '../onboarding/onboarding_screen.dart';
 import '../login/presentation/pages/login_screen.dart';
 import '../register/presentation/register_screen.dart';
 import '../home/home_screen.dart';
-import '../library/library_screen.dart';
+import '../library/presentation/library_screen.dart';
 
 class AppRouter {
   static const String splash = '/';

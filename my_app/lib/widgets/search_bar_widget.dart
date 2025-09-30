@@ -1,11 +1,16 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 class SearchBarWidget extends StatefulWidget {
   final Function(String) onSearch;
+  final VoidCallback? onClear;
+  final String? initialValue;
 
   const SearchBarWidget({
     Key? key,
     required this.onSearch,
+    this.onClear,
+    this.initialValue,
   }) : super(key: key);
 
   @override
@@ -15,83 +20,142 @@ class SearchBarWidget extends StatefulWidget {
 class _SearchBarWidgetState extends State<SearchBarWidget> {
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
+  Timer? _debounceTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialValue != null && widget.initialValue!.isNotEmpty) {
+      _searchController.text = widget.initialValue!;
+      _isSearching = true;
+    }
+  }
+
+  @override
+  void didUpdateWidget(SearchBarWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Actualizar el controlador si cambia el valor inicial
+    if (widget.initialValue != oldWidget.initialValue) {
+      if (widget.initialValue == null || widget.initialValue!.isEmpty) {
+        _searchController.clear();
+        _isSearching = false;
+      } else {
+        _searchController.text = widget.initialValue!;
+        _isSearching = true;
+      }
+      if (mounted) setState(() {});
+    }
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    // Cancel previous timer
+    _debounceTimer?.cancel();
+    
+    setState(() {
+      _isSearching = value.trim().isNotEmpty;
+    });
+    
+    // Set up new timer for debounced search (300ms delay)
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        final query = value.trim();
+        print("🔍 SearchBar: Enviando búsqueda: '$query'");
+        widget.onSearch(query);
+      }
+    });
+  }
+
+  void _clearSearch() {
+    print("🧹 SearchBar: Limpiando búsqueda");
+    _searchController.clear();
+    _debounceTimer?.cancel();
+    setState(() {
+      _isSearching = false;
+    });
+    widget.onSearch(''); // Trigger search with empty query
+    widget.onClear?.call();
+  }
+
+  void _handleSubmitted(String value) {
+    _debounceTimer?.cancel();
+    final query = value.trim();
+    print("⚡ SearchBar: Búsqueda inmediata: '$query'");
+    if (query.isNotEmpty) {
+      widget.onSearch(query);
+    }
+    // Quitar el foco del campo de texto
+    FocusScope.of(context).unfocus();
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 25,
-            offset: const Offset(0, 5),
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Row(
         children: [
           Icon(
-            Icons.search_rounded,
-            color: const Color(0xFF5E35B1),
-            size: 26,
+            _isSearching ? Icons.search : Icons.search_rounded,
+            color: _isSearching ? const Color(0xFF4CAF50) : const Color(0xFF5E35B1),
+            size: 22,
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: TextField(
               controller: _searchController,
+              style: const TextStyle(
+                color: Colors.black87,
+                fontSize: 16,
+              ),
               decoration: InputDecoration(
-                hintText: 'Buscar libros, autores, géneros...',
+                hintText: 'Buscar por título del libro...',
                 hintStyle: TextStyle(
                   color: Colors.grey[500],
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w400,
                 ),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
               ),
-              onChanged: (value) {
-                setState(() {
-                  _isSearching = value.isNotEmpty;
-                });
-              },
-              onSubmitted: (value) {
-                if (value.trim().isNotEmpty) {
-                  widget.onSearch(value.trim());
-                }
-              },
+              textInputAction: TextInputAction.search,
+              onChanged: _onSearchChanged,
+              onSubmitted: _handleSubmitted,
             ),
           ),
           if (_isSearching)
             GestureDetector(
-              onTap: () {
-                _searchController.clear();
-                setState(() {
-                  _isSearching = false;
-                });
-                widget.onSearch('');
-              },
-              child: const Icon(
-                Icons.clear,
-                color: Colors.grey,
-                size: 20,
+              onTap: _clearSearch,
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                child: Icon(
+                  Icons.clear,
+                  color: Colors.grey[600],
+                  size: 18,
+                ),
               ),
             )
           else
             GestureDetector(
-              onTap: () {
-                _showFilterBottomSheet();
-              },
+              onTap: _showQuickSearchOptions,
               child: Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [
@@ -99,12 +163,12 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
                       Color(0xFF3949AB),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
                   Icons.tune_rounded,
                   color: Colors.white,
-                  size: 20,
+                  size: 16,
                 ),
               ),
             ),
@@ -113,95 +177,85 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
     );
   }
 
-  void _showFilterBottomSheet() {
+  void _showQuickSearchOptions() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) {
         return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Filtros de Búsqueda',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.flash_on,
+                    color: Color(0xFF5E35B1),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Búsquedas Rápidas',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _buildQuickSearchChip('Ficción', Icons.auto_stories),
+                  _buildQuickSearchChip('Historia', Icons.history_edu),
+                  _buildQuickSearchChip('Ciencia', Icons.science),
+                  _buildQuickSearchChip('Arte', Icons.palette),
+                  _buildQuickSearchChip('Cervantes', Icons.person),
+                  _buildQuickSearchChip('Quijote', Icons.menu_book),
+                  _buildQuickSearchChip('Filosofía', Icons.psychology),
+                  _buildQuickSearchChip('Novela', Icons.book),
+                ],
               ),
               const SizedBox(height: 20),
               const Text(
-                'Ordenar por:',
+                'Sugerencias:',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                children: [
-                  FilterChip(
-                    label: const Text('Título A-Z'),
-                    selected: true,
-                    onSelected: (selected) {},
-                  ),
-                  FilterChip(
-                    label: const Text('Autor'),
-                    selected: false,
-                    onSelected: (selected) {},
-                  ),
-                  FilterChip(
-                    label: const Text('Fecha'),
-                    selected: false,
-                    onSelected: (selected) {},
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 8),
               const Text(
-                'Disponibilidad:',
+                '• Busca por título completo o parcial\n• Usa palabras clave del título\n• Presiona Enter para búsqueda inmediata\n• Los resultados se filtran automáticamente',
                 style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: Colors.grey,
+                  height: 1.5,
                 ),
               ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                children: [
-                  FilterChip(
-                    label: const Text('Disponibles'),
-                    selected: false,
-                    onSelected: (selected) {},
-                  ),
-                  FilterChip(
-                    label: const Text('Prestados'),
-                    selected: false,
-                    onSelected: (selected) {},
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
+                  onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF5E35B1),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: const Text(
-                    'Aplicar Filtros',
+                    'Cerrar',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -213,6 +267,29 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildQuickSearchChip(String label, IconData icon) {
+    return ActionChip(
+      avatar: Icon(icon, size: 16, color: const Color(0xFF5E35B1)),
+      label: Text(label),
+      onPressed: () {
+        Navigator.pop(context);
+        _searchController.text = label;
+        setState(() {
+          _isSearching = true;
+        });
+        print("🏷️ Búsqueda rápida: $label");
+        widget.onSearch(label);
+      },
+      backgroundColor: const Color(0xFF5E35B1).withOpacity(0.1),
+      labelStyle: const TextStyle(
+        color: Color(0xFF5E35B1),
+        fontWeight: FontWeight.w500,
+      ),
+      elevation: 0,
+      pressElevation: 2,
     );
   }
 }

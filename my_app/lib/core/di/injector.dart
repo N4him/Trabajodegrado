@@ -8,6 +8,8 @@ import 'package:my_app/library/data/repositories/library_repository_impl.dart';
 import 'package:my_app/library/domain/repositories/library_repository.dart';
 import 'package:my_app/library/domain/usescases/get_book_by_id.dart';
 import 'package:my_app/library/domain/usescases/get_books.dart';
+import 'package:my_app/library/domain/usescases/get_books_by_category.dart';
+import 'package:my_app/library/domain/usescases/search_books.dart';
 import 'package:my_app/library/presentation/blocs/library_bloc.dart';
 
 // Login imports
@@ -28,6 +30,7 @@ import '../../register/presentation/blocs/register_bloc.dart';
 import '../../profile/data/repositories/profile_repository_impl.dart';
 import '../../profile/domain/repositories/profile_repository.dart';
 import '../../profile/presentation/bloc/profile_bloc.dart';
+
 final sl = GetIt.instance;
 final getIt = GetIt.instance;
 
@@ -37,26 +40,18 @@ Future<void> setupDI() async {
   // ==============================================
   getIt.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
   getIt.registerLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
-  getIt.registerFactory(
-    () => LibraryBloc(getBooks: getIt()),
-    
-  );
 
-  getIt.registerLazySingleton(() => GetBooks(getIt()));
-  getIt.registerLazySingleton(() => GetBookById(getIt()));
   // ==============================================
   // DATA SOURCES
   // ==============================================
   getIt.registerLazySingleton<LoginRemoteDataSource>(
     () => LoginRemoteDataSourceImpl(firebaseAuth: getIt()),
   );
-  getIt.registerLazySingleton<LibraryRepository>(
-    () => LibraryRepositoryImpl(remoteDataSource: getIt()),
-  );
 
-    getIt.registerLazySingleton<LibraryRemoteDataSource>(
+  getIt.registerLazySingleton<LibraryRemoteDataSource>(
     () => LibraryRemoteDataSourceImpl(firestore: getIt()),
   );
+
   getIt.registerLazySingleton<RegisterRemoteDataSource>(
     () => RegisterRemoteDataSourceImpl(
       firebaseAuth: getIt(),
@@ -69,6 +64,10 @@ Future<void> setupDI() async {
   // ==============================================
   getIt.registerLazySingleton<LoginRepository>(
     () => LoginRepositoryImpl(remoteDataSource: getIt()),
+  );
+
+  getIt.registerLazySingleton<LibraryRepository>(
+    () => LibraryRepositoryImpl(remoteDataSource: getIt()),
   );
   
   getIt.registerLazySingleton<RegisterRepository>(
@@ -93,6 +92,23 @@ Future<void> setupDI() async {
     () => RegisterUser(getIt()),
   );
 
+  // Library Use Cases
+  getIt.registerLazySingleton<GetBooks>(
+    () => GetBooks(getIt()),
+  );
+
+  getIt.registerLazySingleton<GetBookById>(
+    () => GetBookById(getIt()),
+  );
+
+  getIt.registerLazySingleton<GetBooksByCategory>(
+    () => GetBooksByCategory(getIt()),
+  );
+
+  getIt.registerLazySingleton<SearchBooks>(
+    () => SearchBooks(getIt()),
+  );
+
   // ==============================================
   // BLOCS - FACTORY REGISTRATION
   // ==============================================
@@ -108,6 +124,15 @@ Future<void> setupDI() async {
   getIt.registerFactory<ProfileBloc>(
     () => ProfileBloc(profileRepository: getIt()),
   );
+
+  // LibraryBloc with all required dependencies
+  getIt.registerFactory<LibraryBloc>(
+    () => LibraryBloc(
+      getBooks: getIt<GetBooks>(),
+      getBooksByCategory: getIt<GetBooksByCategory>(),
+      searchBooks: getIt<SearchBooks>(),
+    ),
+  );
 }
 
 // ==============================================
@@ -117,6 +142,7 @@ Future<void> setupDI() async {
 LoginBloc getLoginBloc() => getIt<LoginBloc>();
 RegisterBloc getRegisterBloc() => getIt<RegisterBloc>();
 ProfileBloc getProfileBloc() => getIt<ProfileBloc>();
+LibraryBloc getLibraryBloc() => getIt<LibraryBloc>();
 
 // ==============================================
 // FUNCIÓN PARA LIMPIAR DEPENDENCIAS (OPCIONAL)

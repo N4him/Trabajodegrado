@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_app/library/domain/usescases/get_books.dart';
+import 'package:my_app/library/domain/usescases/get_books_by_category.dart';
+import 'package:my_app/library/domain/usescases/search_books.dart';
 import 'package:my_app/library/presentation/blocs/library_bloc.dart';
 
 import 'core/di/injector.dart';
@@ -38,7 +40,11 @@ class MyApp extends StatelessWidget {
             create: (_) => RegisterBloc(registerUser: getIt<RegisterUser>()),
           ),
           BlocProvider<LibraryBloc>(
-            create: (_) => LibraryBloc(getBooks: getIt<GetBooks>()),
+            create: (_) => LibraryBloc(
+              getBooks: getIt<GetBooks>(),
+              getBooksByCategory: getIt<GetBooksByCategory>(),
+              searchBooks: getIt<SearchBooks>(),
+            ),
           ),
           BlocProvider<ProfileBloc>(
             create: (_) => ProfileBloc(profileRepository: getIt<ProfileRepository>()),
