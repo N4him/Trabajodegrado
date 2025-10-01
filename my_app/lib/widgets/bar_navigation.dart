@@ -62,7 +62,7 @@ final List<Widget> _screens = [
           Icon(Icons.person, size: 35, color: Colors.white),
         ],
         color: Colors.black,
-        backgroundColor: Colors.grey[100]!,
+backgroundColor:  Color.fromARGB(239, 0, 0, 0),
         buttonBackgroundColor: Color(0xFF4ECDC4),
         animationCurve: Curves.easeOutQuad,
         animationDuration: const Duration(milliseconds: 350),

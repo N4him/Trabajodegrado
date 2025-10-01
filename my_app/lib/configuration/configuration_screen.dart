@@ -1,4 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:adaptive_theme/adaptive_theme.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -8,20 +10,23 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _darkMode = false;
   String _selectedLanguage = 'English';
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = AdaptiveTheme.of(context).mode == AdaptiveThemeMode.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: colorScheme.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
           'Settings',
           style: TextStyle(
-            color: Colors.black,
+            color: colorScheme.onBackground,
             fontSize: 30,
             fontWeight: FontWeight.bold,
           ),
@@ -33,9 +38,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            // Language Setting
             _buildSettingItem(
+              context,
               icon: Icons.language,
               iconColor: Color(0xFFFFBE0B),
               iconBackgroundColor: Color(0xFFFFBE0B).withOpacity(0.1),
@@ -47,14 +51,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             
             SizedBox(height: 16),
             
-            // Notifications Setting
             _buildSettingItem(
+              context,
               icon: Icons.notifications,
               iconColor: Color(0xFF4ECDC4),
               iconBackgroundColor: Color(0xFF4ECDC4).withOpacity(0.1),
               title: 'Notifications',
               onTap: () {
-                // Navigate to notifications settings
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Navigating to Notifications settings')),
                 );
@@ -64,36 +67,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
             
             SizedBox(height: 16),
             
-            // Dark Mode Setting
             _buildSettingItem(
+              context,
               icon: Icons.dark_mode,
               iconColor: Color(0xFF6C63FF),
               iconBackgroundColor: Color(0xFF6C63FF).withOpacity(0.1),
               title: 'Dark Mode',
-              subtitle: _darkMode ? 'On' : 'Off',
+              subtitle: isDarkMode ? 'On' : 'Off',
               trailing: Switch(
-                value: _darkMode,
+                value: isDarkMode,
                 onChanged: (value) {
-                  setState(() {
-                    _darkMode = value;
-                  });
+                  if (value) {
+                    AdaptiveTheme.of(context).setDark();
+                  } else {
+                    AdaptiveTheme.of(context).setLight();
+                  }
                 },
                 activeColor: Color(0xFF6C63FF),
                 activeTrackColor: Color(0xFF6C63FF).withOpacity(0.3),
               ),
-              showArrow: false, onTap: () {  },
+              showArrow: false,
+              onTap: () {},
             ),
             
             SizedBox(height: 16),
             
-            // Help Setting
             _buildSettingItem(
+              context,
               icon: Icons.help_center,
               iconColor: Color(0xFFFF6B6B),
               iconBackgroundColor: Color(0xFFFF6B6B).withOpacity(0.1),
               title: 'Help',
               onTap: () {
-                // Navigate to help section
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Opening Help section')),
                 );
@@ -101,11 +106,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               showArrow: true,
             ),
             
-                        SizedBox(height: 16),
-
+            SizedBox(height: 16),
             
-            // Privacy Setting
             _buildSettingItem(
+              context,
               icon: Icons.privacy_tip,
               iconColor: Color(0xFF9C27B0),
               iconBackgroundColor: Color(0xFF9C27B0).withOpacity(0.1),
@@ -120,8 +124,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             
             SizedBox(height: 16),
             
-            // About Setting
             _buildSettingItem(
+              context,
               icon: Icons.info,
               iconColor: Color(0xFF4CAF50),
               iconBackgroundColor: Color(0xFF4CAF50).withOpacity(0.1),
@@ -135,8 +139,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             
             SizedBox(height: 16),
             
-            // Logout Setting
             _buildSettingItem(
+              context,
               icon: Icons.logout,
               iconColor: Color(0xFFFF5722),
               iconBackgroundColor: Color(0xFFFF5722).withOpacity(0.1),
@@ -152,7 +156,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSettingItem({
+  Widget _buildSettingItem(
+    BuildContext context, {
     required IconData icon,
     required Color iconColor,
     required Color iconBackgroundColor,
@@ -162,16 +167,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required VoidCallback? onTap,
     required bool showArrow,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.08),
+              color: isDark 
+                  ? Colors.black.withOpacity(0.3)
+                  : Colors.grey.withOpacity(0.08),
               blurRadius: 10,
               offset: Offset(0, 2),
             ),
@@ -202,7 +212,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   if (subtitle != null) ...[
@@ -211,7 +221,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       subtitle,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
                   ],
@@ -223,7 +233,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ] else if (showArrow) ...[
               Icon(
                 Icons.chevron_right,
-                color: Colors.grey[400],
+                color: colorScheme.onSurface.withOpacity(0.4),
                 size: 24,
               ),
             ],
@@ -234,11 +244,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showLanguageDialog() {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Select Language'),
+          backgroundColor: colorScheme.surface,
+          title: Text(
+            'Select Language',
+            style: TextStyle(color: colorScheme.onSurface),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -293,30 +309,106 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showLogoutDialog() {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Logout'),
-          content: Text('Are you sure you want to logout?'),
+          backgroundColor: colorScheme.surface,
+          title: Text(
+            'Logout',
+            style: TextStyle(color: colorScheme.onSurface),
+          ),
+          content: Text(
+            'Are you sure you want to logout?',
+            style: TextStyle(color: colorScheme.onSurface),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                // Implement logout logic here
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Logged out successfully')),
-                );
-              },
+              onPressed: () => _performLogout(),
               child: Text('Logout', style: TextStyle(color: Colors.red)),
             ),
           ],
         );
       },
     );
+  }
+
+  Future<void> _performLogout() async {
+    // Cerrar el diálogo
+    Navigator.pop(context);
+
+    // Mostrar indicador de carga
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: Container(
+          padding: EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: Color(0xFF6C63FF)),
+              SizedBox(height: 16),
+              Text(
+                'Cerrando sesión...',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    try {
+      // Cerrar sesión en Firebase
+      await FirebaseAuth.instance.signOut();
+
+      // Cerrar el diálogo de carga
+      if (mounted) Navigator.pop(context);
+
+      // Navegar a la pantalla de login y limpiar el stack
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/login',
+          (route) => false,
+        );
+      }
+
+      // Mostrar mensaje de éxito
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logged out successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      // Cerrar el diálogo de carga
+      if (mounted) Navigator.pop(context);
+
+      // Mostrar error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cerrar sesión: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

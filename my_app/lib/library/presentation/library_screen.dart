@@ -22,7 +22,7 @@ class _LibraryPageState extends State<LibraryPage>
   late AnimationController _fadeAnimationController;
   late Animation<double> _headerAnimation;
   late Animation<double> _fadeAnimation;
-  late LibraryBloc _libraryBloc; // Mantener referencia al bloc
+  late LibraryBloc _libraryBloc;
 
   final ScrollController _scrollController = ScrollController();
   String selectedCategory = 'Todos';
@@ -32,7 +32,6 @@ class _LibraryPageState extends State<LibraryPage>
   void initState() {
     super.initState();
     
-    // Inicializar el bloc UNA SOLA VEZ
     _libraryBloc = getIt<LibraryBloc>();
     
     _headerAnimationController = AnimationController(
@@ -58,7 +57,6 @@ class _LibraryPageState extends State<LibraryPage>
       _fadeAnimationController.forward();
     });
 
-    // Cargar libros iniciales
     _libraryBloc.add(GetBooksEvent());
   }
 
@@ -67,17 +65,15 @@ class _LibraryPageState extends State<LibraryPage>
     _headerAnimationController.dispose();
     _fadeAnimationController.dispose();
     _scrollController.dispose();
-    _libraryBloc.close(); // Cerrar el bloc
+    _libraryBloc.close();
     super.dispose();
   }
 
-  // Search handler mejorado
   void _handleSearch(String query) {
     print("🔍 UI: Iniciando búsqueda con query: '$query'");
     
     setState(() {
       currentSearchQuery = query.trim();
-      // Reset category when searching
       if (query.trim().isNotEmpty) {
         selectedCategory = 'Todos';
       }
@@ -92,12 +88,10 @@ class _LibraryPageState extends State<LibraryPage>
     }
   }
 
-  // Category change handler
   void _handleCategoryChange(String category) {
     print("📂 UI: Cambiando a categoría: $category");
     setState(() {
       selectedCategory = category;
-      // Clear search when filtering by category
       currentSearchQuery = '';
     });
 
@@ -108,7 +102,6 @@ class _LibraryPageState extends State<LibraryPage>
     }
   }
 
-  // Clear search handler
   void _clearSearch() {
     print("🧹 UI: Limpiando búsqueda");
     setState(() {
@@ -120,20 +113,20 @@ class _LibraryPageState extends State<LibraryPage>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 1
+    
     return BlocProvider<LibraryBloc>.value(
-      value: _libraryBloc, // Usar el bloc existente en lugar de crear uno nuevo
+      value: _libraryBloc,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F9FA),
+        backgroundColor: colorScheme.background, // 👈 CAMBIO 2 (era Color(0xFFF8F9FA))
         body: SafeArea(
           child: CustomScrollView(
             controller: _scrollController,
             slivers: [
-              // Header with Search Bar
               SliverToBoxAdapter(
                 child: _buildEnhancedHeader(),
               ),
 
-              // Content with fade animation
               SliverToBoxAdapter(
                 child: FadeTransition(
                   opacity: _fadeAnimation,
@@ -142,7 +135,6 @@ class _LibraryPageState extends State<LibraryPage>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Only show category chips if not searching
                         if (currentSearchQuery.isEmpty)
                           CategoryChipWidget(
                             selectedCategory: selectedCategory,
@@ -157,12 +149,10 @@ class _LibraryPageState extends State<LibraryPage>
                 ),
               ),
 
-              // Books Grid
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 sliver: BlocConsumer<LibraryBloc, LibraryState>(
                   listener: (context, state) {
-                    // Debug listener to track state changes
                     print("🔄 Estado cambiado a: ${state.runtimeType}");
                     if (state is LibraryLoaded) {
                       print("📚 Libros en UI: ${state.books.length}");
@@ -206,7 +196,7 @@ class _LibraryPageState extends State<LibraryPage>
                             final book = state.books[index];
                             print("📖 Renderizando card: ${book.title}");
                             return BookCardWidget(
-                              key: Key('book_${book.id}'), // Key más específica
+                              key: Key('book_${book.id}'),
                               book: book,
                               onTap: () => _navigateToBookDetail(context, book.id),
                             );
@@ -216,53 +206,7 @@ class _LibraryPageState extends State<LibraryPage>
                       );
                     } else if (state is LibraryError) {
                       print("❌ Mostrando error: ${state.message}");
-                      return SliverToBoxAdapter(
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(40.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  currentSearchQuery.isNotEmpty 
-                                    ? Icons.search_off 
-                                    : Icons.error_outline,
-                                  size: 64,
-                                  color: Colors.grey,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  currentSearchQuery.isNotEmpty
-                                    ? 'No se encontraron libros para "$currentSearchQuery"'
-                                    : state.message,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.grey,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 16),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    if (currentSearchQuery.isNotEmpty) {
-                                      _clearSearch();
-                                    } else {
-                                      _libraryBloc.add(GetBooksEvent());
-                                    }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF5E35B1),
-                                    foregroundColor: Colors.white,
-                                  ),
-                                  child: Text(
-                                    currentSearchQuery.isNotEmpty ? 'Limpiar búsqueda' : 'Reintentar'
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
+                      return _buildErrorState(state.message);
                     }
                     
                     print("⚠️ Estado no manejado: ${state.runtimeType}");
@@ -281,7 +225,61 @@ class _LibraryPageState extends State<LibraryPage>
     );
   }
 
+  Widget _buildErrorState(String message) {
+    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 3
+    
+    return SliverToBoxAdapter(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(40.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                currentSearchQuery.isNotEmpty 
+                  ? Icons.search_off 
+                  : Icons.error_outline,
+                size: 64,
+                color: colorScheme.onSurface.withOpacity(0.4), // 👈 CAMBIO 4
+              ),
+              const SizedBox(height: 16),
+              Text(
+                currentSearchQuery.isNotEmpty
+                  ? 'No se encontraron libros para "$currentSearchQuery"'
+                  : message,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: colorScheme.onSurface.withOpacity(0.6), // 👈 CAMBIO 5
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  if (currentSearchQuery.isNotEmpty) {
+                    _clearSearch();
+                  } else {
+                    _libraryBloc.add(GetBooksEvent());
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF5E35B1),
+                  foregroundColor: Colors.white,
+                ),
+                child: Text(
+                  currentSearchQuery.isNotEmpty ? 'Limpiar búsqueda' : 'Reintentar'
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildEmptyState() {
+    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 6
+    
     return SliverToBoxAdapter(
       child: Center(
         child: Padding(
@@ -293,7 +291,7 @@ class _LibraryPageState extends State<LibraryPage>
                   ? Icons.search_off_rounded
                   : Icons.library_books_outlined,
                 size: 80,
-                color: Colors.grey[400],
+                color: colorScheme.onSurface.withOpacity(0.3), // 👈 CAMBIO 7
               ),
               const SizedBox(height: 16),
               Text(
@@ -302,10 +300,10 @@ class _LibraryPageState extends State<LibraryPage>
                   : selectedCategory != 'Todos'
                     ? 'No hay libros en la categoría "$selectedCategory"'
                     : 'No hay libros disponibles',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
-                  color: Colors.grey,
+                  color: colorScheme.onSurface.withOpacity(0.6), // 👈 CAMBIO 8
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -314,9 +312,9 @@ class _LibraryPageState extends State<LibraryPage>
                 currentSearchQuery.isNotEmpty
                   ? 'Intenta con otros términos: "${currentSearchQuery}"'
                   : 'Los libros aparecerán aquí cuando estén disponibles',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey,
+                  color: colorScheme.onSurface.withOpacity(0.5), // 👈 CAMBIO 9
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -340,18 +338,26 @@ class _LibraryPageState extends State<LibraryPage>
   }
 
   Widget _buildEnhancedHeader() {
+    final isDark = Theme.of(context).brightness == Brightness.dark; // 👈 CAMBIO 10
+    
     return Container(
       height: 320,
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF1A237E),
-            Color(0xFF3949AB),
-            Color(0xFF5E35B1),
-          ],
+          colors: isDark // 👈 CAMBIO 11: Gradiente adaptativo
+            ? [
+                const Color(0xFF1A237E).withOpacity(0.9),
+                const Color(0xFF3949AB).withOpacity(0.9),
+                const Color(0xFF5E35B1).withOpacity(0.9),
+              ]
+            : [
+                const Color(0xFF1A237E),
+                const Color(0xFF3949AB),
+                const Color(0xFF5E35B1),
+              ],
         ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(40),
@@ -359,7 +365,9 @@ class _LibraryPageState extends State<LibraryPage>
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF5E35B1).withOpacity(0.3),
+            color: isDark // 👈 CAMBIO 12
+                ? Colors.black.withOpacity(0.5)
+                : const Color(0xFF5E35B1).withOpacity(0.3),
             blurRadius: 30,
             offset: const Offset(0, 10),
           ),
@@ -425,7 +433,6 @@ class _LibraryPageState extends State<LibraryPage>
               ],
             ),
             
-            // Search bar within header
             const SizedBox(height: 24),
             Container(
               decoration: BoxDecoration(
@@ -439,7 +446,7 @@ class _LibraryPageState extends State<LibraryPage>
               child: SearchBarWidget(
                 onSearch: _handleSearch,
                 onClear: _clearSearch,
-                initialValue: currentSearchQuery, // Pasar el valor actual
+                initialValue: currentSearchQuery,
               ),
             ),
           ],
@@ -449,6 +456,8 @@ class _LibraryPageState extends State<LibraryPage>
   }
 
   Widget _buildSectionHeader() {
+    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 13
+    
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -459,10 +468,10 @@ class _LibraryPageState extends State<LibraryPage>
               : selectedCategory != 'Todos'
                 ? 'Libros de $selectedCategory'
                 : 'Catálogo de Libros',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF2C1810),
+              color: colorScheme.onBackground, // 👈 CAMBIO 14 (era Color(0xFF2C1810))
             ),
           ),
         ),

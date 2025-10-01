@@ -61,24 +61,26 @@ class _BookDetailPageState extends State<BookDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 1
+    
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: colorScheme.background, // 👈 CAMBIO 2 (era Color(0xFFF8F9FA))
       appBar: _buildAppBar(),
       body: FutureBuilder<BookEntity?>(
         future: _bookFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(color: Color(0xFF6C63FF)),
-                  SizedBox(height: 16),
+                  const CircularProgressIndicator(color: Color(0xFF6C63FF)),
+                  const SizedBox(height: 16),
                   Text(
                     'Cargando libro...',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Color(0xFF4A5568),
+                      color: colorScheme.onSurface.withOpacity(0.7), // 👈 CAMBIO 3
                     ),
                   ),
                 ],
@@ -91,14 +93,20 @@ class _BookDetailPageState extends State<BookDetailPage> {
                 children: [
                   const Icon(Icons.error_outline, size: 64, color: Color(0xFFE53E3E)),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'Error al cargar el libro',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface, // 👈 CAMBIO 4
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     snapshot.error?.toString() ?? 'Error desconocido',
-                    style: const TextStyle(color: Color(0xFF718096)),
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withOpacity(0.6), // 👈 CAMBIO 5
+                    ),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -120,15 +128,23 @@ class _BookDetailPageState extends State<BookDetailPage> {
           final book = snapshot.data!;
           
           if (book.pdfUrl.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.picture_as_pdf, size: 64, color: Color(0xFFCBD5E0)),
-                  SizedBox(height: 16),
+                  Icon(
+                    Icons.picture_as_pdf,
+                    size: 64,
+                    color: colorScheme.onSurface.withOpacity(0.3), // 👈 CAMBIO 6
+                  ),
+                  const SizedBox(height: 16),
                   Text(
                     'PDF no disponible',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface, // 👈 CAMBIO 7
+                    ),
                   ),
                 ],
               ),
@@ -150,8 +166,11 @@ class _BookDetailPageState extends State<BookDetailPage> {
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 8
+    final isDark = Theme.of(context).brightness == Brightness.dark; // 👈 CAMBIO 9
+    
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface, // 👈 CAMBIO 10 (era Colors.white)
       elevation: 0,
       leading: Container(
         margin: const EdgeInsets.only(left: 8),
@@ -159,10 +178,16 @@ class _BookDetailPageState extends State<BookDetailPage> {
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFF7FAFC),
+              color: isDark // 👈 CAMBIO 11
+                  ? colorScheme.surface.withOpacity(0.5)
+                  : const Color(0xFFF7FAFC),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF2D3748), size: 18),
+            child: Icon(
+              Icons.arrow_back_ios_new,
+              color: colorScheme.onSurface, // 👈 CAMBIO 12
+              size: 18,
+            ),
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -174,10 +199,16 @@ class _BookDetailPageState extends State<BookDetailPage> {
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFF7FAFC),
+                color: isDark
+                    ? colorScheme.surface.withOpacity(0.5)
+                    : const Color(0xFFF7FAFC),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.more_horiz, color: Color(0xFF2D3748), size: 20),
+              child: Icon(
+                Icons.more_horiz,
+                color: colorScheme.onSurface,
+                size: 20,
+              ),
             ),
             onPressed: () => _showOptionsMenu(),
           ),
@@ -187,9 +218,11 @@ class _BookDetailPageState extends State<BookDetailPage> {
   }
 
   void _showOptionsMenu() {
+    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 13
+    
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface, // 👈 CAMBIO 14 (era Colors.white)
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -221,21 +254,26 @@ class _BookDetailPageState extends State<BookDetailPage> {
   }
 
   Widget _buildOptionItem(IconData icon, String title, VoidCallback onTap) {
+    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 15
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: const Color(0xFFF7FAFC),
+          color: isDark // 👈 CAMBIO 16
+              ? colorScheme.surface.withOpacity(0.5)
+              : const Color(0xFFF7FAFC),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: const Color(0xFF6C63FF), size: 20),
       ),
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
-          color: Color(0xFF2D3748),
+          color: colorScheme.onSurface, // 👈 CAMBIO 17
         ),
       ),
       onTap: onTap,
@@ -243,21 +281,30 @@ class _BookDetailPageState extends State<BookDetailPage> {
   }
 
   void _showJumpToPageDialog() {
+    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 18
     final TextEditingController pageController = TextEditingController();
     
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: colorScheme.surface, // 👈 CAMBIO 19
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
+        title: Text(
           'Ir a página',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface, // 👈 CAMBIO 20
+          ),
         ),
         content: TextField(
           controller: pageController,
           keyboardType: TextInputType.number,
+          style: TextStyle(color: colorScheme.onSurface), // 👈 CAMBIO 21
           decoration: InputDecoration(
             hintText: 'Número de página',
+            hintStyle: TextStyle(
+              color: colorScheme.onSurface.withOpacity(0.5), // 👈 CAMBIO 22
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -270,7 +317,12 @@ class _BookDetailPageState extends State<BookDetailPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar', style: TextStyle(color: Color(0xFF718096))),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(
+                color: colorScheme.onSurface.withOpacity(0.6), // 👈 CAMBIO 23
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -292,8 +344,11 @@ class _BookDetailPageState extends State<BookDetailPage> {
   }
 
   Widget _buildBookHeader(BookEntity book) {
+    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 24
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
-      color: Colors.white,
+      color: colorScheme.surface, // 👈 CAMBIO 25 (era Colors.white)
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
       child: Column(
         children: [
@@ -305,7 +360,9 @@ class _BookDetailPageState extends State<BookDetailPage> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF6C63FF).withOpacity(0.2),
+                  color: isDark // 👈 CAMBIO 26
+                      ? Colors.black.withOpacity(0.5)
+                      : const Color(0xFF6C63FF).withOpacity(0.2),
                   blurRadius: 30,
                   offset: const Offset(0, 15),
                   spreadRadius: -5,
@@ -353,10 +410,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
           // Book title
           Text(
             book.title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1A202C),
+              color: colorScheme.onSurface, // 👈 CAMBIO 27 (era Color(0xFF1A202C))
               height: 1.2,
             ),
             textAlign: TextAlign.center,
@@ -366,13 +423,17 @@ class _BookDetailPageState extends State<BookDetailPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.person_outline, size: 16, color: Color(0xFF718096)),
+              Icon(
+                Icons.person_outline,
+                size: 16,
+                color: colorScheme.onSurface.withOpacity(0.6), // 👈 CAMBIO 28
+              ),
               const SizedBox(width: 6),
               Text(
                 book.author,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
-                  color: Color(0xFF718096),
+                  color: colorScheme.onSurface.withOpacity(0.6), // 👈 CAMBIO 29
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -402,14 +463,14 @@ class _BookDetailPageState extends State<BookDetailPage> {
           ),
           const SizedBox(height: 24),
           // Description section
-          const Align(
+          Align(
             alignment: Alignment.centerLeft,
             child: Text(
               'Descripción',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1A202C),
+                color: colorScheme.onSurface, // 👈 CAMBIO 30
               ),
             ),
           ),
@@ -418,9 +479,9 @@ class _BookDetailPageState extends State<BookDetailPage> {
             book.description.isNotEmpty 
                 ? book.description 
                 : 'Explora este fascinante libro y sumérgete en su contenido. Una obra imprescindible que te transportará a través de sus páginas con historias cautivadoras y conocimientos valiosos.',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
-              color: Color(0xFF4A5568),
+              color: colorScheme.onSurface.withOpacity(0.7), // 👈 CAMBIO 31
               height: 1.6,
               letterSpacing: 0.2,
             ),
@@ -432,14 +493,19 @@ class _BookDetailPageState extends State<BookDetailPage> {
   }
 
   Widget _buildPdfViewer(BookEntity book) {
+    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 32
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
       height: 500,
       margin: const EdgeInsets.only(top: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface, // 👈 CAMBIO 33
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: isDark // 👈 CAMBIO 34
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.08),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -476,18 +542,18 @@ class _BookDetailPageState extends State<BookDetailPage> {
           ),
           if (_isPdfLoading)
             Container(
-              color: Colors.white,
-              child: const Center(
+              color: colorScheme.surface, // 👈 CAMBIO 35
+              child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircularProgressIndicator(color: Color(0xFF6C63FF)),
-                    SizedBox(height: 16),
+                    const CircularProgressIndicator(color: Color(0xFF6C63FF)),
+                    const SizedBox(height: 16),
                     Text(
                       'Cargando PDF...',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Color(0xFF4A5568),
+                        color: colorScheme.onSurface.withOpacity(0.7), // 👈 CAMBIO 36
                       ),
                     ),
                   ],
@@ -496,19 +562,19 @@ class _BookDetailPageState extends State<BookDetailPage> {
             ),
           if (_pdfError != null)
             Container(
-              color: Colors.white,
+              color: colorScheme.surface, // 👈 CAMBIO 37
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(Icons.error_outline, size: 64, color: Color(0xFFE53E3E)),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       'Error al cargar PDF',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF2D3748),
+                        color: colorScheme.onSurface, // 👈 CAMBIO 38
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -516,7 +582,9 @@ class _BookDetailPageState extends State<BookDetailPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Text(
                         _pdfError!,
-                        style: const TextStyle(color: Color(0xFF718096)),
+                        style: TextStyle(
+                          color: colorScheme.onSurface.withOpacity(0.6), // 👈 CAMBIO 39
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ),

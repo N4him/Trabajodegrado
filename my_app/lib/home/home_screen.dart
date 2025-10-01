@@ -33,8 +33,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 1
+    
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: colorScheme.background, // 👈 CAMBIO 2 (era Colors.grey[100])
       bottomNavigationBar: CustomNavigationBar(
         initialIndex: _currentIndex,
         onTap: _updateScreen,
@@ -56,7 +58,6 @@ class _HomeContentState extends State<HomeContent> {
   Timer? _timer;
   int _currentCarouselIndex = 0;
 
-  // Lista de cards del carousel como constante
   static const List<Map<String, dynamic>> _carouselItems = [
     {
       'title': 'Continúa aprendiendo',
@@ -113,7 +114,6 @@ class _HomeContentState extends State<HomeContent> {
   Widget build(BuildContext context) {
     return BlocBuilder<ProfileBloc, ProfileState>(
       builder: (context, state) {
-        // Mostrar loading hasta que cargue el perfil
         if (state is! ProfileLoaded) {
           return const Center(
             child: CircularProgressIndicator(),
@@ -138,17 +138,22 @@ class _HomeContentState extends State<HomeContent> {
   }
 
   Widget _buildHeaderSection(ProfileLoaded state) {
+    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 3
+    final isDark = Theme.of(context).brightness == Brightness.dark; // 👈 CAMBIO 4
+    
     return Container(
       padding: const EdgeInsets.only(left: 16, right: 16, top: 40, bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface, // 👈 CAMBIO 5 (era Colors.white)
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(30),
           bottomRight: Radius.circular(30),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: isDark // 👈 CAMBIO 6
+                ? Colors.black.withOpacity(0.3)
+                : Colors.grey.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -166,6 +171,8 @@ class _HomeContentState extends State<HomeContent> {
   }
 
   Widget _buildUserProfile(ProfileLoaded state) {
+    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 7
+    
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -187,15 +194,15 @@ class _HomeContentState extends State<HomeContent> {
               'Hola,',
               style: TextStyle(
                 fontSize: 25,
-                color: Colors.grey[600],
+                color: colorScheme.onSurface.withOpacity(0.6), // 👈 CAMBIO 8 (era Colors.grey[600])
               ),
             ),
             Text(
               state.profile.name,
-              style: const TextStyle(
+              style: TextStyle( // 👈 CAMBIO 9
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: colorScheme.onSurface, // (era Colors.black87)
               ),
             ),
           ],
@@ -228,6 +235,8 @@ class _HomeContentState extends State<HomeContent> {
   }
 
   Widget _buildCarouselItem(Map<String, dynamic> item) {
+    final isDark = Theme.of(context).brightness == Brightness.dark; // 👈 CAMBIO 10
+    
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4),
       padding: const EdgeInsets.all(16),
@@ -236,7 +245,9 @@ class _HomeContentState extends State<HomeContent> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
+            color: isDark // 👈 CAMBIO 11
+                ? Colors.black.withOpacity(0.3)
+                : Colors.grey.withOpacity(0.2),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -354,9 +365,7 @@ class _HomeContentState extends State<HomeContent> {
             icon: Icons.timeline,
             title: 'Progreso',
             subtitle: '65% completado',
-            onTap: () {
-              // Acción para progreso
-            },
+            onTap: () {},
           ),
           const SizedBox(height: 16),
           _buildCard(
@@ -365,79 +374,81 @@ class _HomeContentState extends State<HomeContent> {
             icon: Icons.star,
             title: 'Retos diarios',
             subtitle: '3 disponibles',
-            onTap: () {
-              // Acción para retos diarios
-            },
+            onTap: () {},
           ),
         ],
       ),
     );
   }
 
-Widget _buildForumCard() {
-  return GestureDetector(
-    onTap: () {
-      Navigator.of(context).pushNamed('/foro');
-    },
-    child: Container(
-      width: double.infinity,
-      height: 120,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF6C63FF),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
+  Widget _buildForumCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark; // 👈 CAMBIO 12
+    
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).pushNamed('/foro');
+      },
+      child: Container(
+        width: double.infinity,
+        height: 120,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF6C63FF),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: isDark // 👈 CAMBIO 13
+                  ? Colors.black.withOpacity(0.3)
+                  : Colors.grey.withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
             ),
-            child: const Icon(
-              Icons.groups,
-              color: Colors.white,
-              size: 30,
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.groups,
+                color: Colors.white,
+                size: 30,
+              ),
             ),
-          ),
-          const SizedBox(width: 20),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Foro',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
+            const SizedBox(width: 20),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Foro',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Únete a grupos de estudio',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 16,
+                  SizedBox(height: 4),
+                  Text(
+                    'Únete a grupos de estudio',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildCard({
     required double height,
@@ -447,6 +458,8 @@ Widget _buildForumCard() {
     required String subtitle,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark; // 👈 CAMBIO 14
+    
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
@@ -456,7 +469,9 @@ Widget _buildForumCard() {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
+              color: isDark // 👈 CAMBIO 15
+                  ? Colors.black.withOpacity(0.3)
+                  : Colors.grey.withOpacity(0.2),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),

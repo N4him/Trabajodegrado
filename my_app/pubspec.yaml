@@ -22,8 +22,8 @@ dependencies:
   get_it: ^8.2.0
   dartz: ^0.10.1
   syncfusion_flutter_pdfviewer: ^31.1.21
-  pdf_render: ^1.4.12
   syncfusion_flutter_pdf: ^31.1.21
+  adaptive_theme: ^3.7.1+2
 
 
 dev_dependencies:

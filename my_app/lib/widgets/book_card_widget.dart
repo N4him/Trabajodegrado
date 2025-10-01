@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/library/domain/entities/book_entity.dart';
-import 'package:pdf_render/pdf_render.dart';
-import 'package:http/http.dart' as http;
-import 'dart:typed_data';
 
 class BookCardWidget extends StatelessWidget {
   final BookEntity book;
@@ -75,20 +72,13 @@ class BookCardWidget extends StatelessWidget {
   }
 
   Widget _buildBookCover() {
-    // Prioridad 1: Si hay coverUrl, usar imagen normal
+    // Si hay coverUrl, usar imagen normal
     if (book.coverUrl.isNotEmpty) {
       return Image.network(
         book.coverUrl,
         fit: BoxFit.cover,
         width: double.infinity,
         errorBuilder: (context, error, stackTrace) {
-          // Si falla la imagen y hay PDF, renderizar primera página
-          if (book.pdfUrl.isNotEmpty) {
-            return _PdfThumbnail(
-              pdfUrl: book.pdfUrl,
-              bookTitle: book.title,
-            );
-          }
           return _buildFallbackCover();
         },
         loadingBuilder: (context, child, loadingProgress) {
@@ -98,15 +88,7 @@ class BookCardWidget extends StatelessWidget {
       );
     }
     
-    // Prioridad 2: Si no hay coverUrl pero hay PDF
-    if (book.pdfUrl.isNotEmpty) {
-      return _PdfThumbnail(
-        pdfUrl: book.pdfUrl,
-        bookTitle: book.title,
-      );
-    }
-    
-    // Prioridad 3: Fallback con gradiente
+    // Fallback con gradiente
     return _buildFallbackCover();
   }
 
@@ -161,163 +143,5 @@ class BookCardWidget extends StatelessWidget {
     ];
     
     return gradients[hash % gradients.length];
-  }
-}
-
-// Widget interno para renderizar la primera página del PDF
-class _PdfThumbnail extends StatefulWidget {
-  final String pdfUrl;
-  final String bookTitle;
-
-  const _PdfThumbnail({
-    required this.pdfUrl,
-    required this.bookTitle,
-  });
-
-  @override
-  State<_PdfThumbnail> createState() => _PdfThumbnailState();
-}
-
-class _PdfThumbnailState extends State<_PdfThumbnail> {
-  Uint8List? _thumbnailBytes;
-  bool _isLoading = true;
-  bool _hasError = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPdfThumbnail();
-  }
-
-  Future<void> _loadPdfThumbnail() async {
-    try {
-      setState(() {
-        _isLoading = true;
-        _hasError = false;
-      });
-
-      // Descargar PDF
-      final response = await http.get(Uri.parse(widget.pdfUrl));
-      
-      if (response.statusCode != 200) {
-        throw Exception('Error al descargar PDF: ${response.statusCode}');
-      }
-
-      final pdfData = response.bodyBytes;
-
-      // Abrir documento PDF
-      final doc = await PdfDocument.openData(pdfData);
-
-      // Obtener primera página
-      final page = await doc.getPage(1);
-
-      // Renderizar como imagen
-      final pageImage = await page.render(
-        width: (page.width * 2.0).toInt(),
-        height: (page.height * 2.0).toInt(),
-      );
-
-      final imageBytes = await pageImage?.createImageIfNotAvailable();
-
-      // Cerrar documento
-      doc.dispose();
-
-      if (mounted && imageBytes != null) {
-        setState(() {
-          _thumbnailBytes = imageBytes;
-          _isLoading = false;
-        });
-      } else {
-        throw Exception('No se pudo generar la imagen');
-      }
-    } catch (e) {
-      print('Error al generar thumbnail del PDF: $e');
-      if (mounted) {
-        setState(() {
-          _hasError = true;
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Container(
-        color: Colors.grey[200],
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircularProgressIndicator(
-                color: Color(0xFF6C63FF),
-                strokeWidth: 2,
-              ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'Cargando portada...',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 11,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (_hasError || _thumbnailBytes == null) {
-      return Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFF6C63FF),
-              const Color(0xFF4834DF),
-            ],
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.picture_as_pdf,
-                color: Colors.white,
-                size: 48,
-              ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  widget.bookTitle,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Image.memory(
-      _thumbnailBytes!,
-      fit: BoxFit.cover,
-      width: double.infinity,
-    );
   }
 }
