@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
+import 'package:my_app/forum/presentation/bloc/forum_bloc.dart';
 import 'package:my_app/library/domain/usescases/get_books.dart';
 import 'package:my_app/library/domain/usescases/get_books_by_category.dart';
 import 'package:my_app/library/domain/usescases/search_books.dart';
@@ -52,11 +53,14 @@ class MyApp extends StatelessWidget {
           BlocProvider<ProfileBloc>(
             create: (_) => ProfileBloc(profileRepository: getIt<ProfileRepository>()),
           ),
+          BlocProvider<ForumBloc>(
+            create: (_) => getIt<ForumBloc>(), // 👈 ahora disponible globalmente
+          ),
         ],
         child: AdaptiveTheme(
           light: ThemeData.light(useMaterial3: true).copyWith(
             primaryColor: const Color(0xFF6C63FF),
-    scaffoldBackgroundColor: Colors.transparent, // 👈 evita blanco global
+            scaffoldBackgroundColor: Colors.transparent,
             appBarTheme: const AppBarTheme(
               backgroundColor: Colors.white,
               foregroundColor: Colors.black,
@@ -71,8 +75,7 @@ class MyApp extends StatelessWidget {
           ),
           dark: ThemeData.dark(useMaterial3: true).copyWith(
             primaryColor: const Color(0xFF6C63FF),
-                scaffoldBackgroundColor: Colors.transparent, // 👈 evita blanco global
-
+            scaffoldBackgroundColor: Colors.transparent,
             appBarTheme: const AppBarTheme(
               backgroundColor: Color(0xFF1E1E1E),
               foregroundColor: Colors.white,

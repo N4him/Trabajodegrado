@@ -1,7 +1,15 @@
-// lib/core/di/injection_container.dart
 import 'package:get_it/get_it.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:my_app/forum/domain/usescases/create_forum_post.dart';
+import 'package:my_app/forum/domain/usescases/delete_forum_post.dart';
+import 'package:my_app/forum/domain/usescases/get_forum_posts.dart';
+import 'package:my_app/forum/domain/usescases/like_forum_post.dart';
+import 'package:my_app/forum/domain/usescases/reply_forum_post.dart';
+
+// ==============================================
+// LIBRARY
+// ==============================================
 import 'package:my_app/library/data/datasources/library_remote_datasource.dart';
 import 'package:my_app/library/data/datasources/library_remote_datasource_impl.dart';
 import 'package:my_app/library/data/repositories/library_repository_impl.dart';
@@ -12,26 +20,40 @@ import 'package:my_app/library/domain/usescases/get_books_by_category.dart';
 import 'package:my_app/library/domain/usescases/search_books.dart';
 import 'package:my_app/library/presentation/blocs/library_bloc.dart';
 
-// Login imports
+// ==============================================
+// LOGIN
+// ==============================================
 import '../../login/data/datasources/login_remote_datasource.dart';
 import '../../login/data/repositories/login_repository_impl.dart';
 import '../../login/domain/repositories/login_repository.dart';
 import '../../login/domain/usecases/login_user.dart';
 import '../../login/presentation/blocs/login_bloc.dart';
 
-// Register imports
+// ==============================================
+// REGISTER
+// ==============================================
 import '../../register/data/datasources/register_remote_datasource.dart';
 import '../../register/data/repositories/register_repository_impl.dart';
 import '../../register/domain/repositories/register_repository.dart';
 import '../../register/domain/usecases/register_user.dart';
 import '../../register/presentation/blocs/register_bloc.dart';
 
-// Profile imports
+// ==============================================
+// PROFILE
+// ==============================================
 import '../../profile/data/repositories/profile_repository_impl.dart';
 import '../../profile/domain/repositories/profile_repository.dart';
 import '../../profile/presentation/bloc/profile_bloc.dart';
 
-final sl = GetIt.instance;
+// ==============================================
+// FORUM
+// ==============================================
+import 'package:my_app/forum/data/datasources/forum_remote_data_source.dart';
+import 'package:my_app/forum/data/repositories/forum_repository_impl.dart';
+import 'package:my_app/forum/domain/repositories/forum_repository.dart';
+
+import 'package:my_app/forum/presentation/bloc/forum_bloc.dart';
+
 final getIt = GetIt.instance;
 
 Future<void> setupDI() async {
@@ -59,6 +81,10 @@ Future<void> setupDI() async {
     ),
   );
 
+  getIt.registerLazySingleton<ForumRemoteDataSource>(
+    () => ForumRemoteDataSourceImpl(firestore: getIt()),
+  );
+
   // ==============================================
   // REPOSITORIES
   // ==============================================
@@ -79,6 +105,10 @@ Future<void> setupDI() async {
       firebaseAuth: getIt<FirebaseAuth>(),
       firestore: getIt<FirebaseFirestore>(),
     ),
+  );
+
+  getIt.registerLazySingleton<ForumRepository>(
+    () => ForumRepositoryImpl(remoteDataSource: getIt()),
   );
 
   // ==============================================
@@ -109,10 +139,26 @@ Future<void> setupDI() async {
     () => SearchBooks(getIt()),
   );
 
+  // Forum Use Cases
+  getIt.registerLazySingleton<GetForumPosts>(
+    () => GetForumPosts(getIt()),
+  );
+  getIt.registerLazySingleton<CreateForumPost>(
+    () => CreateForumPost(getIt()),
+  );
+  getIt.registerLazySingleton<LikeForumPost>(
+    () => LikeForumPost(getIt()),
+  );
+  getIt.registerLazySingleton<ReplyForumPost>(
+    () => ReplyForumPost(getIt()),
+  );
+  getIt.registerLazySingleton<DeleteForumPost>(
+    () => DeleteForumPost(getIt()),
+  );
+
   // ==============================================
   // BLOCS - FACTORY REGISTRATION
   // ==============================================
-  // Los BLoCs se registran como factory porque necesitan ser nuevos cada vez
   getIt.registerFactory<LoginBloc>(
     () => LoginBloc(loginUser: getIt()),
   );
@@ -125,7 +171,6 @@ Future<void> setupDI() async {
     () => ProfileBloc(profileRepository: getIt()),
   );
 
-  // LibraryBloc with all required dependencies
   getIt.registerFactory<LibraryBloc>(
     () => LibraryBloc(
       getBooks: getIt<GetBooks>(),
@@ -133,16 +178,26 @@ Future<void> setupDI() async {
       searchBooks: getIt<SearchBooks>(),
     ),
   );
+
+  getIt.registerFactory<ForumBloc>(
+    () => ForumBloc(
+      getForumPostsUseCase: getIt<GetForumPosts>(),
+      createForumPostUseCase: getIt<CreateForumPost>(),
+      likeForumPostUseCase: getIt<LikeForumPost>(),
+      replyForumPostUseCase: getIt<ReplyForumPost>(),
+      deleteForumPostUseCase: getIt<DeleteForumPost>(),
+    ),
+  );
 }
 
 // ==============================================
 // HELPER FUNCTIONS PARA OBTENER BLOCS
 // ==============================================
-// Funciones auxiliares para obtener instancias de BLoCs
 LoginBloc getLoginBloc() => getIt<LoginBloc>();
 RegisterBloc getRegisterBloc() => getIt<RegisterBloc>();
 ProfileBloc getProfileBloc() => getIt<ProfileBloc>();
 LibraryBloc getLibraryBloc() => getIt<LibraryBloc>();
+ForumBloc getForumBloc() => getIt<ForumBloc>();
 
 // ==============================================
 // FUNCIÓN PARA LIMPIAR DEPENDENCIAS (OPCIONAL)

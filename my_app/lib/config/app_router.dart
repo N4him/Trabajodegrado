@@ -27,7 +27,7 @@ class AppRouter {
     register: (_) => RegisterScreen(),
     home: (_) => HomeScreen(),
     library: (_) => LibraryPage(),
-    foro: (_) => ForumsScreen(), // Placeholder for ForoScreen
+    foro: (_) => ForumScreen(),
      bookDetail: (context) {
       final bookId = ModalRoute.of(context)!.settings.arguments as String;
       return BookDetailPage(bookId: bookId);
