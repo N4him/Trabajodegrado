@@ -10,7 +10,7 @@ import '../../widgets/category_chip_widget.dart';
 import '../../widgets/search_bar_widget.dart';
 
 class LibraryPage extends StatefulWidget {
-  const LibraryPage({Key? key}) : super(key: key);
+  const LibraryPage({super.key});
 
   @override
   State<LibraryPage> createState() => _LibraryPageState();
@@ -20,7 +20,6 @@ class _LibraryPageState extends State<LibraryPage>
     with TickerProviderStateMixin {
   late AnimationController _headerAnimationController;
   late AnimationController _fadeAnimationController;
-  late Animation<double> _headerAnimation;
   late Animation<double> _fadeAnimation;
   late LibraryBloc _libraryBloc;
 
@@ -43,10 +42,7 @@ class _LibraryPageState extends State<LibraryPage>
       vsync: this,
     );
 
-    _headerAnimation = CurvedAnimation(
-      parent: _headerAnimationController,
-      curve: Curves.easeOutCubic,
-    );
+
     _fadeAnimation = CurvedAnimation(
       parent: _fadeAnimationController,
       curve: Curves.easeInOut,
@@ -70,7 +66,6 @@ class _LibraryPageState extends State<LibraryPage>
   }
 
   void _handleSearch(String query) {
-    print("🔍 UI: Iniciando búsqueda con query: '$query'");
     
     setState(() {
       currentSearchQuery = query.trim();
@@ -80,16 +75,13 @@ class _LibraryPageState extends State<LibraryPage>
     });
 
     if (query.trim().isEmpty) {
-      print("🔍 UI: Query vacía, obteniendo todos los libros");
       _libraryBloc.add(GetBooksEvent());
     } else {
-      print("🔍 UI: Enviando SearchBooksEvent al BLoC");
       _libraryBloc.add(SearchBooksEvent(query.trim()));
     }
   }
 
   void _handleCategoryChange(String category) {
-    print("📂 UI: Cambiando a categoría: $category");
     setState(() {
       selectedCategory = category;
       currentSearchQuery = '';
@@ -103,7 +95,6 @@ class _LibraryPageState extends State<LibraryPage>
   }
 
   void _clearSearch() {
-    print("🧹 UI: Limpiando búsqueda");
     setState(() {
       currentSearchQuery = '';
       selectedCategory = 'Todos';
@@ -153,18 +144,14 @@ class _LibraryPageState extends State<LibraryPage>
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 sliver: BlocConsumer<LibraryBloc, LibraryState>(
                   listener: (context, state) {
-                    print("🔄 Estado cambiado a: ${state.runtimeType}");
                     if (state is LibraryLoaded) {
-                      print("📚 Libros en UI: ${state.books.length}");
+                      // ignore: unused_local_variable
                       for (var book in state.books) {
-                        print("  - ${book.title}");
                       }
                     } else if (state is LibraryError) {
-                      print("❌ Error en UI: ${state.message}");
                     }
                   },
                   builder: (context, state) {
-                    print("🎨 Construyendo UI con estado: ${state.runtimeType}");
                     
                     if (state is LibraryLoading) {
                       return const SliverToBoxAdapter(
@@ -178,7 +165,6 @@ class _LibraryPageState extends State<LibraryPage>
                         ),
                       );
                     } else if (state is LibraryLoaded) {
-                      print("✅ Renderizando ${state.books.length} libros en UI");
                       
                       if (state.books.isEmpty) {
                         return _buildEmptyState();
@@ -194,7 +180,6 @@ class _LibraryPageState extends State<LibraryPage>
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final book = state.books[index];
-                            print("📖 Renderizando card: ${book.title}");
                             return BookCardWidget(
                               key: Key('book_${book.id}'),
                               book: book,
@@ -205,11 +190,9 @@ class _LibraryPageState extends State<LibraryPage>
                         ),
                       );
                     } else if (state is LibraryError) {
-                      print("❌ Mostrando error: ${state.message}");
                       return _buildErrorState(state.message);
                     }
                     
-                    print("⚠️ Estado no manejado: ${state.runtimeType}");
                     return const SliverToBoxAdapter(child: SizedBox());
                   },
                 ),
@@ -310,7 +293,7 @@ class _LibraryPageState extends State<LibraryPage>
               const SizedBox(height: 8),
               Text(
                 currentSearchQuery.isNotEmpty
-                  ? 'Intenta con otros términos: "${currentSearchQuery}"'
+                  ? 'Intenta con otros términos: "$currentSearchQuery"'
                   : 'Los libros aparecerán aquí cuando estén disponibles',
                 style: TextStyle(
                   fontSize: 14,
@@ -507,7 +490,6 @@ class _LibraryPageState extends State<LibraryPage>
   }
 
   void _navigateToBookDetail(BuildContext context, String bookId) {
-    print("🚀 Navegando al detalle del libro con ID: $bookId");
     Navigator.pushNamed(
       context,
       '/book-detail',

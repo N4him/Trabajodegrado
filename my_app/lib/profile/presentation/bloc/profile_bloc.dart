@@ -32,7 +32,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         emit(ProfileError('No se encontraron datos del usuario.'));
       }
     } catch (e) {
-      print('Error loading profile: $e'); // Debug
+      // Debug
       emit(ProfileError('Error al cargar datos: $e'));
     }
   }
@@ -66,7 +66,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         return;
       }
 
-      print('Updating profile with: name=${event.name}, photoUrl=${event.photoUrl}'); // Debug
+      // Debug
 
       // Crear el perfil actualizado manteniendo los datos existentes
       final updatedProfile = currentProfile.copyWith(
@@ -74,27 +74,27 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         photoUrl: event.photoUrl.isNotEmpty ? event.photoUrl : null,
       );
 
-      print('Updated profile: $updatedProfile'); // Debug
+      // Debug
 
       // Actualizar en Firestore primero
       await profileRepository.updateProfile(updatedProfile);
-      print('Profile updated in Firestore'); // Debug
+      // Debug
 
       // Actualizar displayName y photoURL en FirebaseAuth para mantener consistencia
       if (user.displayName != event.name) {
         await user.updateDisplayName(event.name);
-        print('Display name updated in FirebaseAuth'); // Debug
+        // Debug
       }
       
       if (user.photoURL != event.photoUrl) {
         await user.updatePhotoURL(event.photoUrl.isNotEmpty ? event.photoUrl : null);
-        print('Photo URL updated in FirebaseAuth'); // Debug
+        // Debug
       }
 
       // Actualizar contraseña si se proporcionó una nueva
       if (event.password != null && event.password!.isNotEmpty) {
         await user.updatePassword(event.password!);
-        print('Password updated in FirebaseAuth'); // Debug
+        // Debug
       }
 
       // Recargar los datos del usuario desde Firebase Auth para asegurar consistencia
@@ -112,12 +112,12 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         level: updatedProfile.level,
       );
 
-      print('Final profile: $finalProfile'); // Debug
+      // Debug
 
       emit(ProfileLoaded(finalProfile));
       
     } catch (e) {
-      print('Error updating profile: $e'); // Debug
+      // Debug
       // Si teníamos un perfil cargado, intentar mantenerlo
       if (state is ProfileUpdating) {
         final profile = (state as ProfileUpdating).profile;

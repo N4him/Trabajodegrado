@@ -50,4 +50,35 @@ class ForumModel extends ForumEntity {
       'replies': replies,
     };
   }
+
+  /// 👉 Método copyWith para clonar cambiando solo algunos campos
+  ForumModel copyWith({
+    String? id,
+    String? title,
+    String? content,
+    String? authorId,
+    String? authorName,
+    String? authorPhotoUrl,
+    String? category,
+    String? categoryColor,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    int? likes,
+    int? replies,
+  }) {
+    return ForumModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      content: content ?? this.content,
+      authorId: authorId ?? this.authorId,
+      authorName: authorName ?? this.authorName,
+      authorPhotoUrl: authorPhotoUrl ?? this.authorPhotoUrl,
+      category: category ?? this.category,
+      categoryColor: categoryColor ?? this.categoryColor,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      likes: likes ?? this.likes,
+      replies: replies ?? this.replies,
+    );
+  }
 }

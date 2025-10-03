@@ -5,10 +5,10 @@ class CategoryChipWidget extends StatelessWidget {
   final Function(String) onCategoryChanged;
 
   const CategoryChipWidget({
-    Key? key,
+    super.key,
     required this.selectedCategory,
     required this.onCategoryChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

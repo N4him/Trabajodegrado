@@ -7,11 +7,11 @@ class SearchBarWidget extends StatefulWidget {
   final String? initialValue;
 
   const SearchBarWidget({
-    Key? key,
+    super.key,
     required this.onSearch,
     this.onClear,
     this.initialValue,
-  }) : super(key: key);
+  });
 
   @override
   State<SearchBarWidget> createState() => _SearchBarWidgetState();
@@ -66,14 +66,12 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
       if (mounted) {
         final query = value.trim();
-        print("🔍 SearchBar: Enviando búsqueda: '$query'");
         widget.onSearch(query);
       }
     });
   }
 
   void _clearSearch() {
-    print("🧹 SearchBar: Limpiando búsqueda");
     _searchController.clear();
     _debounceTimer?.cancel();
     setState(() {
@@ -86,7 +84,6 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
   void _handleSubmitted(String value) {
     _debounceTimer?.cancel();
     final query = value.trim();
-    print("⚡ SearchBar: Búsqueda inmediata: '$query'");
     if (query.isNotEmpty) {
       widget.onSearch(query);
     }
@@ -280,7 +277,6 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
         setState(() {
           _isSearching = true;
         });
-        print("🏷️ Búsqueda rápida: $label");
         widget.onSearch(label);
       },
       backgroundColor: const Color(0xFF5E35B1).withOpacity(0.1),

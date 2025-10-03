@@ -1,3 +1,5 @@
+// ignore_for_file: empty_catches
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 class OnboardingService {
@@ -9,10 +11,8 @@ class OnboardingService {
       final prefs = await SharedPreferences.getInstance();
       final hasSeenOnboarding = prefs.getBool(_onboardingKey) ?? false;
       
-      print('🔍 Verificando onboarding: ${hasSeenOnboarding ? "Ya visto" : "Primera vez"}');
       return hasSeenOnboarding;
     } catch (e) {
-      print('❌ Error al verificar onboarding: $e');
       return false; // Si hay error, asumir que es primera vez
     }
   }
@@ -23,9 +23,7 @@ class OnboardingService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_onboardingKey, true);
-      print('✅ Onboarding marcado como visto');
     } catch (e) {
-      print('❌ Error al marcar onboarding como visto: $e');
     }
   }
   
@@ -34,9 +32,7 @@ class OnboardingService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_onboardingKey);
-      print('🔄 Onboarding reseteado');
     } catch (e) {
-      print('❌ Error al resetear onboarding: $e');
     }
   }
   
@@ -45,9 +41,7 @@ class OnboardingService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-      print('🗑️ Todos los datos de onboarding eliminados');
     } catch (e) {
-      print('❌ Error al limpiar datos de onboarding: $e');
     }
   }
 }

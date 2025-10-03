@@ -189,12 +189,12 @@ class CustomSnackBarWidget extends StatelessWidget {
   final VoidCallback? onActionPressed;
 
   const CustomSnackBarWidget({
-    Key? key,
+    super.key,
     required this.message,
     this.type = SnackBarType.info,
     this.actionLabel,
     this.onActionPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -21,14 +21,14 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     emit(LoginLoading());
 
     try {
-      print('Attempting login with email: ${event.email}'); // Debug
+      // Debug
       
       final user = await loginUser(
         email: event.email,
         password: event.password,
       );
 
-      print('Login successful for user: ${user?.uid}'); // Debug
+      // Debug
       
       if (user == null) {
         emit(LoginFailure(error: 'Error al iniciar sesión'));
@@ -37,14 +37,14 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
 
       emit(LoginSuccess(user: user));
     } on FirebaseAuthException catch (e) {
-      print('FirebaseAuthException: ${e.code} - ${e.message}'); // Debug
+      // Debug
       
       // Usar el mapeador para convertir el código de error a un mensaje amigable
       final userFriendlyMessage = FirebaseErrorMapper.toMessage(e.code);
       emit(LoginFailure(error: userFriendlyMessage));
       
     } catch (e) {
-      print('General exception: $e'); // Debug
+      // Debug
       emit(LoginFailure(error: 'Ocurrió un error inesperado'));
     }
   }

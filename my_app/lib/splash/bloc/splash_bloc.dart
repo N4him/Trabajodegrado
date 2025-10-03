@@ -41,15 +41,12 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
       final hasSeenOnboarding = await OnboardingService.hasSeenOnboarding();
       
       if (hasSeenOnboarding) {
-        print('🚀 Usuario existente - Ir a Login');
         emit(SplashNavigateToLogin());
       } else {
-        print('👋 Primera vez - Ir a Onboarding');
         emit(SplashNavigateToOnboarding());
       }
       
     } catch (e) {
-      print('❌ Error en splash: $e');
       // En caso de error, ir al onboarding para estar seguros
       emit(SplashNavigateToOnboarding());
     }

@@ -6,17 +6,14 @@ class ProfileEntity extends UserEntity {
   final int? level;
 
   ProfileEntity({
-    required String uid,
-    required String email,
-    required String name,
+    required super.uid,
+    required super.email,
+    required super.name,
     String? gender, // Hacerlo opcional
     this.photoUrl,
     this.points,
     this.level,
   }) : super(
-    uid: uid, 
-    email: email, 
-    name: name, 
     gender: gender ?? '' // Proporcionar valor por defecto
   );
 

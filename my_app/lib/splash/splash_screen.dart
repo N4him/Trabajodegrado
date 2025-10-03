@@ -4,6 +4,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'bloc/splash_bloc.dart';
 
 class SplashScreen extends StatelessWidget {
+  const SplashScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -98,11 +100,9 @@ class SplashScreen extends StatelessWidget {
   
   Future<bool> _checkFirebase() async {
     try {
-      final app = Firebase.app();
-      print('🔥 Firebase conectado: ${app.name} - Proyecto: ${app.options.projectId}');
+      Firebase.app();
       return true;
     } catch (e) {
-      print('❌ Firebase error: $e');
       return false;
     }
   }

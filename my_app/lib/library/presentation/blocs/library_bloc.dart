@@ -28,11 +28,9 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
 
     result.fold(
       (failure) {
-        print("❌ Error al obtener libros: ${failure.message}");
         emit(LibraryError(message: failure.message));
       },
       (books) {
-        print("✅ Se obtuvieron ${books.length} libros desde Firestore");
         emit(LibraryLoaded(books: books));
       },
     );
@@ -40,18 +38,15 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
 
   void _onGetBooksByCategory(
       GetBooksByCategoryEvent event, Emitter<LibraryState> emit) async {
-    print("🔍 Filtrando libros por categoría: ${event.category}");
     emit(LibraryLoading());
     
     final result = await getBooksByCategory(event.category);
     
     result.fold(
       (failure) {
-        print("❌ Error al obtener libros por categoría: ${failure.message}");
         emit(LibraryError(message: failure.message));
       },
       (books) {
-        print("✅ Se obtuvieron ${books.length} libros de la categoría '${event.category}'");
         emit(LibraryLoaded(books: books));
       },
     );
@@ -60,7 +55,6 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
   void _onSearchBooks(SearchBooksEvent event, Emitter<LibraryState> emit) async {
     final query = event.query.trim();
     
-    print("🔍 Buscando libros con query: '$query'");
     
     if (query.isEmpty) {
       add(GetBooksEvent());
@@ -73,11 +67,9 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
     
     result.fold(
       (failure) {
-        print("❌ Error al buscar libros: ${failure.message}");
         emit(LibraryError(message: failure.message));
       },
       (books) {
-        print("✅ Se encontraron ${books.length} libros para la búsqueda '$query'");
         
         if (books.isEmpty) {
           emit(const LibraryError(message: "No se encontraron libros que coincidan con tu búsqueda"));

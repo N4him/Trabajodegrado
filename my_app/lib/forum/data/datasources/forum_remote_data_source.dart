@@ -58,8 +58,6 @@ class ForumRemoteDataSourceImpl implements ForumRemoteDataSource {
       'title': title,
       'content': content,
       'authorId': authorId,
-      'authorName': authorName,
-      'authorPhotoUrl': authorPhotoUrl,
       'category': category,
       'categoryColor': categoryColor,
       'createdAt': Timestamp.fromDate(now),
@@ -71,14 +69,34 @@ class ForumRemoteDataSourceImpl implements ForumRemoteDataSource {
   }
 
   @override
-  Future<List<ForumModel>> getForumPosts() async {
-    final snapshot = await firestore
-        .collection('forums')
-        .orderBy('createdAt', descending: true)
+Future<List<ForumModel>> getForumPosts() async {
+  final snapshot = await firestore
+      .collection('forums')
+      .orderBy('createdAt', descending: true)
+      .get();
+
+  final posts = <ForumModel>[];
+
+  for (final doc in snapshot.docs) {
+    final data = doc.data();
+
+    // 👇 consulta al usuario en base al authorId
+    final userDoc = await firestore
+        .collection('users')
+        .doc(data['authorId'])
         .get();
 
-    return snapshot.docs.map((doc) => ForumModel.fromFirestore(doc)).toList();
+    final userData = userDoc.data();
+
+    posts.add(ForumModel.fromFirestore(doc).copyWith(
+      authorName: userData?['displayName'],
+      authorPhotoUrl: userData?['photoUrl'],
+    ));
   }
+
+  return posts;
+}
+
 
   @override
   Future<void> likeForumPost({

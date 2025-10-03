@@ -18,9 +18,9 @@ class LoginRemoteDataSourceImpl implements LoginRemoteDataSource {
         password: password,
       );
       return result.user!;
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException {
       // 👇 relanzamos el error para que el Bloc lo pueda mapear
-      throw e;
+      rethrow;
     }
   }
 }

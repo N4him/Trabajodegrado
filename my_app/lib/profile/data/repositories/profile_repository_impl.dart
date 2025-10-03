@@ -53,7 +53,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
         level: data['level'] ?? 1,
       );
     } catch (e) {
-      print('Error getting profile: $e');
       return null;
     }
   }
@@ -86,10 +85,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
         SetOptions(merge: true), // Usar merge para no sobrescribir campos existentes
       );
 
-      print('Profile updated successfully in Firestore');
     } catch (e) {
-      print('Error updating profile in Firestore: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -107,10 +104,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
-      print('Initial profile created in Firestore');
     } catch (e) {
-      print('Error creating initial profile: $e');
-      throw e;
+      rethrow;
     }
   }
 }

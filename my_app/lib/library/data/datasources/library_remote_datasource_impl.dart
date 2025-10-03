@@ -1,3 +1,5 @@
+// ignore_for_file: empty_catches, unused_local_variable
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:my_app/core/di/error/exceptions.dart';
 import '../models/book_model.dart';
@@ -12,17 +14,14 @@ class LibraryRemoteDataSourceImpl implements LibraryRemoteDataSource {
   @override
   Future<List<BookModel>> getBooks() async {
     try {
-      print("🔍 Intentando obtener libros de Firestore...");
       
       final querySnapshot = await firestore
           .collection(collectionName)
           .orderBy('title')
           .get();
       
-      print("📊 Documentos obtenidos: ${querySnapshot.docs.length}");
       
       if (querySnapshot.docs.isEmpty) {
-        print("⚠️ No se encontraron documentos en la colección '$collectionName'");
         return [];
       }
       
@@ -32,16 +31,13 @@ class LibraryRemoteDataSourceImpl implements LibraryRemoteDataSource {
           final book = BookModel.fromFirestore(doc);
           books.add(book);
         } catch (e) {
-          print("❌ Error procesando documento ${doc.id}: $e");
           continue;
         }
       }
       
-      print("🎉 Total de libros procesados: ${books.length}");
       return books;
       
     } catch (e) {
-      print("💥 Error general en getBooks: $e");
       throw ServerException();
     }
   }
@@ -49,7 +45,6 @@ class LibraryRemoteDataSourceImpl implements LibraryRemoteDataSource {
   @override
   Future<List<BookModel>> getBooksByCategory(String category) async {
     try {
-      print("🔍 Buscando libros por categoría: $category");
       
       final querySnapshot = await firestore
           .collection(collectionName)
@@ -57,13 +52,11 @@ class LibraryRemoteDataSourceImpl implements LibraryRemoteDataSource {
           .orderBy('title')
           .get();
       
-      print("📊 Libros encontrados en categoría '$category': ${querySnapshot.docs.length}");
       
       return querySnapshot.docs
           .map((doc) => BookModel.fromFirestore(doc))
           .toList();
     } catch (e) {
-      print("❌ Error en getBooksByCategory: $e");
       throw ServerException();
     }
   }
@@ -71,7 +64,6 @@ class LibraryRemoteDataSourceImpl implements LibraryRemoteDataSource {
   @override
   Future<BookModel> getBookById(String id) async {
     try {
-      print("🔍 Buscando libro por ID: $id");
       
       final doc = await firestore
           .collection(collectionName)
@@ -79,13 +71,11 @@ class LibraryRemoteDataSourceImpl implements LibraryRemoteDataSource {
           .get();
       
       if (!doc.exists) {
-        print("❌ Libro no encontrado: $id");
         throw ServerException();
       }
       
       return BookModel.fromFirestore(doc);
     } catch (e) {
-      print("❌ Error en getBookById: $e");
       throw ServerException();
     }
   }
@@ -93,10 +83,8 @@ class LibraryRemoteDataSourceImpl implements LibraryRemoteDataSource {
   @override
   Future<List<BookModel>> searchBooks(String query) async {
     try {
-      print("🔍 Buscando libros por título: '$query'");
       
       if (query.trim().isEmpty) {
-        print("⚠️ Query vacía, retornando lista vacía");
         return [];
       }
       
@@ -121,11 +109,9 @@ class LibraryRemoteDataSourceImpl implements LibraryRemoteDataSource {
       // Ordenar resultados alfabéticamente por título
       results.sort((a, b) => a.title.compareTo(b.title));
       
-      print("✅ Búsqueda por título completada. Resultados: ${results.length}");
       return results;
       
     } catch (e) {
-      print("❌ Error en searchBooks: $e");
       throw ServerException();
     }
   }
@@ -136,21 +122,18 @@ class LibraryRemoteDataSourceImpl implements LibraryRemoteDataSource {
     List<BookModel> results,
   ) async {
     try {
-      print("🔍 Buscando títulos que empiecen con: '$query'");
       
       final querySnapshot = await firestore
           .collection(collectionName)
           .where('title', isGreaterThanOrEqualTo: query)
-          .where('title', isLessThan: query + 'z')
+          .where('title', isLessThan: '${query}z')
           .orderBy('title')
           .limit(20)
           .get();
       
-      print("📊 Encontrados ${querySnapshot.docs.length} libros con query '$query'");
       _addUniqueResults(querySnapshot, foundIds, results);
       
     } catch (e) {
-      print("⚠️ Error en búsqueda de título con query '$query': $e");
     }
   }
   
@@ -160,7 +143,6 @@ class LibraryRemoteDataSourceImpl implements LibraryRemoteDataSource {
     List<BookModel> results,
   ) async {
     try {
-      print("🔍 Realizando búsqueda local en títulos...");
       
       final allBooksSnapshot = await firestore
           .collection(collectionName)
@@ -184,14 +166,11 @@ class LibraryRemoteDataSourceImpl implements LibraryRemoteDataSource {
             if (results.length >= 20) break; // Limitar resultados totales
           }
         } catch (e) {
-          print("⚠️ Error procesando documento en búsqueda local: ${doc.id}");
         }
       }
       
-      print("📊 Coincidencias locales encontradas en títulos: $localMatches");
       
     } catch (e) {
-      print("⚠️ Error en búsqueda local de títulos: $e");
     }
   }
   
@@ -206,9 +185,7 @@ class LibraryRemoteDataSourceImpl implements LibraryRemoteDataSource {
           foundIds.add(doc.id);
           final book = BookModel.fromFirestore(doc);
           results.add(book);
-          print("📖 Agregado: ${book.title}");
         } catch (e) {
-          print("⚠️ Error procesando resultado: ${doc.id}");
         }
       }
     }

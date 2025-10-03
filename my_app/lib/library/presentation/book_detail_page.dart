@@ -7,6 +7,7 @@ import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 class BookDetailPage extends StatefulWidget {
   final String bookId;
 
+  // ignore: use_super_parameters
   const BookDetailPage({Key? key, required this.bookId}) : super(key: key);
 
   @override
@@ -39,22 +40,17 @@ class _BookDetailPageState extends State<BookDetailPage> {
 
   Future<BookEntity?> _fetchBook() async {
     try {
-      print("🔍 Cargando libro con ID: ${widget.bookId}");
       final getBookById = getIt<GetBookById>();
       final result = await getBookById(widget.bookId);
       return result.fold(
         (failure) {
-          print("❌ Error al cargar libro: ${failure.message}");
           return null;
         },
         (book) {
-          print("✅ Libro cargado: ${book.title}");
-          print("📄 PDF URL: ${book.pdfUrl}");
           return book;
         },
       );
     } catch (e) {
-      print("💥 Excepción al cargar libro: $e");
       return null;
     }
   }
@@ -530,14 +526,12 @@ class _BookDetailPageState extends State<BookDetailPage> {
                 _isPdfLoading = false;
                 _pdfError = null;
               });
-              print("✅ PDF cargado exitosamente. Páginas: ${details.document.pages.count}");
             },
             onDocumentLoadFailed: (details) {
               setState(() {
                 _isPdfLoading = false;
                 _pdfError = details.error;
               });
-              print("❌ Error al cargar PDF: ${details.error}");
             },
           ),
           if (_isPdfLoading)
