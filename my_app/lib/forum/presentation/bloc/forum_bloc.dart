@@ -2,14 +2,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_app/forum/domain/usescases/create_forum_post.dart';
 import 'package:my_app/forum/domain/usescases/delete_forum_post.dart';
 import 'package:my_app/forum/domain/usescases/get_forum_posts.dart';
+import 'package:my_app/forum/domain/usescases/get_user_forum_posts.dart';
 import 'package:my_app/forum/domain/usescases/like_forum_post.dart';
 import 'package:my_app/forum/domain/usescases/reply_forum_post.dart';
+import 'package:my_app/forum/domain/usescases/search_forum_posts.dart';
 
 import 'forum_event.dart';
 import 'forum_state.dart';
 
 class ForumBloc extends Bloc<ForumEvent, ForumState> {
   final GetForumPosts getForumPostsUseCase;
+  final SearchForumPosts searchForumPostsUseCase;
+  final GetUserForumPosts getUserForumPostsUseCase;
   final CreateForumPost createForumPostUseCase;
   final LikeForumPost likeForumPostUseCase;
   final ReplyForumPost replyForumPostUseCase;
@@ -17,12 +21,16 @@ class ForumBloc extends Bloc<ForumEvent, ForumState> {
 
   ForumBloc({
     required this.getForumPostsUseCase,
+    required this.searchForumPostsUseCase,
+    required this.getUserForumPostsUseCase,
     required this.createForumPostUseCase,
     required this.likeForumPostUseCase,
     required this.replyForumPostUseCase,
     required this.deleteForumPostUseCase,
   }) : super(ForumInitial()) {
     on<LoadForumPostsEvent>(_onLoadForumPosts);
+    on<SearchForumPostsEvent>(_onSearchForumPosts);
+    on<LoadUserForumPostsEvent>(_onLoadUserForumPosts);
     on<CreateForumPostEvent>(_onCreateForumPost);
     on<LikeForumPostEvent>(_onLikeForumPost);
     on<ReplyToForumPostEvent>(_onReplyToForumPost);
@@ -35,6 +43,35 @@ class ForumBloc extends Bloc<ForumEvent, ForumState> {
   ) async {
     emit(ForumLoading());
     final result = await getForumPostsUseCase();
+    result.fold(
+      (failure) => emit(ForumError(failure.toString())),
+      (posts) => emit(ForumLoaded(posts)),
+    );
+  }
+
+  Future<void> _onSearchForumPosts(
+    SearchForumPostsEvent event,
+    Emitter<ForumState> emit,
+  ) async {
+    if (event.query.isEmpty) {
+      add(LoadForumPostsEvent());
+      return;
+    }
+
+    emit(ForumLoading());
+    final result = await searchForumPostsUseCase(event.query);
+    result.fold(
+      (failure) => emit(ForumError(failure.toString())),
+      (posts) => emit(ForumLoaded(posts)),
+    );
+  }
+
+  Future<void> _onLoadUserForumPosts(
+    LoadUserForumPostsEvent event,
+    Emitter<ForumState> emit,
+  ) async {
+    emit(ForumLoading());
+    final result = await getUserForumPostsUseCase(event.userId);
     result.fold(
       (failure) => emit(ForumError(failure.toString())),
       (posts) => emit(ForumLoaded(posts)),

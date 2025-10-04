@@ -4,8 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:my_app/forum/domain/usescases/create_forum_post.dart';
 import 'package:my_app/forum/domain/usescases/delete_forum_post.dart';
 import 'package:my_app/forum/domain/usescases/get_forum_posts.dart';
+import 'package:my_app/forum/domain/usescases/get_user_forum_posts.dart';
 import 'package:my_app/forum/domain/usescases/like_forum_post.dart';
 import 'package:my_app/forum/domain/usescases/reply_forum_post.dart';
+import 'package:my_app/forum/domain/usescases/search_forum_posts.dart';
 
 // ==============================================
 // LIBRARY
@@ -155,6 +157,12 @@ Future<void> setupDI() async {
   getIt.registerLazySingleton<DeleteForumPost>(
     () => DeleteForumPost(getIt()),
   );
+  getIt.registerLazySingleton<SearchForumPosts>(
+  () => SearchForumPosts(getIt()),
+);
+getIt.registerLazySingleton<GetUserForumPosts>(
+  () => GetUserForumPosts(getIt()),
+);
 
   // ==============================================
   // BLOCS - FACTORY REGISTRATION
@@ -186,6 +194,8 @@ Future<void> setupDI() async {
       likeForumPostUseCase: getIt<LikeForumPost>(),
       replyForumPostUseCase: getIt<ReplyForumPost>(),
       deleteForumPostUseCase: getIt<DeleteForumPost>(),
+      searchForumPostsUseCase: getIt<SearchForumPosts>(),
+      getUserForumPostsUseCase: getIt<GetUserForumPosts>(),
     ),
   );
 }

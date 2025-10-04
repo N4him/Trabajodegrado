@@ -14,6 +14,8 @@ abstract class ForumRemoteDataSource {
   });
 
   Future<List<ForumModel>> getForumPosts();
+  Future<List<ForumModel>> searchForumPostsByTitle(String query);
+  Future<List<ForumModel>> getUserForumPosts(String userId);
 
   Future<void> likeForumPost({
     required String forumId,
@@ -34,7 +36,6 @@ abstract class ForumRemoteDataSource {
   });
 
   Future<List<ReplyModel>> getForumReplies(String forumId);
-
   Future<void> deleteForumPost(String forumId);
 }
 
@@ -53,15 +54,16 @@ class ForumRemoteDataSourceImpl implements ForumRemoteDataSource {
     required String category,
     required String categoryColor,
   }) async {
-    final now = DateTime.now();
     final docRef = await firestore.collection('forums').add({
       'title': title,
       'content': content,
       'authorId': authorId,
+      'authorName': authorName,
+      'authorPhotoUrl': authorPhotoUrl,
       'category': category,
       'categoryColor': categoryColor,
-      'createdAt': Timestamp.fromDate(now),
-      'updatedAt': Timestamp.fromDate(now),
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
       'likes': 0,
       'replies': 0,
     });
@@ -69,59 +71,58 @@ class ForumRemoteDataSourceImpl implements ForumRemoteDataSource {
   }
 
   @override
-Future<List<ForumModel>> getForumPosts() async {
-  final snapshot = await firestore
-      .collection('forums')
-      .orderBy('createdAt', descending: true)
-      .get();
-
-  final posts = <ForumModel>[];
-
-  for (final doc in snapshot.docs) {
-    final data = doc.data();
-
-    // 👇 consulta al usuario en base al authorId
-    final userDoc = await firestore
-        .collection('users')
-        .doc(data['authorId'])
+  Future<List<ForumModel>> getForumPosts() async {
+    final querySnapshot = await firestore
+        .collection('forums')  // 👈 CAMBIADO
+        .orderBy('createdAt', descending: true)
         .get();
 
-    final userData = userDoc.data();
-
-    posts.add(ForumModel.fromFirestore(doc).copyWith(
-      authorName: userData?['displayName'],
-      authorPhotoUrl: userData?['photoUrl'],
-    ));
+    return querySnapshot.docs
+        .map((doc) => ForumModel.fromFirestore(doc))
+        .toList();
   }
 
-  return posts;
-}
+  @override
+  Future<List<ForumModel>> searchForumPostsByTitle(String query) async {
+    final queryLower = query.toLowerCase();
+    
+    final querySnapshot = await firestore
+        .collection('forums')  // 👈 CAMBIADO
+        .orderBy('createdAt', descending: true)
+        .get();
 
+    // Filtrar en el cliente por el título
+    return querySnapshot.docs
+        .map((doc) => ForumModel.fromFirestore(doc))
+        .where((post) => post.title.toLowerCase().contains(queryLower))
+        .toList();
+  }
+
+  @override
+  Future<List<ForumModel>> getUserForumPosts(String userId) async {
+    final querySnapshot = await firestore
+        .collection('forums')  // 👈 CAMBIADO
+        .where('authorId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true)
+        .get();
+
+    return querySnapshot.docs
+        .map((doc) => ForumModel.fromFirestore(doc))
+        .toList();
+  }
 
   @override
   Future<void> likeForumPost({
     required String forumId,
     required String userId,
   }) async {
-    final batch = firestore.batch();
+    await firestore.runTransaction((transaction) async {
+      final forumRef = firestore.collection('forums').doc(forumId);  // 👈 CAMBIADO
+      final likeRef = forumRef.collection('likes').doc(userId);
 
-    final likeRef = firestore
-        .collection('forums')
-        .doc(forumId)
-        .collection('likes')
-        .doc(userId);
-
-    final forumRef = firestore.collection('forums').doc(forumId);
-
-    batch.set(likeRef, {
-      'likedAt': Timestamp.now(),
+      transaction.set(likeRef, {'userId': userId, 'createdAt': FieldValue.serverTimestamp()});
+      transaction.update(forumRef, {'likes': FieldValue.increment(1)});
     });
-
-    batch.update(forumRef, {
-      'likes': FieldValue.increment(1),
-    });
-
-    await batch.commit();
   }
 
   @override
@@ -129,23 +130,13 @@ Future<List<ForumModel>> getForumPosts() async {
     required String forumId,
     required String userId,
   }) async {
-    final batch = firestore.batch();
+    await firestore.runTransaction((transaction) async {
+      final forumRef = firestore.collection('forums').doc(forumId);  // 👈 CAMBIADO
+      final likeRef = forumRef.collection('likes').doc(userId);
 
-    final likeRef = firestore
-        .collection('forums')
-        .doc(forumId)
-        .collection('likes')
-        .doc(userId);
-
-    final forumRef = firestore.collection('forums').doc(forumId);
-
-    batch.delete(likeRef);
-
-    batch.update(forumRef, {
-      'likes': FieldValue.increment(-1),
+      transaction.delete(likeRef);
+      transaction.update(forumRef, {'likes': FieldValue.increment(-1)});
     });
-
-    await batch.commit();
   }
 
   @override
@@ -156,76 +147,41 @@ Future<List<ForumModel>> getForumPosts() async {
     String? authorPhotoUrl,
     required String content,
   }) async {
-    final batch = firestore.batch();
-
-    final replyRef = firestore
-        .collection('forums')
+    final docRef = await firestore
+        .collection('forums')  // 👈 CAMBIADO
         .doc(forumId)
         .collection('replies')
-        .doc();
-
-    final forumRef = firestore.collection('forums').doc(forumId);
-
-    batch.set(replyRef, {
+        .add({
       'authorId': authorId,
       'authorName': authorName,
       'authorPhotoUrl': authorPhotoUrl,
       'content': content,
-      'createdAt': Timestamp.now(),
-      'likes': 0,
+      'createdAt': FieldValue.serverTimestamp(),
     });
 
-    batch.update(forumRef, {
+    await firestore.collection('forums').doc(forumId).update({  // 👈 CAMBIADO
       'replies': FieldValue.increment(1),
-      'updatedAt': Timestamp.now(),
     });
 
-    await batch.commit();
-    return replyRef.id;
+    return docRef.id;
   }
 
   @override
   Future<List<ReplyModel>> getForumReplies(String forumId) async {
-    final snapshot = await firestore
-        .collection('forums')
+    final querySnapshot = await firestore
+        .collection('forums')  // 👈 CAMBIADO
         .doc(forumId)
         .collection('replies')
         .orderBy('createdAt', descending: false)
         .get();
 
-    return snapshot.docs.map((doc) => ReplyModel.fromFirestore(doc)).toList();
+    return querySnapshot.docs
+        .map((doc) => ReplyModel.fromFirestore(doc))
+        .toList();
   }
 
   @override
   Future<void> deleteForumPost(String forumId) async {
-    final batch = firestore.batch();
-
-    // Eliminar subcolección de likes
-    final likesSnapshot = await firestore
-        .collection('forums')
-        .doc(forumId)
-        .collection('likes')
-        .get();
-
-    for (final doc in likesSnapshot.docs) {
-      batch.delete(doc.reference);
-    }
-
-    // Eliminar subcolección de replies
-    final repliesSnapshot = await firestore
-        .collection('forums')
-        .doc(forumId)
-        .collection('replies')
-        .get();
-
-    for (final doc in repliesSnapshot.docs) {
-      batch.delete(doc.reference);
-    }
-
-    // Eliminar el post principal
-    final forumRef = firestore.collection('forums').doc(forumId);
-    batch.delete(forumRef);
-
-    await batch.commit();
+    await firestore.collection('forums').doc(forumId).delete();  // 👈 CAMBIADO
   }
 }

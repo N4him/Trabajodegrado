@@ -15,6 +15,12 @@ abstract class ForumRepository {
 
   Future<Either<Exception, List<ForumEntity>>> getForumPosts();
 
+  /// Buscar posts por título
+  Future<Either<Exception, List<ForumEntity>>> searchForumPostsByTitle(String query);
+
+  /// Obtener posts del usuario actual
+  Future<Either<Exception, List<ForumEntity>>> getUserForumPosts(String userId);
+
   Future<Either<Exception, void>> likeForumPost({
     required String forumId,
     required String userId,

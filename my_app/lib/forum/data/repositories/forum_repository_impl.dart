@@ -46,6 +46,26 @@ class ForumRepositoryImpl implements ForumRepository {
   }
 
   @override
+  Future<Either<Exception, List<ForumEntity>>> searchForumPostsByTitle(String query) async {
+    try {
+      final posts = await remoteDataSource.searchForumPostsByTitle(query);
+      return Right(posts);
+    } catch (e) {
+      return Left(Exception('Error searching forum posts: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Exception, List<ForumEntity>>> getUserForumPosts(String userId) async {
+    try {
+      final posts = await remoteDataSource.getUserForumPosts(userId);
+      return Right(posts);
+    } catch (e) {
+      return Left(Exception('Error getting user forum posts: $e'));
+    }
+  }
+
+  @override
   Future<Either<Exception, void>> likeForumPost({
     required String forumId,
     required String userId,

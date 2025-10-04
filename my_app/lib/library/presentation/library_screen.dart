@@ -21,6 +21,7 @@ class _LibraryPageState extends State<LibraryPage>
   late AnimationController _headerAnimationController;
   late AnimationController _fadeAnimationController;
   late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
   late LibraryBloc _libraryBloc;
 
   final ScrollController _scrollController = ScrollController();
@@ -34,7 +35,7 @@ class _LibraryPageState extends State<LibraryPage>
     _libraryBloc = getIt<LibraryBloc>();
     
     _headerAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
     _fadeAnimationController = AnimationController(
@@ -42,14 +43,21 @@ class _LibraryPageState extends State<LibraryPage>
       vsync: this,
     );
 
-
     _fadeAnimation = CurvedAnimation(
       parent: _fadeAnimationController,
       curve: Curves.easeInOut,
     );
 
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _fadeAnimationController,
+      curve: Curves.easeOut,
+    ));
+
     _headerAnimationController.forward();
-    Future.delayed(const Duration(milliseconds: 300), () {
+    Future.delayed(const Duration(milliseconds: 200), () {
       _fadeAnimationController.forward();
     });
 
@@ -66,7 +74,6 @@ class _LibraryPageState extends State<LibraryPage>
   }
 
   void _handleSearch(String query) {
-    
     setState(() {
       currentSearchQuery = query.trim();
       if (query.trim().isNotEmpty) {
@@ -104,37 +111,41 @@ class _LibraryPageState extends State<LibraryPage>
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 1
+    final colorScheme = Theme.of(context).colorScheme;
     
     return BlocProvider<LibraryBloc>.value(
       value: _libraryBloc,
       child: Scaffold(
-        backgroundColor: colorScheme.background, // 👈 CAMBIO 2 (era Color(0xFFF8F9FA))
+        backgroundColor: colorScheme.background,
         body: SafeArea(
           child: CustomScrollView(
             controller: _scrollController,
+            physics: const BouncingScrollPhysics(),
             slivers: [
               SliverToBoxAdapter(
                 child: _buildEnhancedHeader(),
               ),
 
               SliverToBoxAdapter(
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (currentSearchQuery.isEmpty)
-                          CategoryChipWidget(
-                            selectedCategory: selectedCategory,
-                            onCategoryChanged: _handleCategoryChange,
-                          ),
-                        if (currentSearchQuery.isEmpty) const SizedBox(height: 30),
-                        _buildSectionHeader(),
-                        const SizedBox(height: 20),
-                      ],
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (currentSearchQuery.isEmpty)
+                            CategoryChipWidget(
+                              selectedCategory: selectedCategory,
+                              onCategoryChanged: _handleCategoryChange,
+                            ),
+                          if (currentSearchQuery.isEmpty) const SizedBox(height: 24),
+                          _buildSectionHeader(),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -152,20 +163,31 @@ class _LibraryPageState extends State<LibraryPage>
                     }
                   },
                   builder: (context, state) {
-                    
                     if (state is LibraryLoading) {
-                      return const SliverToBoxAdapter(
+                      return SliverToBoxAdapter(
                         child: Center(
                           child: Padding(
-                            padding: EdgeInsets.all(40.0),
-                            child: CircularProgressIndicator(
-                              color: Color(0xFF5E35B1),
+                            padding: const EdgeInsets.all(60.0),
+                            child: Column(
+                              children: [
+                                const CircularProgressIndicator(
+                                  color: Color(0xFF5E35B1),
+                                  strokeWidth: 3,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Loading books...',
+                                  style: TextStyle(
+                                    color: colorScheme.onSurface.withOpacity(0.6),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
                       );
                     } else if (state is LibraryLoaded) {
-                      
                       if (state.books.isEmpty) {
                         return _buildEmptyState();
                       }
@@ -199,7 +221,7 @@ class _LibraryPageState extends State<LibraryPage>
               ),
 
               const SliverToBoxAdapter(
-                child: SizedBox(height: 20),
+                child: SizedBox(height: 40),
               ),
             ],
           ),
@@ -209,51 +231,108 @@ class _LibraryPageState extends State<LibraryPage>
   }
 
   Widget _buildErrorState(String message) {
-    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 3
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return SliverToBoxAdapter(
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(40.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                currentSearchQuery.isNotEmpty 
-                  ? Icons.search_off 
-                  : Icons.error_outline,
-                size: 64,
-                color: colorScheme.onSurface.withOpacity(0.4), // 👈 CAMBIO 4
-              ),
-              const SizedBox(height: 16),
-              Text(
-                currentSearchQuery.isNotEmpty
-                  ? 'No se encontraron libros para "$currentSearchQuery"'
-                  : message,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: colorScheme.onSurface.withOpacity(0.6), // 👈 CAMBIO 5
+          child: Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: isDark 
+                ? colorScheme.surface 
+                : Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  if (currentSearchQuery.isNotEmpty) {
-                    _clearSearch();
-                  } else {
-                    _libraryBloc.add(GetBooksEvent());
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5E35B1),
-                  foregroundColor: Colors.white,
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    currentSearchQuery.isNotEmpty 
+                      ? Icons.search_off_rounded
+                      : Icons.error_outline_rounded,
+                    size: 64,
+                    color: Colors.red.withOpacity(0.7),
+                  ),
                 ),
-                child: Text(
-                  currentSearchQuery.isNotEmpty ? 'Limpiar búsqueda' : 'Reintentar'
+                const SizedBox(height: 24),
+                Text(
+                  currentSearchQuery.isNotEmpty
+                    ? 'No results found'
+                    : 'Something went wrong',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  currentSearchQuery.isNotEmpty
+                    ? 'No books found for "$currentSearchQuery"'
+                    : message,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () {
+                    if (currentSearchQuery.isNotEmpty) {
+                      _clearSearch();
+                    } else {
+                      _libraryBloc.add(GetBooksEvent());
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF5E35B1),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        currentSearchQuery.isNotEmpty 
+                          ? Icons.clear_all_rounded 
+                          : Icons.refresh_rounded,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        currentSearchQuery.isNotEmpty ? 'Clear search' : 'Retry',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -261,59 +340,102 @@ class _LibraryPageState extends State<LibraryPage>
   }
 
   Widget _buildEmptyState() {
-    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 6
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return SliverToBoxAdapter(
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(40.0),
-          child: Column(
-            children: [
-              Icon(
-                currentSearchQuery.isNotEmpty 
-                  ? Icons.search_off_rounded
-                  : Icons.library_books_outlined,
-                size: 80,
-                color: colorScheme.onSurface.withOpacity(0.3), // 👈 CAMBIO 7
-              ),
-              const SizedBox(height: 16),
-              Text(
-                currentSearchQuery.isNotEmpty
-                  ? 'No se encontraron libros'
-                  : selectedCategory != 'Todos'
-                    ? 'No hay libros en la categoría "$selectedCategory"'
-                    : 'No hay libros disponibles',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.onSurface.withOpacity(0.6), // 👈 CAMBIO 8
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                currentSearchQuery.isNotEmpty
-                  ? 'Intenta con otros términos: "$currentSearchQuery"'
-                  : 'Los libros aparecerán aquí cuando estén disponibles',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: colorScheme.onSurface.withOpacity(0.5), // 👈 CAMBIO 9
-                ),
-                textAlign: TextAlign.center,
-              ),
-              if (currentSearchQuery.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _clearSearch,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5E35B1),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  ),
-                  child: const Text('Ver todos los libros'),
+          child: Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: isDark 
+                ? colorScheme.surface 
+                : Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
                 ),
               ],
-            ],
+            ),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF5E35B1).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    currentSearchQuery.isNotEmpty 
+                      ? Icons.search_off_rounded
+                      : Icons.auto_stories_rounded,
+                    size: 80,
+                    color: const Color(0xFF5E35B1).withOpacity(0.7),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  currentSearchQuery.isNotEmpty
+                    ? 'No books found'
+                    : selectedCategory != 'Todos'
+                      ? 'No books in this category'
+                      : 'No books available',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  currentSearchQuery.isNotEmpty
+                    ? 'Try different search terms: "$currentSearchQuery"'
+                    : selectedCategory != 'Todos'
+                      ? 'No books found in "$selectedCategory" category'
+                      : 'Books will appear here when available',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                if (currentSearchQuery.isNotEmpty || selectedCategory != 'Todos') ...[
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _clearSearch,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF5E35B1),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.library_books_rounded, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'View all books',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
       ),
@@ -321,20 +443,19 @@ class _LibraryPageState extends State<LibraryPage>
   }
 
   Widget _buildEnhancedHeader() {
-    final isDark = Theme.of(context).brightness == Brightness.dark; // 👈 CAMBIO 10
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
-      height: 320,
-      width: double.infinity,
+      padding: const EdgeInsets.all(24.0),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: isDark // 👈 CAMBIO 11: Gradiente adaptativo
+          colors: isDark
             ? [
-                const Color(0xFF1A237E).withOpacity(0.9),
-                const Color(0xFF3949AB).withOpacity(0.9),
-                const Color(0xFF5E35B1).withOpacity(0.9),
+                const Color(0xFF1A237E).withOpacity(0.95),
+                const Color(0xFF3949AB).withOpacity(0.95),
+                const Color(0xFF5E35B1).withOpacity(0.95),
               ]
             : [
                 const Color(0xFF1A237E),
@@ -343,12 +464,12 @@ class _LibraryPageState extends State<LibraryPage>
               ],
         ),
         borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(40),
-          bottomRight: Radius.circular(40),
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
         ),
         boxShadow: [
           BoxShadow(
-            color: isDark // 👈 CAMBIO 12
+            color: isDark
                 ? Colors.black.withOpacity(0.5)
                 : const Color(0xFF5E35B1).withOpacity(0.3),
             blurRadius: 30,
@@ -356,130 +477,147 @@ class _LibraryPageState extends State<LibraryPage>
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              children: [
-                Hero(
-                  tag: 'library_icon',
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.auto_stories,
-                      color: Colors.white,
-                      size: 32,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Hero(
+                tag: 'library_icon',
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1.5,
                     ),
                   ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Biblioteca Digital',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        currentSearchQuery.isNotEmpty
-                          ? 'Buscando: "$currentSearchQuery"'
-                          : selectedCategory != 'Todos'
-                            ? 'Categoría: $selectedCategory'
-                            : 'Descubre mundos infinitos de conocimiento',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
+                  child: const Icon(
+                    Icons.auto_stories_rounded,
+                    color: Colors.white,
+                    size: 28,
                   ),
                 ),
-              ],
-            ),
-            
-            const SizedBox(height: 24),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
-                  width: 1,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Digital Library',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      currentSearchQuery.isNotEmpty
+                        ? 'Searching: "$currentSearchQuery"'
+                        : selectedCategory != 'Todos'
+                          ? 'Category: $selectedCategory'
+                          : 'Explore infinite worlds of knowledge',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
               ),
-              child: SearchBarWidget(
-                onSearch: _handleSearch,
-                onClear: _clearSearch,
-                initialValue: currentSearchQuery,
+            ],
+          ),
+          
+          const SizedBox(height: 20),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1,
               ),
             ),
-          ],
-        ),
+            child: SearchBarWidget(
+              onSearch: _handleSearch,
+              onClear: _clearSearch,
+              initialValue: currentSearchQuery,
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildSectionHeader() {
-    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 13
+    final colorScheme = Theme.of(context).colorScheme;
     
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(
-          child: Text(
-            currentSearchQuery.isNotEmpty
-              ? 'Resultados para "$currentSearchQuery"'
-              : selectedCategory != 'Todos'
-                ? 'Libros de $selectedCategory'
-                : 'Catálogo de Libros',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onBackground, // 👈 CAMBIO 14 (era Color(0xFF2C1810))
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                currentSearchQuery.isNotEmpty
+                  ? 'Search Results'
+                  : selectedCategory != 'Todos'
+                    ? selectedCategory
+                    : 'Book Catalog',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onBackground,
+                ),
+              ),
+              if (currentSearchQuery.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'for "$currentSearchQuery"',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: colorScheme.onBackground.withOpacity(0.6),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ],
           ),
         ),
         const SizedBox(width: 16),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             color: const Color(0xFF5E35B1).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: const Color(0xFF5E35B1).withOpacity(0.2),
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: [
+            children: const [
               Icon(
-                Icons.sort,
-                size: 16,
-                color: const Color(0xFF5E35B1),
+                Icons.sort_rounded,
+                size: 18,
+                color: Color(0xFF5E35B1),
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: 6),
               Text(
-                'Ordenar',
+                'Sort',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF5E35B1),
+                  color: Color(0xFF5E35B1),
                 ),
               ),
             ],

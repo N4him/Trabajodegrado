@@ -9,6 +9,24 @@ abstract class ForumEvent extends Equatable {
 
 class LoadForumPostsEvent extends ForumEvent {}
 
+class SearchForumPostsEvent extends ForumEvent {
+  final String query;
+
+  const SearchForumPostsEvent(this.query);
+
+  @override
+  List<Object> get props => [query];
+}
+
+class LoadUserForumPostsEvent extends ForumEvent {
+  final String userId;
+
+  const LoadUserForumPostsEvent(this.userId);
+
+  @override
+  List<Object> get props => [userId];
+}
+
 class CreateForumPostEvent extends ForumEvent {
   final String title;
   final String content;

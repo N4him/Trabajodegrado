@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:my_app/forum/screen_forum.dart';
+import 'package:my_app/forum/presentation/screen_forum.dart';
 import 'package:my_app/library/presentation/book_detail_page.dart';
 
 import '../splash/splash_screen.dart';
