@@ -20,7 +20,7 @@ class ReplyModel extends ReplyEntity {
       authorName: data['authorName'] ?? '',
       authorPhotoUrl: data['authorPhotoUrl'],
       content: data['content'] ?? '',
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+    createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       likes: data['likes'] ?? 0,
     );
   }

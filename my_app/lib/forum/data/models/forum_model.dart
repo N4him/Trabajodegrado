@@ -28,8 +28,8 @@ class ForumModel extends ForumEntity {
       authorPhotoUrl: data['authorPhotoUrl'],
       category: data['category'] ?? '',
       categoryColor: data['categoryColor'] ?? '',
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
-      updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+    createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       likes: data['likes'] ?? 0,
       replies: data['replies'] ?? 0,
     );

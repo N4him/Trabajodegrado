@@ -62,8 +62,8 @@ class ForumRemoteDataSourceImpl implements ForumRemoteDataSource {
       'authorPhotoUrl': authorPhotoUrl,
       'category': category,
       'categoryColor': categoryColor,
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'createdAt': Timestamp.now(),
+      'updatedAt': Timestamp.now(),
       'likes': 0,
       'replies': 0,
     });
@@ -156,7 +156,7 @@ class ForumRemoteDataSourceImpl implements ForumRemoteDataSource {
       'authorName': authorName,
       'authorPhotoUrl': authorPhotoUrl,
       'content': content,
-      'createdAt': FieldValue.serverTimestamp(),
+      'createdAt': Timestamp.now(),
     });
 
     await firestore.collection('forums').doc(forumId).update({  // 👈 CAMBIADO

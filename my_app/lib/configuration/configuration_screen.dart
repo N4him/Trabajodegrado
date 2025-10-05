@@ -53,22 +53,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             
             _buildSettingItem(
               context,
-              icon: Icons.notifications,
-              iconColor: Color(0xFF4ECDC4),
-              iconBackgroundColor: Color(0xFF4ECDC4).withOpacity(0.1),
-              title: 'Notifications',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Navigating to Notifications settings')),
-                );
-              },
-              showArrow: true,
-            ),
-            
-            SizedBox(height: 16),
-            
-            _buildSettingItem(
-              context,
               icon: Icons.dark_mode,
               iconColor: Color(0xFF6C63FF),
               iconBackgroundColor: Color(0xFF6C63FF).withOpacity(0.1),
@@ -101,22 +85,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Opening Help section')),
-                );
-              },
-              showArrow: true,
-            ),
-            
-            SizedBox(height: 16),
-            
-            _buildSettingItem(
-              context,
-              icon: Icons.privacy_tip,
-              iconColor: Color(0xFF9C27B0),
-              iconBackgroundColor: Color(0xFF9C27B0).withOpacity(0.1),
-              title: 'Privacy & Security',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Opening Privacy settings')),
                 );
               },
               showArrow: true,
