@@ -33,10 +33,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 1
+    final colorScheme = Theme.of(context).colorScheme;
     
     return Scaffold(
-      backgroundColor: colorScheme.background, // 👈 CAMBIO 2 (era Colors.grey[100])
+      backgroundColor: colorScheme.background,
       bottomNavigationBar: CustomNavigationBar(
         initialIndex: _currentIndex,
         onTap: _updateScreen,
@@ -58,25 +58,11 @@ class _HomeContentState extends State<HomeContent> {
   Timer? _timer;
   int _currentCarouselIndex = 0;
 
-  static const List<Map<String, dynamic>> _carouselItems = [
-    {
-      'title': 'Continúa aprendiendo',
-      'subtitle': 'Tienes 3 lecciones pendientes',
-      'icon': Icons.library_books,
-      'color': Color(0xFF4ECDC4),
-    },
-    {
-      'title': 'Practica vocabulario',
-      'subtitle': '15 palabras nuevas esperándote',
-      'icon': Icons.quiz,
-      'color': Color(0xFFFF6B6B),
-    },
-    {
-      'title': 'Completa tu racha',
-      'subtitle': '¡Llevas 7 días consecutivos!',
-      'icon': Icons.local_fire_department,
-      'color': Color(0xFFFFBE0B),
-    },
+  // Lista de imágenes del carousel
+  static const List<String> _carouselImages = [
+    'assets/images/card_welcome (4).png',
+    'assets/images/forum_cards.png',
+    'assets/images/petapp_card.png',
   ];
 
   @override
@@ -86,10 +72,10 @@ class _HomeContentState extends State<HomeContent> {
   }
 
   void _startAutoSlide() {
-    _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 15), (timer) {
       if (!mounted || !_pageController.hasClients) return;
 
-      if (_currentCarouselIndex < _carouselItems.length - 1) {
+      if (_currentCarouselIndex < _carouselImages.length - 1) {
         _currentCarouselIndex++;
       } else {
         _currentCarouselIndex = 0;
@@ -138,20 +124,20 @@ class _HomeContentState extends State<HomeContent> {
   }
 
   Widget _buildHeaderSection(ProfileLoaded state) {
-    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 3
-    final isDark = Theme.of(context).brightness == Brightness.dark; // 👈 CAMBIO 4
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
-      padding: const EdgeInsets.only(left: 16, right: 16, top: 40, bottom: 16),
+      padding: const EdgeInsets.only(left: 5, right: 5, top: 35, bottom: 0),
       decoration: BoxDecoration(
-        color: colorScheme.surface, // 👈 CAMBIO 5 (era Colors.white)
+        color: colorScheme.surface,
         borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
+          bottomLeft: Radius.circular(50),
+          bottomRight: Radius.circular(50),
         ),
         boxShadow: [
           BoxShadow(
-            color: isDark // 👈 CAMBIO 6
+            color: isDark
                 ? Colors.black.withOpacity(0.3)
                 : Colors.grey.withOpacity(0.1),
             blurRadius: 10,
@@ -162,8 +148,10 @@ class _HomeContentState extends State<HomeContent> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          SizedBox(height: 10),
           _buildUserProfile(state),
-          const SizedBox(height: 20),
+                    SizedBox(height:10),
+
           _buildCarousel(),
         ],
       ),
@@ -171,7 +159,7 @@ class _HomeContentState extends State<HomeContent> {
   }
 
   Widget _buildUserProfile(ProfileLoaded state) {
-    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 7
+    final colorScheme = Theme.of(context).colorScheme;
     
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -194,15 +182,15 @@ class _HomeContentState extends State<HomeContent> {
               'Hola,',
               style: TextStyle(
                 fontSize: 25,
-                color: colorScheme.onSurface.withOpacity(0.6), // 👈 CAMBIO 8 (era Colors.grey[600])
+                color: colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
             Text(
               state.profile.name,
-              style: TextStyle( // 👈 CAMBIO 9
+              style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface, // (era Colors.black87)
+                color: colorScheme.onSurface,
               ),
             ),
           ],
@@ -214,7 +202,7 @@ class _HomeContentState extends State<HomeContent> {
   Widget _buildCarousel() {
     return SizedBox(
       width: double.infinity,
-      height: 170,
+      height: 215,
       child: Stack(
         children: [
           PageView.builder(
@@ -224,9 +212,9 @@ class _HomeContentState extends State<HomeContent> {
                 _currentCarouselIndex = index;
               });
             },
-            itemCount: _carouselItems.length,
+            itemCount: _carouselImages.length,
             itemBuilder: (context, index) =>
-                _buildCarouselItem(_carouselItems[index]),
+                _buildCarouselItem(_carouselImages[index]),
           ),
           _buildCarouselIndicators(),
         ],
@@ -234,79 +222,31 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
-  Widget _buildCarouselItem(Map<String, dynamic> item) {
-    final isDark = Theme.of(context).brightness == Brightness.dark; // 👈 CAMBIO 10
-    
+  Widget _buildCarouselItem(String imagePath) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: item['color'] as Color,
+      margin: const EdgeInsets.symmetric(horizontal: 0),
+      child: ClipRRect(
         borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: isDark // 👈 CAMBIO 11
-                ? Colors.black.withOpacity(0.3)
-                : Colors.grey.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              item['icon'] as IconData,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  item['title'] as String,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  item['subtitle'] as String,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        child: Image.asset(
+          imagePath,
+          fit: BoxFit.cover,
+          width: double.infinity,
+        ),
       ),
     );
   }
 
   Widget _buildCarouselIndicators() {
     return Positioned(
-      bottom: 12,
+      bottom: 0,
       left: 0,
       right: 0,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: _carouselItems.asMap().entries.map((entry) {
+        children: _carouselImages.asMap().entries.map((entry) {
           return Container(
-            width: 8,
-            height: 8,
+            width: 5,
+            height: 20,
             margin: const EdgeInsets.symmetric(horizontal: 4),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -341,39 +281,65 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
-  Widget _buildLibraryCard() {
-    return SizedBox(
-      width: MediaQuery.of(context).size.width * 0.4,
-      child: _buildCard(
-        height: 320,
-        color: const Color(0xFFFF6B6B),
-        icon: Icons.book,
-        title: 'Biblioteca',
-        subtitle: '12 nuevas',
-        onTap: () => Navigator.of(context).pushNamed('/library'),
+Widget _buildLibraryCard() {
+  return SizedBox(
+    width: MediaQuery.of(context).size.width * 0.4,
+    child: GestureDetector(
+      onTap: () => Navigator.of(context).pushNamed('/library'),
+      child: Container(
+        height: 290,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          image: const DecorationImage(
+            image: AssetImage('assets/images/lib.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.book, color: Colors.white, size: 40),
+              const SizedBox(height: 8),
+              const Text(
+                'Biblioteca',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildRightColumn() {
     return Expanded(
       child: Column(
         children: [
           _buildCard(
-            height: 160,
+            height: 140,
             color: const Color(0xFFFFBE0B),
             icon: Icons.timeline,
-            title: 'Progresosssss',
-            subtitle: '65% com',
+            title: 'Progresosssssss',
+            subtitle: '',
             onTap: () {},
           ),
           const SizedBox(height: 10),
           _buildCard(
-            height: 150,
+            height: 140,
             color: const Color(0xFF4ECDC4),
             icon: Icons.star,
             title: 'Retos diariosss',
-            subtitle: '3 disponibles',
+            subtitle: '',
             onTap: () {},
           ),
         ],
@@ -381,38 +347,43 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
-  Widget _buildForumCard() {
-    final isDark = Theme.of(context).brightness == Brightness.dark; // 👈 CAMBIO 12
-    
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).pushNamed('/foro');
-      },
+Widget _buildForumCard() {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  
+  return GestureDetector(
+    onTap: () {
+      Navigator.of(context).pushNamed('/foro');
+    },
+    child: Container(
+      width: double.infinity,
+      height: 110,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        image: const DecorationImage(
+          image: AssetImage('assets/images/foro.jpg'),
+          fit: BoxFit.cover,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.grey.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
       child: Container(
-        width: double.infinity,
-        height: 100,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: const Color(0xFF6C63FF),
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: isDark // 👈 CAMBIO 13
-                  ? Colors.black.withOpacity(0.3)
-                  : Colors.grey.withOpacity(0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
+
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
+
               child: const Icon(
                 Icons.groups,
                 color: Colors.white,
@@ -420,35 +391,20 @@ class _HomeContentState extends State<HomeContent> {
               ),
             ),
             const SizedBox(width: 20),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Foro',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Únete a grupos de estudio',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
+            const Text(
+              'Foro',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildCard({
     required double height,
@@ -458,7 +414,7 @@ class _HomeContentState extends State<HomeContent> {
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark; // 👈 CAMBIO 14
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return InkWell(
       onTap: onTap,
@@ -469,7 +425,7 @@ class _HomeContentState extends State<HomeContent> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: isDark // 👈 CAMBIO 15
+              color: isDark
                   ? Colors.black.withOpacity(0.3)
                   : Colors.grey.withOpacity(0.2),
               blurRadius: 10,
