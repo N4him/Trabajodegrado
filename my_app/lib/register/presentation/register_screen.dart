@@ -85,11 +85,18 @@ class _RegisterScreenBodyState extends State<_RegisterScreenBody> {
             child: Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.topCenter,
                   children: [
-                    _buildHeader(),
-                    _buildForm(),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 80),
+                      child: _buildForm(),
+                    ),
+                    Positioned(
+                      top: -100,
+                      child: _buildHeader(),
+                    ),
                   ],
                 ),
               ),
@@ -122,26 +129,21 @@ class _RegisterScreenBodyState extends State<_RegisterScreenBody> {
 
   Widget _buildHeader() {
     return Container(
-      height: 100,
-      width: 100,
-      margin: const EdgeInsets.only(bottom: 24),
+      height: 300,
+      width: 300,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
-        ),
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF4CAF50).withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(20),
       ),
-      child: const Icon(
-        Icons.person_add,
-        size: 50,
-        color: Colors.white,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/ajolotes.png'),
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -166,6 +168,7 @@ class _RegisterScreenBodyState extends State<_RegisterScreenBody> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const SizedBox(height: 50),
             _buildTitle(),
             const SizedBox(height: 24),
             _buildNameField(),

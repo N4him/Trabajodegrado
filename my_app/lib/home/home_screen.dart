@@ -123,41 +123,32 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
-  Widget _buildHeaderSection(ProfileLoaded state) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+Widget _buildHeaderSection(ProfileLoaded state) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    return Container(
-      padding: const EdgeInsets.only(left: 5, right: 5, top: 35, bottom: 0),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(50),
-          bottomRight: Radius.circular(50),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
+  return Container(
+    padding: const EdgeInsets.only(left: 5, right: 5, top: 35, bottom: 0),
+    clipBehavior: Clip.antiAliasWithSaveLayer,
+    decoration: BoxDecoration(
+      color: isDark ? const Color(0xFF1A1A2E) : const Color.fromARGB(255, 235, 233, 243),
+      borderRadius: const BorderRadius.only(
+        bottomLeft: Radius.circular(30),
+        bottomRight: Radius.circular(30),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(height: 10),
-          _buildUserProfile(state),
-                    SizedBox(height:10),
 
-          _buildCarousel(),
-        ],
-      ),
-    );
-  }
 
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(height: 10),
+        _buildUserProfile(state),
+        SizedBox(height: 10),
+        _buildCarousel(),
+      ],
+    ),
+  );
+}
   Widget _buildUserProfile(ProfileLoaded state) {
     final colorScheme = Theme.of(context).colorScheme;
     
@@ -246,13 +237,13 @@ class _HomeContentState extends State<HomeContent> {
         children: _carouselImages.asMap().entries.map((entry) {
           return Container(
             width: 5,
-            height: 20,
+            height: 10,
             margin: const EdgeInsets.symmetric(horizontal: 4),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: _currentCarouselIndex == entry.key
-                  ? Colors.white
-                  : Colors.white.withOpacity(0.4),
+                  ? const Color.fromARGB(255, 39, 38, 38)
+                  : const Color.fromARGB(255, 95, 91, 91).withOpacity(0.4),
             ),
           );
         }).toList(),
@@ -281,118 +272,120 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
-Widget _buildLibraryCard() {
-  return SizedBox(
-    width: MediaQuery.of(context).size.width * 0.4,
-    child: GestureDetector(
-      onTap: () => Navigator.of(context).pushNamed('/library'),
-      child: Container(
-        height: 290,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          image: const DecorationImage(
-            image: AssetImage('assets/images/lib.png'),
-            fit: BoxFit.cover,
-          ),
-        ),
+  Widget _buildLibraryCard() {
+    return SizedBox(
+      width: MediaQuery.of(context).size.width * 0.4,
+      child: GestureDetector(
+        onTap: () => Navigator.of(context).pushNamed('/library'),
         child: Container(
+          height: 295,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(Icons.book, color: Colors.white, size: 40),
-              const SizedBox(height: 8),
-              const Text(
-                'Biblioteca',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+            border: Border.all(
+              color: const Color(0xFFA66059),
+              width: 3,
+            ),
+            image: const DecorationImage(
+              image: AssetImage('assets/images/biblio.jpg'),
+              fit: BoxFit.cover,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFA66059),
+                blurRadius: 0,
+                spreadRadius: 0,
+                offset: const Offset(6, 6),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.6),
+                blurRadius: 15,
+                spreadRadius: 1,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 8),
+                const Text(
+                  'Biblioteca',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildRightColumn() {
     return Expanded(
       child: Column(
         children: [
-          _buildCard(
-            height: 140,
-            color: const Color(0xFFFFBE0B),
-            icon: Icons.timeline,
-            title: 'Progresosssssss',
-            subtitle: '',
-            onTap: () {},
-          ),
-          const SizedBox(height: 10),
-          _buildCard(
-            height: 140,
-            color: const Color(0xFF4ECDC4),
-            icon: Icons.star,
-            title: 'Retos diariosss',
-            subtitle: '',
-            onTap: () {},
-          ),
+          _buildProgressCard(onTap: () {}),
+          const SizedBox(height: 20),
+          _buildHabitsCard(onTap: () {}),
         ],
       ),
     );
   }
 
-Widget _buildForumCard() {
+Widget _buildProgressCard({required VoidCallback onTap}) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
   
-  return GestureDetector(
-    onTap: () {
-      Navigator.of(context).pushNamed('/foro');
-    },
-    child: Container(
-      width: double.infinity,
-      height: 110,
+  return InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(20),
+    child: Ink(
       decoration: BoxDecoration(
+        color: const Color(0xFFFFBE0B),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFB0B89B),
+          width: 3,
+        ),
         image: const DecorationImage(
-          image: AssetImage('assets/images/foro.jpg'),
+          image: AssetImage('assets/images/equilibrio (3).jpg'),
           fit: BoxFit.cover,
         ),
         boxShadow: [
           BoxShadow(
+            color: const Color(0xFFB0B89B),
+            blurRadius: 0,
+            spreadRadius: 0,
+            offset: const Offset(6, 6),
+          ),
+          BoxShadow(
             color: isDark
                 ? Colors.black.withOpacity(0.3)
-                : Colors.grey.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+                : Colors.black.withOpacity(0.2),
+            blurRadius: 15,
+            spreadRadius: 1,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-
-        ),
+        height: 140,
+        padding: const EdgeInsets.all(10),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-
-              child: const Icon(
-                Icons.groups,
-                color: Colors.white,
-                size: 30,
-              ),
-            ),
-            const SizedBox(width: 20),
             const Text(
-              'Foro',
+              'Equilibrio\nMental',
+              textAlign: TextAlign.right,
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 22,
@@ -406,72 +399,114 @@ Widget _buildForumCard() {
   );
 }
 
-  Widget _buildCard({
-    required double height,
-    required Color color,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Ink(
+Widget _buildHabitsCard({required VoidCallback onTap}) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  
+  return InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(20),
+    child: Ink(
+      decoration: BoxDecoration(
+        color: const Color(0xFF4ECDC4),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFCDB38F),
+          width: 3,
+        ),
+        image: const DecorationImage(
+          image: AssetImage('assets/images/habito (1).jpg'),
+          fit: BoxFit.cover,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFCDB38F),
+            blurRadius: 0,
+            spreadRadius: 0,
+            offset: const Offset(6, 6),
+          ),
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.2),
+            blurRadius: 15,
+            spreadRadius: 1,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Container(
+        height: 120,
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Text(
+              'Hábitos',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+  Widget _buildForumCard() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).pushNamed('/foro');
+      },
+      child: Container(
+        width: double.infinity,
+        height: 110,
         decoration: BoxDecoration(
-          color: color,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: const Color(0x5A65AD),
+            width: 3,
+          ),
+          image: const DecorationImage(
+            image: AssetImage('assets/images/foros_card5.jpg'),
+            fit: BoxFit.cover,
+          ),
           boxShadow: [
             BoxShadow(
-              color: isDark
-                  ? Colors.black.withOpacity(0.3)
-                  : Colors.grey.withOpacity(0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
+              color: const Color.fromARGB(255, 77, 85, 150),
+              blurRadius: 0,
+              spreadRadius: 0,
+              offset: const Offset(6, 6),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 15,
+              spreadRadius: 1,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
         child: Container(
-          height: height,
           padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 30,
-                ),
+  
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
+              const SizedBox(width: 20),
+              const Text(
+                '    Foro',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),

@@ -14,7 +14,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = AdaptiveTheme.of(context).mode == AdaptiveThemeMode.dark;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -51,28 +50,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             
             SizedBox(height: 16),
             
-            _buildSettingItem(
-              context,
-              icon: Icons.dark_mode,
-              iconColor: Color(0xFF6C63FF),
-              iconBackgroundColor: Color(0xFF6C63FF).withOpacity(0.1),
-              title: 'Dark Mode',
-              subtitle: isDarkMode ? 'On' : 'Off',
-              trailing: Switch(
-                value: isDarkMode,
-                onChanged: (value) {
-                  if (value) {
-                    AdaptiveTheme.of(context).setDark();
-                  } else {
-                    AdaptiveTheme.of(context).setLight();
-                  }
-                },
-                activeColor: Color(0xFF6C63FF),
-                activeTrackColor: Color(0xFF6C63FF).withOpacity(0.3),
-              ),
-              showArrow: false,
-              onTap: () {},
-            ),
+
             
             SizedBox(height: 16),
             

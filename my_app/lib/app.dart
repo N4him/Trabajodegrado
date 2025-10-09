@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:my_app/forum/presentation/bloc/forum_bloc.dart';
 import 'package:my_app/library/domain/usescases/get_books.dart';
 import 'package:my_app/library/domain/usescases/get_books_by_category.dart';
@@ -20,9 +19,7 @@ import 'register/domain/usecases/register_user.dart';
 import 'profile/domain/repositories/profile_repository.dart';
 
 class MyApp extends StatelessWidget {
-  final AdaptiveThemeMode? savedThemeMode;
-  
-  const MyApp({super.key, this.savedThemeMode});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -54,13 +51,14 @@ class MyApp extends StatelessWidget {
             create: (_) => ProfileBloc(profileRepository: getIt<ProfileRepository>()),
           ),
           BlocProvider<ForumBloc>(
-            create: (_) => getIt<ForumBloc>(), // 👈 ahora disponible globalmente
+            create: (_) => getIt<ForumBloc>(),
           ),
         ],
-        child: AdaptiveTheme(
-          light: ThemeData.light(useMaterial3: true).copyWith(
+        child: MaterialApp(
+          title: 'Flutter BLoC App',
+          theme: ThemeData.light(useMaterial3: true).copyWith(
             primaryColor: const Color(0xFF6C63FF),
-            scaffoldBackgroundColor: Colors.transparent,
+            scaffoldBackgroundColor: const Color(0xFFF8F9FA),
             appBarTheme: const AppBarTheme(
               backgroundColor: Colors.white,
               foregroundColor: Colors.black,
@@ -70,33 +68,28 @@ class MyApp extends StatelessWidget {
               primary: Color(0xFF6C63FF),
               secondary: Color(0xFF5E35B1),
               surface: Colors.white,
-              background: Color(0xFFF8F9FA),
+              background: Color.fromARGB(255, 235, 233, 243),
             ),
           ),
-          dark: ThemeData.dark(useMaterial3: true).copyWith(
+          darkTheme: ThemeData.dark(useMaterial3: true).copyWith(
             primaryColor: const Color(0xFF6C63FF),
-            scaffoldBackgroundColor: Colors.transparent,
+            scaffoldBackgroundColor: const Color(0xFF1A1A2E),
             appBarTheme: const AppBarTheme(
-              backgroundColor: Color(0xFF1E1E1E),
-              foregroundColor: Colors.white,
+              backgroundColor: Color(0xFF2C3E50),
+              foregroundColor: Color.fromARGB(255, 241, 143, 143),
               elevation: 0,
             ),
             colorScheme: const ColorScheme.dark(
               primary: Color(0xFF7C6CFF),
               secondary: Color(0xFF6C63FF),
-              surface: Color(0xFF1E1E1E),
-              background: Color(0xFF121212),
+              surface: Color(0xFF2C3E50),
+              background: Color(0xFF1A1A2E),
             ),
           ),
-          initial: savedThemeMode ?? AdaptiveThemeMode.light,
-          builder: (theme, darkTheme) => MaterialApp(
-            title: 'Flutter BLoC App',
-            theme: theme,
-            darkTheme: darkTheme,
-            initialRoute: AppRouter.splash,
-            routes: AppRouter.routes,
-            debugShowCheckedModeBanner: false,
-          ),
+          themeMode: ThemeMode.system, // Sigue el tema del sistema por defecto
+          initialRoute: AppRouter.splash,
+          routes: AppRouter.routes,
+          debugShowCheckedModeBanner: false,
         ),
       ),
     );
