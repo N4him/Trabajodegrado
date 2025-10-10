@@ -46,25 +46,20 @@ final List<Widget> _screens = [
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 30,
-          ),
-        ],
+
       ),
       child: CurvedNavigationBar(
         index: _currentIndex,
         height: 70.0,
         items: const [
-          Icon(Icons.settings, size: 35, color: Colors.white),
-          Icon(Icons.home_rounded, size: 35, color: Colors.white),
-          Icon(Icons.person, size: 35, color: Colors.white),
+          Icon(Icons.settings, size: 35, color: Color.fromARGB(255, 235, 233, 243)),
+          Icon(Icons.home_rounded, size: 35, color: Color.fromARGB(255, 235, 233, 243)),
+          Icon(Icons.person, size: 35, color: Color.fromARGB(255, 235, 233, 243)),
         ],
-        color: Colors.black,
-backgroundColor:  Color.fromARGB(239, 0, 0, 0),
-        buttonBackgroundColor: Color(0xFF4ECDC4),
-        animationCurve: Curves.easeOutQuad,
+        color: const Color.fromARGB(255, 19, 18, 18),
+backgroundColor:  const Color.fromARGB(255, 235, 233, 243),
+        buttonBackgroundColor: Color.fromARGB(255, 24, 23, 23),
+        animationCurve: Curves.fastOutSlowIn,
         animationDuration: const Duration(milliseconds: 350),
         onTap: _handleTap,
       ),

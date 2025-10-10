@@ -33,10 +33,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     
     return Scaffold(
-      backgroundColor: colorScheme.background,
+            backgroundColor: const Color.fromARGB(255, 235, 233, 243),
+
       bottomNavigationBar: CustomNavigationBar(
         initialIndex: _currentIndex,
         onTap: _updateScreen,
@@ -149,21 +149,35 @@ Widget _buildHeaderSection(ProfileLoaded state) {
     ),
   );
 }
-  Widget _buildUserProfile(ProfileLoaded state) {
-    final colorScheme = Theme.of(context).colorScheme;
-    
-    return Row(
+Widget _buildUserProfile(ProfileLoaded state) {
+  final colorScheme = Theme.of(context).colorScheme;
+  
+  return Padding(
+    padding: const EdgeInsets.only(left: 15),
+    child: Row(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        CircleAvatar(
-          radius: 40,
-          backgroundImage: state.profile.photoUrl?.isNotEmpty == true
-              ? NetworkImage(state.profile.photoUrl!)
-              : null,
-          child: state.profile.photoUrl?.isEmpty != false
-              ? const Icon(Icons.person, size: 40, color: Colors.grey)
-              : null,
+        Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: CircleAvatar(
+            radius: 40,
+            backgroundImage: state.profile.photoUrl?.isNotEmpty == true
+                ? NetworkImage(state.profile.photoUrl!)
+                : null,
+            child: state.profile.photoUrl?.isEmpty != false
+                ? const Icon(Icons.person, size: 40, color: Colors.grey)
+                : null,
+          ),
         ),
         const SizedBox(width: 21),
         Column(
@@ -187,9 +201,9 @@ Widget _buildHeaderSection(ProfileLoaded state) {
           ],
         ),
       ],
-    );
-  }
-
+    ),
+  );
+}
   Widget _buildCarousel() {
     return SizedBox(
       width: double.infinity,

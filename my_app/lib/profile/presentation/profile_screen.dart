@@ -40,6 +40,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 235, 233, 243),
       body: BlocConsumer<ProfileBloc, ProfileState>(
         listener: _handleStateChanges,
         builder: (context, state) {
@@ -301,12 +302,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Widget _buildProfileInfo(String userName, String gender) {
     // Determinar el título basado en el género
-    String title = 'Experto';
-    if (gender.toLowerCase() == 'boy' || gender.toLowerCase() == 'male') {
-      title = 'Experto';
-    } else if (gender.toLowerCase() == 'girl' || gender.toLowerCase() == 'female') {
-      title = 'Experta';
-    }
+
 
     return Column(
       children: [
@@ -317,10 +313,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           maxLines: 1,
         ),
         const SizedBox(height: 4),
-        Text(
-          title,
-          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-        ),
+
         // Mostrar género como información adicional
       ],
     );
@@ -422,126 +415,12 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildStatsTab(int points, int level, String gender) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
+    return const Padding(
+      padding: EdgeInsets.all(16.0),
       child: Column(
         children: [
-          _buildStatCard(
-            icon: Icons.star,
-            title: 'Puntos Totales',
-            value: '$points',
-          ),
-          const SizedBox(height: 16),
-          _buildStatCard(
-            icon: Icons.trending_up,
-            title: 'Nivel Actual',
-            value: 'Nivel $level',
-          ),
-          const SizedBox(height: 16),
-          _buildProgressCard(points, level),
+          // Cards removidas
         ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard({
-    required IconData icon,
-    required String title,
-    required String value,
-  }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: const Color(0xFF7C4DFF),
-              size: 30,
-            ),
-            const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF7C4DFF),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProgressCard(int points, int level) {
-    final progressPoints = points % 100;
-    final progress = progressPoints / 100;
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.bar_chart,
-                  color: Color(0xFF7C4DFF),
-                  size: 24,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Progreso al Nivel ${level + 1}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor: Colors.grey[200],
-                valueColor:
-                    const AlwaysStoppedAnimation<Color>(Color(0xFF7C4DFF)),
-                minHeight: 8,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '$progressPoints/100 puntos',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
