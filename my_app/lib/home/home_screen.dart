@@ -328,7 +328,7 @@ Widget _buildUserProfile(ProfileLoaded state) {
               children: [
                 const SizedBox(height: 8),
                 const Text(
-                  'Biblioteca',
+                  'Biblioteca Digital',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -510,12 +510,11 @@ Widget _buildHabitsCard({required VoidCallback onTap}) {
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(0),
   
               ),
-              const SizedBox(width: 20),
               const Text(
-                '    Foro',
+                '    Foro de \n Comunidad',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 22,

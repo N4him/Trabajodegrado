@@ -44,7 +44,6 @@ class _ProfileScreenState extends State<ProfileScreen>
       body: BlocConsumer<ProfileBloc, ProfileState>(
         listener: _handleStateChanges,
         builder: (context, state) {
-          // Mostrar loading hasta que esté completamente cargado
           if (state is ProfileLoading) {
             return const Center(
               child: CircularProgressIndicator(
@@ -72,7 +71,6 @@ class _ProfileScreenState extends State<ProfileScreen>
       _showErrorSnackBar(state.message);
     }
 
-    // Mostrar mensaje de éxito solo después de una actualización
     if (state is ProfileLoaded) {
       final previousState = context.read<ProfileBloc>().state;
       if (previousState is ProfileUpdating) {
@@ -166,7 +164,6 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _handleRefresh() async {
     final completer = Completer<void>();
 
-    // Escuchar cambios de estado para completar el refresh
     late StreamSubscription subscription;
     subscription = context.read<ProfileBloc>().stream.listen((state) {
       if (state is ProfileLoaded || state is ProfileError) {
@@ -177,7 +174,6 @@ class _ProfileScreenState extends State<ProfileScreen>
       }
     });
 
-    // Disparar el evento de carga
     context.read<ProfileBloc>().add(LoadProfile());
 
     return completer.future;
@@ -188,30 +184,71 @@ class _ProfileScreenState extends State<ProfileScreen>
     final level = profile.level ?? 1;
     final points = profile.points ?? 0;
     final photoUrl = profile.photoUrl ?? '';
-    final gender = profile.gender ?? 'boy'; // Obtener gender del perfil
+    final gender = profile.gender ?? 'boy';
 
     return Stack(
       children: [
-        Card(
-          elevation: 4,
-          margin: EdgeInsets.zero,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(60),
-              bottomRight: Radius.circular(60),
+        // Contenedor exterior con sombra interna (efecto hundido)
+        Container(
+          decoration: BoxDecoration(
+            color: const Color.fromARGB(255, 235, 233, 243),
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(70),
+              bottomRight: Radius.circular(70),
             ),
+            boxShadow: [
+              // Sombra interior oscura (arriba-izquierda)
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                offset: const Offset(4, 4),
+                blurRadius: 8,
+                spreadRadius: 0,
+              ),
+              // Sombra interior clara (abajo-derecha) - efecto hundido
+              BoxShadow(
+                color: Colors.white.withOpacity(0.7),
+                offset: const Offset(-4, -4),
+                blurRadius: 8,
+                spreadRadius: 0,
+              ),
+            ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                const SizedBox(height: 40),
-                _buildProfileAvatar(photoUrl, userName, isUpdating, gender),
-                const SizedBox(height: 16),
-                _buildProfileInfo(userName, gender), // Pasar gender
-                const SizedBox(height: 24),
-                _buildProgressBar(level, points),
+          child: Container(
+            margin: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(56),
+                bottomRight: Radius.circular(56),
+              ),
+              boxShadow: [
+                // Sombra interna adicional para profundidad
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  offset: const Offset(2, 2),
+                  blurRadius: 6,
+                  spreadRadius: -2,
+                ),
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.3),
+                  offset: const Offset(-2, -2),
+                  blurRadius: 6,
+                  spreadRadius: -2,
+                ),
               ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  const SizedBox(height: 40),
+                  _buildProfileAvatar(photoUrl, userName, isUpdating, gender),
+                  const SizedBox(height: 16),
+                  _buildProfileInfo(userName, gender),
+                  const SizedBox(height: 24),
+                  _buildProgressBar(level, points),
+                ],
+              ),
             ),
           ),
         ),
@@ -295,15 +332,12 @@ class _ProfileScreenState extends State<ProfileScreen>
       context,
       currentName: userName,
       currentPhotoUrl: photoUrl,
-      gender: gender, // Pasar el gender al diálogo
+      gender: gender,
       onSave: _handleProfileUpdate,
     );
   }
 
   Widget _buildProfileInfo(String userName, String gender) {
-    // Determinar el título basado en el género
-
-
     return Column(
       children: [
         Text(
@@ -313,8 +347,6 @@ class _ProfileScreenState extends State<ProfileScreen>
           maxLines: 1,
         ),
         const SizedBox(height: 4),
-
-        // Mostrar género como información adicional
       ],
     );
   }
@@ -386,7 +418,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget _buildTabSection(dynamic profile) {
     final points = profile.points ?? 0;
     final level = profile.level ?? 1;
-    final gender = profile.gender ?? 'boy'; // Obtener gender para stats
+    final gender = profile.gender ?? 'boy';
 
     return SizedBox(
       height: 500,
@@ -418,9 +450,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     return const Padding(
       padding: EdgeInsets.all(16.0),
       child: Column(
-        children: [
-          // Cards removidas
-        ],
+        children: [],
       ),
     );
   }

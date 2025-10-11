@@ -148,124 +148,12 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
                 ),
               ),
             )
-          else
-            GestureDetector(
-              onTap: _showQuickSearchOptions,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFF5E35B1),
-                      Color(0xFF3949AB),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.tune_rounded,
-                  color: Colors.white,
-                  size: 16,
-                ),
-              ),
-            ),
+          
         ],
       ),
     );
   }
 
-  void _showQuickSearchOptions() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.flash_on,
-                    color: Color(0xFF5E35B1),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Búsquedas Rápidas',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _buildQuickSearchChip('Ficción', Icons.auto_stories),
-                  _buildQuickSearchChip('Historia', Icons.history_edu),
-                  _buildQuickSearchChip('Ciencia', Icons.science),
-                  _buildQuickSearchChip('Arte', Icons.palette),
-                  _buildQuickSearchChip('Cervantes', Icons.person),
-                  _buildQuickSearchChip('Quijote', Icons.menu_book),
-                  _buildQuickSearchChip('Filosofía', Icons.psychology),
-                  _buildQuickSearchChip('Novela', Icons.book),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Sugerencias:',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                '• Busca por título completo o parcial\n• Usa palabras clave del título\n• Presiona Enter para búsqueda inmediata\n• Los resultados se filtran automáticamente',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5E35B1),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Cerrar',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
 
   Widget _buildQuickSearchChip(String label, IconData icon) {
     return ActionChip(

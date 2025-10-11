@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_app/forum/presentation/bloc/forum_bloc.dart';
+import 'package:my_app/library/domain/repositories/saved_book_entity.dart';
+import 'package:my_app/library/domain/usescases/check_book_saved_usecase.dart';
+import 'package:my_app/library/domain/usescases/delete_saved_book_usecase.dart';
 import 'package:my_app/library/domain/usescases/get_books.dart';
 import 'package:my_app/library/domain/usescases/get_books_by_category.dart';
+import 'package:my_app/library/domain/usescases/get_user_saved_books_usecase.dart';
+import 'package:my_app/library/domain/usescases/save_book_usecase.dart';
 import 'package:my_app/library/domain/usescases/search_books.dart';
 import 'package:my_app/library/presentation/blocs/library_bloc.dart';
+
+import 'package:my_app/library/presentation/blocs/saved_book_bloc.dart';
 
 import 'core/di/injector.dart';
 import 'config/app_router.dart';
@@ -50,6 +57,15 @@ class MyApp extends StatelessWidget {
           BlocProvider<ProfileBloc>(
             create: (_) => ProfileBloc(profileRepository: getIt<ProfileRepository>()),
           ),
+          BlocProvider<SavedBookBloc>(
+            create: (_) => SavedBookBloc(
+              saveBookUseCase: getIt<SaveBookUseCase>(),
+              getUserSavedBooksUseCase: getIt<GetUserSavedBooksUseCase>(),
+              deleteSavedBookUseCase: getIt<DeleteSavedBookUseCase>(),
+              checkBookSavedUseCase: getIt<CheckBookSavedUseCase>(),
+              repository: getIt<SavedBookRepository>(),
+            ),
+          ),
           BlocProvider<ForumBloc>(
             create: (_) => getIt<ForumBloc>(),
           ),
@@ -86,7 +102,7 @@ class MyApp extends StatelessWidget {
               background: Color(0xFF1A1A2E),
             ),
           ),
-          themeMode: ThemeMode.system, // Sigue el tema del sistema por defecto
+          themeMode: ThemeMode.system,
           initialRoute: AppRouter.splash,
           routes: AppRouter.routes,
           debugShowCheckedModeBanner: false,
@@ -95,3 +111,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+// IMPORTANTE: No olvides agregar el import faltante
+// import 'package:my_app/books/domain/repositories/saved_book_repository.dart';

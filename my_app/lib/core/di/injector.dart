@@ -14,13 +14,25 @@ import 'package:my_app/forum/domain/usescases/search_forum_posts.dart';
 // ==============================================
 import 'package:my_app/library/data/datasources/library_remote_datasource.dart';
 import 'package:my_app/library/data/datasources/library_remote_datasource_impl.dart';
+import 'package:my_app/library/data/datasources/saved_book_remote_datasource.dart';
+import 'package:my_app/library/data/datasources/saved_book_repository_impl.dart';
 import 'package:my_app/library/data/repositories/library_repository_impl.dart';
 import 'package:my_app/library/domain/repositories/library_repository.dart';
+import 'package:my_app/library/domain/repositories/saved_book_entity.dart';
+import 'package:my_app/library/domain/usescases/check_book_saved_usecase.dart';
+import 'package:my_app/library/domain/usescases/delete_saved_book_usecase.dart';
 import 'package:my_app/library/domain/usescases/get_book_by_id.dart';
 import 'package:my_app/library/domain/usescases/get_books.dart';
 import 'package:my_app/library/domain/usescases/get_books_by_category.dart';
+import 'package:my_app/library/domain/usescases/get_user_saved_books_usecase.dart';
+import 'package:my_app/library/domain/usescases/save_book_usecase.dart';
 import 'package:my_app/library/domain/usescases/search_books.dart';
 import 'package:my_app/library/presentation/blocs/library_bloc.dart';
+
+// ==============================================
+// SAVED BOOKS (Libros Guardados)
+// ==============================================
+import 'package:my_app/library/presentation/blocs/saved_book_bloc.dart';
 
 // ==============================================
 // LOGIN
@@ -53,7 +65,6 @@ import '../../profile/presentation/bloc/profile_bloc.dart';
 import 'package:my_app/forum/data/datasources/forum_remote_data_source.dart';
 import 'package:my_app/forum/data/repositories/forum_repository_impl.dart';
 import 'package:my_app/forum/domain/repositories/forum_repository.dart';
-
 import 'package:my_app/forum/presentation/bloc/forum_bloc.dart';
 
 final getIt = GetIt.instance;
@@ -87,6 +98,11 @@ Future<void> setupDI() async {
     () => ForumRemoteDataSourceImpl(firestore: getIt()),
   );
 
+  // Saved Books DataSource
+  getIt.registerLazySingleton<SavedBookRemoteDataSource>(
+    () => SavedBookRemoteDataSourceImpl(getIt()),
+  );
+
   // ==============================================
   // REPOSITORIES
   // ==============================================
@@ -111,6 +127,11 @@ Future<void> setupDI() async {
 
   getIt.registerLazySingleton<ForumRepository>(
     () => ForumRepositoryImpl(remoteDataSource: getIt()),
+  );
+
+  // Saved Books Repository
+  getIt.registerLazySingleton<SavedBookRepository>(
+    () => SavedBookRepositoryImpl(getIt()),
   );
 
   // ==============================================
@@ -141,6 +162,23 @@ Future<void> setupDI() async {
     () => SearchBooks(getIt()),
   );
 
+  // Saved Books Use Cases
+  getIt.registerLazySingleton<SaveBookUseCase>(
+    () => SaveBookUseCase(getIt()),
+  );
+
+  getIt.registerLazySingleton<GetUserSavedBooksUseCase>(
+    () => GetUserSavedBooksUseCase(getIt()),
+  );
+
+  getIt.registerLazySingleton<DeleteSavedBookUseCase>(
+    () => DeleteSavedBookUseCase(getIt()),
+  );
+
+  getIt.registerLazySingleton<CheckBookSavedUseCase>(
+    () => CheckBookSavedUseCase(getIt()),
+  );
+
   // Forum Use Cases
   getIt.registerLazySingleton<GetForumPosts>(
     () => GetForumPosts(getIt()),
@@ -158,11 +196,11 @@ Future<void> setupDI() async {
     () => DeleteForumPost(getIt()),
   );
   getIt.registerLazySingleton<SearchForumPosts>(
-  () => SearchForumPosts(getIt()),
-);
-getIt.registerLazySingleton<GetUserForumPosts>(
-  () => GetUserForumPosts(getIt()),
-);
+    () => SearchForumPosts(getIt()),
+  );
+  getIt.registerLazySingleton<GetUserForumPosts>(
+    () => GetUserForumPosts(getIt()),
+  );
 
   // ==============================================
   // BLOCS - FACTORY REGISTRATION
@@ -187,6 +225,17 @@ getIt.registerLazySingleton<GetUserForumPosts>(
     ),
   );
 
+  // Saved Books BLoC
+  getIt.registerFactory<SavedBookBloc>(
+    () => SavedBookBloc(
+      saveBookUseCase: getIt<SaveBookUseCase>(),
+      getUserSavedBooksUseCase: getIt<GetUserSavedBooksUseCase>(),
+      deleteSavedBookUseCase: getIt<DeleteSavedBookUseCase>(),
+      checkBookSavedUseCase: getIt<CheckBookSavedUseCase>(),
+      repository: getIt<SavedBookRepository>(),
+    ),
+  );
+
   getIt.registerFactory<ForumBloc>(
     () => ForumBloc(
       getForumPostsUseCase: getIt<GetForumPosts>(),
@@ -207,6 +256,7 @@ LoginBloc getLoginBloc() => getIt<LoginBloc>();
 RegisterBloc getRegisterBloc() => getIt<RegisterBloc>();
 ProfileBloc getProfileBloc() => getIt<ProfileBloc>();
 LibraryBloc getLibraryBloc() => getIt<LibraryBloc>();
+SavedBookBloc getSavedBookBloc() => getIt<SavedBookBloc>();
 ForumBloc getForumBloc() => getIt<ForumBloc>();
 
 // ==============================================

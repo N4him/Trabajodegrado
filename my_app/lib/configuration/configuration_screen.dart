@@ -18,98 +18,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       backgroundColor: Color.fromARGB(255, 235, 233, 243),
       body: ListView(
-        padding: EdgeInsets.zero,
+        padding: const EdgeInsets.only(top: 16),
         children: [
-          Container(
-            width: double.infinity,
-            height: 170,
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFD1D1E0),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
-              ),
-              boxShadow: [
-                // Capa 1 - más cercana (simula el grosor)
-                BoxShadow(
-                  color: const Color(0xFFAAAAC5),
-                  offset: const Offset(0, 2),
-                  blurRadius: 0,
-                ),
-                // Capa 2
-                BoxShadow(
-                  color: const Color(0xFFAAAAC5),
-                  offset: const Offset(0, 4),
-                  blurRadius: 0,
-                ),
-                // Capa 3
-                BoxShadow(
-                  color: const Color(0xFFAAAAC5),
-                  offset: const Offset(0, 6),
-                  blurRadius: 0,
-                ),
-                // Capa 4
-                BoxShadow(
-                  color: const Color(0xFFAAAAC5),
-                  offset: const Offset(0, 8),
-                  blurRadius: 0,
-                ),
-                // Capa 5 - más profunda
-                BoxShadow(
-                  color: const Color(0xFFAAAAC5),
-                  offset: const Offset(0, 10),
-                  blurRadius: 0,
-                ),
-                // Sombra final difusa
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  offset: const Offset(0, 12),
-                  blurRadius: 15,
-                  spreadRadius: 0,
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(24),
-                bottomRight: Radius.circular(24),
-              ),
-              child: Stack(
-                children: [
-                  // Imagen de fondo
-                  Positioned.fill(
-                    child: Image.asset(
-                      'assets/images/ajolote_conf (5).png',
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  // Título a la izquierda
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 25, top: 25),
-                      child: Text(
-                        'Configuración',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 50, 16, 16),
+            child: Text(
+              'Configuración',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
               ),
             ),
           ),
-          const SizedBox(height: 16),
           _buildSectionHeader('SOPORTE'),
           const SizedBox(height: 8),
           _buildGroupContainer([
             _buildSettingTile(
               icon: Icons.help_center_outlined,
               title: 'Centro de Ayuda',
+              iconColor: const Color(0xFF6C63FF),
               onTap: () {
                 _showCustomSnackBar(context, 'Abriendo Centro de Ayuda', Icons.help_center);
               },
@@ -119,6 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildSettingTile(
               icon: Icons.info_outline,
               title: 'Acerca de',
+              iconColor: const Color.fromARGB(255, 70, 70, 78),
               onTap: () => _showAboutDialog(),
               isLast: true,
             ),
@@ -129,6 +58,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildSettingTile(
               icon: Icons.bug_report_outlined,
               title: 'Reportar un error',
+              iconColor: const Color.fromARGB(255, 98, 187, 110),
               onTap: () {
                 _showCustomSnackBar(context, 'Abriendo reporte de errores', Icons.bug_report);
               },
@@ -137,7 +67,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildDivider(),
             _buildSettingTile(
               icon: Icons.send_outlined,
-              title: 'Enviar comentarios',
+              title: 'Enviar comentario',
+              iconColor: const Color(0xFF26C6DA),
               onTap: () {
                 _showCustomSnackBar(context, 'Abriendo formulario de comentarios', Icons.send);
               },
@@ -150,6 +81,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildSettingTile(
               icon: Icons.logout,
               title: 'Cerrar Sesión',
+              iconColor: const Color(0xFFFF5252),
               onTap: () => _showLogoutDialog(),
               isFirst: true,
               isLast: true,
@@ -197,6 +129,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
+    Color? iconColor,
     bool isFirst = false,
     bool isLast = false,
   }) {
@@ -219,7 +152,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Icon(
                 icon,
                 size: 24,
-                color: isDark ? Colors.grey[300] : Colors.grey[800],
+                color: iconColor ?? (isDark ? Colors.grey[300] : Colors.grey[800]),
               ),
               const SizedBox(width: 16),
               Expanded(
