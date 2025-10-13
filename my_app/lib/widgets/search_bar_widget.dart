@@ -97,7 +97,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(25),
+        borderRadius: BorderRadius.circular(90),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -110,7 +110,9 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
         children: [
           Icon(
             _isSearching ? Icons.search : Icons.search_rounded,
-            color: _isSearching ? const Color(0xFF4CAF50) : const Color(0xFF5E35B1),
+            color: _isSearching ? const Color(0xFF4CAF50) : const Color(0xFF9c6055
+
+),
             size: 22,
           ),
           const SizedBox(width: 12),
@@ -122,7 +124,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
                 fontSize: 16,
               ),
               decoration: InputDecoration(
-                hintText: 'Buscar por título del libro...',
+                hintText: 'Busca por título...',
                 hintStyle: TextStyle(
                   color: Colors.grey[500],
                   fontSize: 14,

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:my_app/core/di/injector.dart';
 import 'package:my_app/library/presentation/blocs/library_bloc.dart';
 import 'package:my_app/library/presentation/blocs/library_event.dart';
 import 'package:my_app/library/presentation/blocs/library_state.dart';
+import 'package:my_app/library/presentation/blocs/saved_book_bloc.dart';
+import 'package:my_app/library/presentation/blocs/saved_book_event.dart';
 import 'package:my_app/config/app_router.dart';
+import 'package:my_app/library/presentation/saved_book.dart';
 
 import '../../widgets/book_card_widget.dart';
 import '../../widgets/category_chip_widget.dart';
@@ -31,11 +35,15 @@ class _LibraryPageState extends State<LibraryPage>
   String currentSearchQuery = '';
   int _currentIndex = 0;
   final GlobalKey<CurvedNavigationBarState> _bottomNavigationKey = GlobalKey();
+  
+  late String _userId;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
     super.initState();
     
+    _userId = _auth.currentUser?.uid ?? '';
     _libraryBloc = getIt<LibraryBloc>();
     
     _headerAnimationController = AnimationController(
@@ -66,6 +74,10 @@ class _LibraryPageState extends State<LibraryPage>
     });
 
     _libraryBloc.add(GetBooksEvent());
+    
+    if (_userId.isNotEmpty) {
+      context.read<SavedBookBloc>().add(GetUserSavedBooksEvent(_userId));
+    }
   }
 
   @override
@@ -75,6 +87,17 @@ class _LibraryPageState extends State<LibraryPage>
     _scrollController.dispose();
     _libraryBloc.close();
     super.dispose();
+  }
+
+  Future<void> _refreshLibrary() async {
+    if (currentSearchQuery.isNotEmpty) {
+      _libraryBloc.add(SearchBooksEvent(currentSearchQuery));
+    } else if (selectedCategory != 'Todos') {
+      _libraryBloc.add(GetBooksByCategoryEvent(selectedCategory));
+    } else {
+      _libraryBloc.add(GetBooksEvent());
+    }
+    await Future.delayed(const Duration(milliseconds: 500));
   }
 
   void _handleSearch(String query) {
@@ -115,13 +138,8 @@ class _LibraryPageState extends State<LibraryPage>
 
   void _onNavBarTap(int index) {
     setState(() {
-      _currentIndex = 0;
+      _currentIndex = index;
     });
-
-    if (index == 1) {
-      // Navegar a la pantalla de libros guardados
-      Navigator.pushNamed(context, AppRouter.savedBooks);
-    }
   }
 
   @override
@@ -133,112 +151,118 @@ class _LibraryPageState extends State<LibraryPage>
       value: _libraryBloc,
       child: Scaffold(
         backgroundColor: isDark ? colorScheme.background : const Color(0xFFFAF9F6),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Banner destacado con búsqueda integrada
-                _buildFeaturedBannerWithSearch(),
-                
-                const SizedBox(height: 20),
-                
-                // Categorías (chips horizontales)
-                if (currentSearchQuery.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: CategoryChipWidget(
-                      selectedCategory: selectedCategory,
-                      onCategoryChanged: _handleCategoryChange,
-                    ),
-                  ),
-                
-                if (currentSearchQuery.isEmpty) const SizedBox(height: 24),
-                
-                // Grid de libros
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: BlocConsumer<LibraryBloc, LibraryState>(
-                    listener: (context, state) {
-                      if (state is LibraryLoaded) {
-                        // ignore: unused_local_variable
-                        for (var book in state.books) {
-                        }
-                      } else if (state is LibraryError) {
-                      }
-                    },
-                    builder: (context, state) {
-                      if (state is LibraryLoading) {
-                        return Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(60.0),
-                            child: Column(
-                              children: [
-                                const CircularProgressIndicator(
-                                  color: Color(0xFF9D6055),
-                                  strokeWidth: 3,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'Loading books...',
-                                  style: TextStyle(
-                                    color: colorScheme.onSurface.withOpacity(0.6),
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      } else if (state is LibraryLoaded) {
-                        if (state.books.isEmpty) {
-                          return _buildEmptyState();
-                        }
-
-                       return ListView.separated(
-                         shrinkWrap: true,
-                         physics: const NeverScrollableScrollPhysics(),
-                         itemCount: state.books.length,
-                         separatorBuilder: (context, index) => const SizedBox(height: 12),
-                         itemBuilder: (context, index) {
-                           final book = state.books[index];
-                           return BookCardWidget(
-                             key: Key('book_${book.id}'),
-                             book: book,
-                             onTap: () => _navigateToBookDetail(context, book.id),
-                           );
-                         },
-                       );
-                      } else if (state is LibraryError) {
-                        return _buildErrorState(state.message);
-                      }
-                      
-                      return const SizedBox();
-                    },
-                  ),
-                ),
-
-                const SizedBox(height: 80), // Espacio para la barra de navegación
-              ],
-            ),
-          ),
+        body: IndexedStack(
+          index: _currentIndex,
+          children: [
+            _buildLibraryView(colorScheme, isDark),
+            const SavedBooksPage(),
+          ],
         ),
         bottomNavigationBar: CurvedNavigationBar(
           key: _bottomNavigationKey,
           index: _currentIndex,
           height: 60.0,
           items: const <Widget>[
-            Icon(Icons.home_rounded, size: 30, color: Colors.white),
+            Icon(Icons.book_rounded, size: 30, color: Colors.white),
             Icon(Icons.bookmark_rounded, size: 30, color: Colors.white),
           ],
-          color: const Color(0xFFa65f59),
-          buttonBackgroundColor: const Color.fromARGB(255, 196, 110, 100),
+          color: const Color.fromARGB(255, 160, 93, 85),
+          buttonBackgroundColor: const Color.fromARGB(255, 192, 113, 104),
           backgroundColor: Colors.transparent,
-          animationCurve: Curves.easeInOut,
+          animationCurve: Curves.linearToEaseOut,
           animationDuration: const Duration(milliseconds: 300),
           onTap: _onNavBarTap,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLibraryView(ColorScheme colorScheme, bool isDark) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        controller: _scrollController,
+
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFeaturedBannerWithSearch(),
+            
+            if (currentSearchQuery.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: CategoryChipWidget(
+                  selectedCategory: selectedCategory,
+                  onCategoryChanged: _handleCategoryChange,
+                ),
+              ),
+            
+            if (currentSearchQuery.isEmpty) const SizedBox(height: 24),
+            
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: BlocConsumer<LibraryBloc, LibraryState>(
+                listener: (context, state) {},
+                builder: (context, state) {
+                  if (state is LibraryLoading) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(60.0),
+                        child: Column(
+                          children: [
+                            const CircularProgressIndicator(
+                              color: Color(0xFF9D6055),
+                              strokeWidth: 3,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Cargando libros...',
+                              style: TextStyle(
+                                color: colorScheme.onSurface.withOpacity(0.6),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  } else if (state is LibraryLoaded) {
+                    if (state.books.isEmpty) {
+                      return _buildEmptyState();
+                    }
+
+                    // RefreshIndicator solo para la lista de libros
+                    return RefreshIndicator(
+                      onRefresh: _refreshLibrary,
+                      color: const Color(0xFF9D6055),
+                      backgroundColor: colorScheme.surface,
+                      strokeWidth: 3,
+                      displacement: 40,
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: state.books.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final book = state.books[index];
+                          return BookCardWidget(
+                            key: Key('book_${book.id}'),
+                            book: book,
+                            onTap: () => _navigateToBookDetail(context, book.id),
+                          );
+                        },
+                      ),
+                    );
+                  } else if (state is LibraryError) {
+                    return _buildErrorState(state.message);
+                  }
+                  
+                  return const SizedBox();
+                },
+              ),
+            ),
+
+            const SizedBox(height: 80),
+          ],
         ),
       ),
     );
@@ -248,20 +272,19 @@ class _LibraryPageState extends State<LibraryPage>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
-      height: 240,
+      height: 250,
       width: double.infinity,
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.2),
-            blurRadius: 15,
-            offset: const Offset(0, 2),
+            blurRadius: 30,
+            offset: const Offset(15, 15),
           ),
         ],
       ),
       child: Stack(
         children: [
-          // Imagen de fondo desde assets
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
@@ -272,7 +295,6 @@ class _LibraryPageState extends State<LibraryPage>
               ),
             ),
           ),
-          // Overlay oscuro para mejorar legibilidad
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -280,28 +302,27 @@ class _LibraryPageState extends State<LibraryPage>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    const Color.fromARGB(255, 114, 35, 35).withOpacity(0.4),
-                    const Color.fromARGB(255, 114, 35, 35).withOpacity(0.6),
+                    const Color(0xFF9d3f35).withOpacity(0.1),
+                    const Color(0xFF9d3f35).withOpacity(0.1),
                   ],
                 ),
               ),
             ),
           ),
-          // Contenido con título y búsqueda
           Positioned(
             left: 0,
             right: 0,
-            bottom: 0,
+            bottom: 30,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              padding: const EdgeInsets.symmetric(horizontal: 30.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text(
-                    'Discover Your Next Great Read',
+                    'Biblioteca P.A.P',
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: 40,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                       height: 1.2,
@@ -310,6 +331,23 @@ class _LibraryPageState extends State<LibraryPage>
                           color: Colors.black45,
                           offset: Offset(1, 1),
                           blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Lee, Aplica, Apoya',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black45,
+                          offset: Offset(1, 1),
+                          blurRadius: 3,
                         ),
                       ],
                     ),
@@ -339,9 +377,7 @@ class _LibraryPageState extends State<LibraryPage>
         child: Container(
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: isDark 
-              ? colorScheme.surface 
-              : Colors.white,
+            color: isDark ? colorScheme.surface : Colors.white,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
@@ -371,8 +407,8 @@ class _LibraryPageState extends State<LibraryPage>
               const SizedBox(height: 24),
               Text(
                 currentSearchQuery.isNotEmpty
-                  ? 'No results found'
-                  : 'Something went wrong',
+                  ? 'No se encontraron resultados'
+                  : 'Algo salió mal',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -383,7 +419,7 @@ class _LibraryPageState extends State<LibraryPage>
               const SizedBox(height: 8),
               Text(
                 currentSearchQuery.isNotEmpty
-                  ? 'No books found for "$currentSearchQuery"'
+                  ? 'No se encontraron libros para "$currentSearchQuery"'
                   : message,
                 style: TextStyle(
                   fontSize: 14,
@@ -420,7 +456,7 @@ class _LibraryPageState extends State<LibraryPage>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      currentSearchQuery.isNotEmpty ? 'Clear search' : 'Retry',
+                      currentSearchQuery.isNotEmpty ? 'Limpiar búsqueda' : 'Reintentar',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
@@ -446,9 +482,7 @@ class _LibraryPageState extends State<LibraryPage>
         child: Container(
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: isDark 
-              ? colorScheme.surface 
-              : Colors.white,
+            color: isDark ? colorScheme.surface : Colors.white,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
@@ -470,17 +504,17 @@ class _LibraryPageState extends State<LibraryPage>
                   currentSearchQuery.isNotEmpty 
                     ? Icons.search_off_rounded
                     : Icons.auto_stories_rounded,
-                  size: 80,
+                  size: 30,
                   color: const Color(0xFF9D6055).withOpacity(0.7),
                 ),
               ),
               const SizedBox(height: 24),
               Text(
                 currentSearchQuery.isNotEmpty
-                  ? 'No books found'
+                  ? 'No se encontraron libros'
                   : selectedCategory != 'Todos'
-                    ? 'No books in this category'
-                    : 'No books available',
+                    ? 'No hay libros en esta categoría'
+                    : 'No hay libros disponibles',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -491,10 +525,10 @@ class _LibraryPageState extends State<LibraryPage>
               const SizedBox(height: 8),
               Text(
                 currentSearchQuery.isNotEmpty
-                  ? 'Try different search terms: "$currentSearchQuery"'
+                  ? 'Intenta con otros términos: "$currentSearchQuery"'
                   : selectedCategory != 'Todos'
-                    ? 'No books found in "$selectedCategory" category'
-                    : 'Books will appear here when available',
+                    ? 'No se encontraron libros en "$selectedCategory"'
+                    : 'Los libros aparecerán aquí cuando estén disponibles',
                 style: TextStyle(
                   fontSize: 14,
                   color: colorScheme.onSurface.withOpacity(0.5),
@@ -514,13 +548,13 @@ class _LibraryPageState extends State<LibraryPage>
                     ),
                     elevation: 0,
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
+                    children: [
                       Icon(Icons.library_books_rounded, size: 20),
                       SizedBox(width: 8),
                       Text(
-                        'View all books',
+                        'Ver todos los libros',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,

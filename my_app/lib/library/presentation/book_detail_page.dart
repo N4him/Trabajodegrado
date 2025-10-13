@@ -7,7 +7,6 @@ import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 class BookDetailPage extends StatefulWidget {
   final String bookId;
 
-  // ignore: use_super_parameters
   const BookDetailPage({Key? key, required this.bookId}) : super(key: key);
 
   @override
@@ -20,6 +19,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
   PdfViewerController? _pdfViewerController;
   bool _isPdfLoading = true;
   String? _pdfError;
+  bool _showBookInfo = true;
 
   @override
   void initState() {
@@ -57,10 +57,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 1
+    final colorScheme = Theme.of(context).colorScheme;
     
     return Scaffold(
-      backgroundColor: colorScheme.background, // 👈 CAMBIO 2 (era Color(0xFFF8F9FA))
+      backgroundColor: colorScheme.background,
       appBar: _buildAppBar(),
       body: FutureBuilder<BookEntity?>(
         future: _bookFuture,
@@ -70,13 +70,13 @@ class _BookDetailPageState extends State<BookDetailPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const CircularProgressIndicator(color: Color(0xFF6C63FF)),
+                  const CircularProgressIndicator(color: const Color.fromARGB(255, 160, 93, 85)),
                   const SizedBox(height: 16),
                   Text(
                     'Cargando libro...',
                     style: TextStyle(
                       fontSize: 16,
-                      color: colorScheme.onSurface.withOpacity(0.7), // 👈 CAMBIO 3
+                      color: colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                 ],
@@ -94,21 +94,21 @@ class _BookDetailPageState extends State<BookDetailPage> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface, // 👈 CAMBIO 4
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     snapshot.error?.toString() ?? 'Error desconocido',
                     style: TextStyle(
-                      color: colorScheme.onSurface.withOpacity(0.6), // 👈 CAMBIO 5
+                      color: colorScheme.onSurface.withOpacity(0.6),
                     ),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => setState(() => _loadBook()),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6C63FF),
+                      backgroundColor: const Color.fromARGB(255, 160, 93, 85),
                       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -131,7 +131,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
                   Icon(
                     Icons.picture_as_pdf,
                     size: 64,
-                    color: colorScheme.onSurface.withOpacity(0.3), // 👈 CAMBIO 6
+                    color: colorScheme.onSurface.withOpacity(0.3),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -139,7 +139,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface, // 👈 CAMBIO 7
+                      color: colorScheme.onSurface,
                     ),
                   ),
                 ],
@@ -147,42 +147,89 @@ class _BookDetailPageState extends State<BookDetailPage> {
             );
           }
 
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                _buildBookHeader(book),
-                _buildPdfViewer(book),
-                const SizedBox(height: 24),
-              ],
-            ),
+          return Stack(
+            children: [
+              Column(
+                children: [
+                  // Header del libro - Se muestra/oculta con animación
+                  if (_showBookInfo)
+                    Expanded(
+                      child: _buildBookHeader(book, context),
+                    ),
+                  
+                  // PDF Viewer - Ocupa el espacio restante automáticamente
+                  if (!_showBookInfo)
+                    Expanded(
+                      child: _buildPdfViewer(book),
+                    ),
+                ],
+              ),
+              
+              // Botón flotante para mostrar/ocultar info
+              Positioned(
+                bottom: 24,
+                right: 24,
+                child: _buildToggleInfoButton(),
+              ),
+            ],
           );
         },
       ),
     );
   }
 
+  Widget _buildToggleInfoButton() {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _showBookInfo = !_showBookInfo;
+        });
+      },
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(255, 160, 93, 85),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: const Color.fromARGB(255, 160, 93, 85).withOpacity(0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Icon(
+          _showBookInfo ? Icons.menu_book : Icons.info_outline,
+          color: Colors.white,
+          size: 28,
+        ),
+      ),
+    );
+  }
+
   PreferredSizeWidget _buildAppBar() {
-    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 8
-    final isDark = Theme.of(context).brightness == Brightness.dark; // 👈 CAMBIO 9
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return AppBar(
-      backgroundColor: colorScheme.surface, // 👈 CAMBIO 10 (era Colors.white)
+      backgroundColor: colorScheme.surface,
       elevation: 0,
       leading: Container(
-        margin: const EdgeInsets.only(left: 8),
+        margin: const EdgeInsets.only(left:5,),
         child: IconButton(
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: isDark // 👈 CAMBIO 11
+              color: isDark
                   ? colorScheme.surface.withOpacity(0.5)
-                  : const Color(0xFFF7FAFC),
+                  : const Color.fromARGB(255, 160, 93, 85),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               Icons.arrow_back_ios_new,
-              color: colorScheme.onSurface, // 👈 CAMBIO 12
-              size: 18,
+              color: colorScheme.onSurface,
+              size: 20,
             ),
           ),
           onPressed: () => Navigator.pop(context),
@@ -190,15 +237,15 @@ class _BookDetailPageState extends State<BookDetailPage> {
       ),
       actions: [
         Container(
-          margin: const EdgeInsets.only(right: 16),
+          margin: const EdgeInsets.only(right: 5),
           child: IconButton(
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: isDark
                     ? colorScheme.surface.withOpacity(0.5)
-                    : const Color(0xFFF7FAFC),
-                borderRadius: BorderRadius.circular(10),
+                    : const Color.fromARGB(255, 160, 93, 85),
+                borderRadius: BorderRadius.circular(40),
               ),
               child: Icon(
                 Icons.more_horiz,
@@ -214,11 +261,11 @@ class _BookDetailPageState extends State<BookDetailPage> {
   }
 
   void _showOptionsMenu() {
-    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 13
+    final colorScheme = Theme.of(context).colorScheme;
     
     showModalBottomSheet(
       context: context,
-      backgroundColor: colorScheme.surface, // 👈 CAMBIO 14 (era Colors.white)
+      backgroundColor: colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -250,26 +297,26 @@ class _BookDetailPageState extends State<BookDetailPage> {
   }
 
   Widget _buildOptionItem(IconData icon, String title, VoidCallback onTap) {
-    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 15
+    final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isDark // 👈 CAMBIO 16
+          color: isDark
               ? colorScheme.surface.withOpacity(0.5)
               : const Color(0xFFF7FAFC),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, color: const Color(0xFF6C63FF), size: 20),
+        child: Icon(icon, color: const Color.fromARGB(255, 160, 93, 85), size: 20),
       ),
       title: Text(
         title,
         style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
-          color: colorScheme.onSurface, // 👈 CAMBIO 17
+          color: colorScheme.onSurface,
         ),
       ),
       onTap: onTap,
@@ -277,36 +324,36 @@ class _BookDetailPageState extends State<BookDetailPage> {
   }
 
   void _showJumpToPageDialog() {
-    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 18
+    final colorScheme = Theme.of(context).colorScheme;
     final TextEditingController pageController = TextEditingController();
     
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: colorScheme.surface, // 👈 CAMBIO 19
+        backgroundColor: colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Ir a página',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: colorScheme.onSurface, // 👈 CAMBIO 20
+            color: colorScheme.onSurface,
           ),
         ),
         content: TextField(
           controller: pageController,
           keyboardType: TextInputType.number,
-          style: TextStyle(color: colorScheme.onSurface), // 👈 CAMBIO 21
+          style: TextStyle(color: colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: 'Número de página',
             hintStyle: TextStyle(
-              color: colorScheme.onSurface.withOpacity(0.5), // 👈 CAMBIO 22
+              color: colorScheme.onSurface.withOpacity(0.5),
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF6C63FF), width: 2),
+              borderSide: const BorderSide(color: const Color.fromARGB(255, 160, 93, 85), width: 2),
             ),
           ),
         ),
@@ -316,7 +363,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
             child: Text(
               'Cancelar',
               style: TextStyle(
-                color: colorScheme.onSurface.withOpacity(0.6), // 👈 CAMBIO 23
+                color: colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
           ),
@@ -329,7 +376,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C63FF),
+              backgroundColor: const Color.fromARGB(255, 160, 93, 85),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             child: const Text('Ir'),
@@ -339,171 +386,162 @@ class _BookDetailPageState extends State<BookDetailPage> {
     );
   }
 
-  Widget _buildBookHeader(BookEntity book) {
-    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 24
+  Widget _buildBookHeader(BookEntity book, BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
-      color: colorScheme.surface, // 👈 CAMBIO 25 (era Colors.white)
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-      child: Column(
-        children: [
-          // Book cover with shadow
-          Container(
-            width: 180,
-            height: 260,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark // 👈 CAMBIO 26
-                      ? Colors.black.withOpacity(0.5)
-                      : const Color(0xFF6C63FF).withOpacity(0.2),
-                  blurRadius: 30,
-                  offset: const Offset(0, 15),
-                  spreadRadius: -5,
+      width: double.infinity,
+      color: colorScheme.surface,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 20),
+            // Portada del libro
+            Container(
+              width: 220,
+              height: 320,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDark
+                        ? Colors.black.withOpacity(0.5)
+                        : const Color.fromARGB(255, 160, 93, 85).withOpacity(0.2),
+                    blurRadius: 30,
+                    offset: const Offset(0, 15),
+                    spreadRadius: -5,
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: book.coverUrl.isNotEmpty
+                    ? Image.network(
+                        book.coverUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  const Color.fromARGB(255, 160, 93, 85),
+                                  const Color.fromARGB(255, 160, 93, 85),
+                                ],
+                              ),
+                            ),
+                            child: const Icon(Icons.menu_book, color: Colors.white, size: 64),
+                          );
+                        },
+                      )
+                    : Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              const Color.fromARGB(255, 160, 93, 85),
+                              const Color.fromARGB(255, 160, 93, 85),
+                            ],
+                          ),
+                        ),
+                        child: const Icon(Icons.menu_book, color: Colors.white, size: 64),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Título
+            Text(
+              book.title,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+                height: 1.2,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 12),
+            
+            // Autor
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.person_outline,
+                  size: 16,
+                  color: const  Color.fromARGB(255, 160, 93, 85).withOpacity(0.6),
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    book.author,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: colorScheme.onSurface.withOpacity(0.6),
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: book.coverUrl.isNotEmpty
-                  ? Image.network(
-                      book.coverUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                const Color(0xFF6C63FF),
-                                const Color(0xFF4834DF),
-                              ],
-                            ),
-                          ),
-                          child: const Icon(Icons.menu_book, color: Colors.white, size: 64),
-                        );
-                      },
-                    )
-                  : Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            const Color(0xFF6C63FF),
-                            const Color(0xFF4834DF),
-                          ],
-                        ),
-                      ),
-                      child: const Icon(Icons.menu_book, color: Colors.white, size: 64),
-                    ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          // Book title
-          Text(
-            book.title,
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface, // 👈 CAMBIO 27 (era Color(0xFF1A202C))
-              height: 1.2,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          // Author
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.person_outline,
-                size: 16,
-                color: colorScheme.onSurface.withOpacity(0.6), // 👈 CAMBIO 28
-              ),
-              const SizedBox(width: 6),
-              Text(
-                book.author,
+            const SizedBox(height: 16),
+            
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Descripción',
                 style: TextStyle(
                   fontSize: 16,
-                  color: colorScheme.onSurface.withOpacity(0.6), // 👈 CAMBIO 29
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Category badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF6C63FF).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: const Color(0xFF6C63FF).withOpacity(0.3),
-                width: 1,
-              ),
             ),
-            child: Text(
-              book.category,
-              style: const TextStyle(
-                color: Color(0xFF6C63FF),
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          // Description section
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Descripción',
+            const SizedBox(height: 12),
+            Text(
+              book.description.isNotEmpty 
+                  ? book.description 
+                  : 'Explora este fascinante libro y sumérgete en su contenido. Una obra imprescindible que te transportará a través de sus páginas con historias cautivadoras y conocimientos valiosos.',
               style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface, // 👈 CAMBIO 30
+                fontSize: 14,
+                color: colorScheme.onSurface.withOpacity(0.7),
+                height: 1.6,
+                letterSpacing: 0.2,
               ),
+              textAlign: TextAlign.left,
+              maxLines: 6,
+              overflow: TextOverflow.ellipsis,
             ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            book.description.isNotEmpty 
-                ? book.description 
-                : 'Explora este fascinante libro y sumérgete en su contenido. Una obra imprescindible que te transportará a través de sus páginas con historias cautivadoras y conocimientos valiosos.',
-            style: TextStyle(
-              fontSize: 15,
-              color: colorScheme.onSurface.withOpacity(0.7), // 👈 CAMBIO 31
-              height: 1.6,
-              letterSpacing: 0.2,
-            ),
-            textAlign: TextAlign.left,
-          ),
-        ],
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildPdfViewer(BookEntity book) {
-    final colorScheme = Theme.of(context).colorScheme; // 👈 CAMBIO 32
+    final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
-      height: 500,
-      margin: const EdgeInsets.only(top: 8),
       decoration: BoxDecoration(
-        color: colorScheme.surface, // 👈 CAMBIO 33
+        color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: isDark // 👈 CAMBIO 34
+            color: isDark
                 ? Colors.black.withOpacity(0.3)
                 : Colors.black.withOpacity(0.08),
             blurRadius: 20,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, -4),
           ),
         ],
       ),
@@ -536,18 +574,18 @@ class _BookDetailPageState extends State<BookDetailPage> {
           ),
           if (_isPdfLoading)
             Container(
-              color: colorScheme.surface, // 👈 CAMBIO 35
+              color: colorScheme.surface,
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const CircularProgressIndicator(color: Color(0xFF6C63FF)),
+                    const CircularProgressIndicator(color: const Color.fromARGB(255, 160, 93, 85)),
                     const SizedBox(height: 16),
                     Text(
                       'Cargando PDF...',
                       style: TextStyle(
                         fontSize: 16,
-                        color: colorScheme.onSurface.withOpacity(0.7), // 👈 CAMBIO 36
+                        color: colorScheme.onSurface.withOpacity(0.7),
                       ),
                     ),
                   ],
@@ -556,7 +594,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
             ),
           if (_pdfError != null)
             Container(
-              color: colorScheme.surface, // 👈 CAMBIO 37
+              color: colorScheme.surface,
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -568,7 +606,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface, // 👈 CAMBIO 38
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -577,28 +615,29 @@ class _BookDetailPageState extends State<BookDetailPage> {
                       child: Text(
                         _pdfError!,
                         style: TextStyle(
-                          color: colorScheme.onSurface.withOpacity(0.6), // 👈 CAMBIO 39
+                          color: colorScheme.onSurface.withOpacity(0.6),
                         ),
                         textAlign: TextAlign.center,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _isPdfLoading = true;
-                          _pdfError = null;
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6C63FF),
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text('Reintentar'),
-                    ),
+ElevatedButton(
+  onPressed: () {
+    setState(() {
+      _isPdfLoading = true;
+      _pdfError = null;
+    });
+  },
+  style: ElevatedButton.styleFrom(
+    backgroundColor: const Color.fromARGB(255, 160, 93, 85),
+    foregroundColor: Colors.white, // Color del texto
+    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(8),
+    ),
+  ),
+  child: const Text('Reintentar'),
+),
                   ],
                 ),
               ),
