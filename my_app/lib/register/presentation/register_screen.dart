@@ -6,6 +6,7 @@ import 'package:my_app/widgets/custom_snackbar.dart';
 import 'blocs/register_bloc.dart';
 import 'blocs/register_event.dart';
 import 'blocs/register_state.dart';
+import 'package:flutter/gestures.dart';
 
 class RegisterScreen extends StatelessWidget {
   const RegisterScreen({super.key});
@@ -65,41 +66,42 @@ class _RegisterScreenBodyState extends State<_RegisterScreenBody> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isSmallScreen = size.height < 700;
+    
     return Scaffold(
+      backgroundColor: const Color(0xFFE8DFE3),
       body: BlocListener<RegisterBloc, RegisterState>(
         listener: _handleStateChanges,
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF4CAF50),
-                Color(0xFF66BB6A),
-                Color(0xFF81C784),
-                Color(0xFF9CCC65),
-              ],
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: size.width * 0.06,
+              vertical: isSmallScreen ? 8 : 12,
             ),
-          ),
-          child: SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  alignment: Alignment.topCenter,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 80),
-                      child: _buildForm(),
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    child: Column(
+                      children: [
+                        SizedBox(height: isSmallScreen ? 8 : 12),
+                        _buildIllustration(context, isSmallScreen),
+                        SizedBox(height: isSmallScreen ? 12 : 16),
+                        _buildTitle(isSmallScreen),
+                        SizedBox(height: isSmallScreen ? 16 : 20),
+                        _buildRegisterForm(isSmallScreen),
+                        SizedBox(height: isSmallScreen ? 8 : 12),
+                        _buildOrDivider(),
+                        SizedBox(height: isSmallScreen ? 6 : 8),
+                        _buildLoginTextLink(),
+                      ],
                     ),
-                    Positioned(
-                      top: -100,
-                      child: _buildHeader(),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
@@ -127,156 +129,222 @@ class _RegisterScreenBodyState extends State<_RegisterScreenBody> {
     }
   }
 
-  Widget _buildHeader() {
+  Widget _buildIllustration(BuildContext context, bool isSmallScreen) {
+    final size = MediaQuery.of(context).size;
+    
+    double illustrationSize;
+    if (size.height < 600) {
+      illustrationSize = size.width * 0.3;
+    } else if (isSmallScreen) {
+      illustrationSize = size.width * 0.38;
+    } else {
+      illustrationSize = size.width * 0.55;
+    }
+    
+    illustrationSize = illustrationSize.clamp(100.0, 280.0);
+    
     return Container(
-      height: 300,
-      width: 300,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          decoration: const BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/images/ajolotes.png'),
-              fit: BoxFit.contain,
-            ),
-          ),
-        ),
+      height: illustrationSize,
+      width: illustrationSize,
+      child: Image.asset(
+        'assets/images/ajolote_register.png',
+        fit: BoxFit.contain,
       ),
     );
   }
 
-  Widget _buildForm() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(60),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 50),
-            _buildTitle(),
-            const SizedBox(height: 24),
-            _buildNameField(),
-            const SizedBox(height: 16),
-            _buildEmailField(),
-            const SizedBox(height: 16),
-            _buildPasswordField(),
-            const SizedBox(height: 16),
-            _buildGenderSection(),
-            const SizedBox(height: 24),
-            _buildRegisterButton(),
-            const SizedBox(height: 20),
-            _buildLoginLink(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTitle() {
-    return const Text(
-      'Crear Cuenta',
+  Widget _buildTitle(bool isSmallScreen) {
+    return Text(
+      '¡Crea una cuenta!',
       style: TextStyle(
-        fontSize: 28,
+        fontSize: isSmallScreen ? 26 : 32,
         fontWeight: FontWeight.bold,
-        color: Color(0xFF2D2D2D),
+        color: const Color(0xFF6B5B5A),
+        letterSpacing: 0.5,
       ),
       textAlign: TextAlign.center,
     );
   }
 
+  Widget _buildRegisterForm(bool isSmallScreen) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        children: [
+          _buildNameField(),
+          SizedBox(height: isSmallScreen ? 10 : 14),
+          _buildEmailField(),
+          SizedBox(height: isSmallScreen ? 10 : 14),
+          _buildPasswordField(),
+          SizedBox(height: isSmallScreen ? 14 : 18),
+          _buildGenderSection(isSmallScreen),
+          SizedBox(height: isSmallScreen ? 16 : 20),
+          _buildRegisterButton(),
+        ],
+      ),
+    );
+  }
+
   Widget _buildNameField() {
-    return _buildInputField(
-      controller: _nameController,
-      hintText: 'Tu nombre completo',
-      icon: Icons.person_outline,
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Por favor ingresa tu nombre';
-        }
-        return null;
-      },
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 500),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: _nameController,
+        style: const TextStyle(
+          fontSize: 15,
+          color: Color(0xFF2D2D2D),
+        ),
+        decoration: InputDecoration(
+          hintText: 'Tu nombre completo',
+          hintStyle: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 15,
+          ),
+          prefixIcon: Padding(
+            padding: const EdgeInsets.only(left: 20, right: 12),
+            child: Icon(
+              Icons.person_outline,
+              color: Colors.grey.shade700,
+              size: 22,
+            ),
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 22,
+          ),
+        ),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Por favor ingresa tu nombre';
+          }
+          return null;
+        },
+      ),
     );
   }
 
   Widget _buildEmailField() {
-    return _buildInputField(
-      controller: _emailController,
-      hintText: 'tu@email.com',
-      icon: Icons.alternate_email,
-      keyboardType: TextInputType.emailAddress,
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Por favor ingresa tu email';
-        }
-        if (!value.contains('@')) {
-          return 'Por favor ingresa un email válido';
-        }
-        return null;
-      },
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 500),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: _emailController,
+        keyboardType: TextInputType.emailAddress,
+        style: const TextStyle(
+          fontSize: 15,
+          color: Color(0xFF2D2D2D),
+        ),
+        decoration: InputDecoration(
+          hintText: 'tu@email.com',
+          hintStyle: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 15,
+          ),
+          prefixIcon: Padding(
+            padding: const EdgeInsets.only(left: 20, right: 12),
+            child: Icon(
+              Icons.alternate_email,
+              color: Colors.grey.shade700,
+              size: 22,
+            ),
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 22,
+          ),
+        ),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Por favor ingresa tu email';
+          }
+          if (!value.contains('@')) {
+            return 'Por favor ingresa un email válido';
+          }
+          return null;
+        },
+      ),
     );
   }
 
   Widget _buildPasswordField() {
     return Container(
+      constraints: const BoxConstraints(maxWidth: 500),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: TextFormField(
         controller: _passwordController,
         obscureText: _obscurePassword,
         style: const TextStyle(
-          fontSize: 16,
+          fontSize: 15,
           color: Color(0xFF2D2D2D),
         ),
         decoration: InputDecoration(
-          hintText: '••••••••••••',
-          hintStyle: const TextStyle(
-            color: Color(0xFF9E9E9E),
-            fontSize: 16,
+          hintText: '••••••••••••••••',
+          hintStyle: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 15,
           ),
-          prefixIcon: Container(
-            padding: const EdgeInsets.all(12),
-            child: const Icon(
+          prefixIcon: Padding(
+            padding: const EdgeInsets.only(left: 20, right: 12),
+            child: Icon(
               Icons.lock_outline,
-              color: Color(0xFF4CAF50),
-              size: 20,
+              color: Colors.grey.shade700,
+              size: 22,
             ),
           ),
-          suffixIcon: IconButton(
-            icon: Icon(
-              _obscurePassword
-                  ? Icons.visibility_outlined
-                  : Icons.visibility_off_outlined,
-              color: const Color(0xFF9E9E9E),
-              size: 20,
+          suffixIcon: Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: IconButton(
+              icon: Icon(
+                _obscurePassword
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+                color: Colors.grey.shade600,
+                size: 22,
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscurePassword = !_obscurePassword;
+                });
+              },
             ),
-            onPressed: () {
-              setState(() {
-                _obscurePassword = !_obscurePassword;
-              });
-            },
           ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 20,
-            vertical: 16,
+            vertical: 22,
           ),
         ),
         validator: (value) {
@@ -292,92 +360,45 @@ class _RegisterScreenBodyState extends State<_RegisterScreenBody> {
     );
   }
 
-  Widget _buildInputField({
-    required TextEditingController controller,
-    required String hintText,
-    required IconData icon,
-    required String? Function(String?) validator,
-    TextInputType? keyboardType,
-  }) {
+  Widget _buildGenderSection(bool isSmallScreen) {
     return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        style: const TextStyle(
-          fontSize: 16,
-          color: Color(0xFF2D2D2D),
-        ),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: const TextStyle(
-            color: Color(0xFF9E9E9E),
-            fontSize: 16,
-          ),
-          prefixIcon: Container(
-            padding: const EdgeInsets.all(12),
-            child: Icon(
-              icon,
-              color: const Color(0xFF4CAF50),
-              size: 20,
-            ),
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 16,
-          ),
-        ),
-        validator: validator,
-      ),
-    );
-  }
-
-  Widget _buildGenderSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Género',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF2D2D2D),
-            letterSpacing: 0.5,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            _buildGenderOption(
-              value: "boy",
-              label: "Masculino",
-              icon: Icons.male_rounded,
-              color: const Color(0xFF2196F3),
-            ),
-            _buildGenderOption(
-              value: "girl",
-              label: "Femenino",
-              icon: Icons.female_rounded,
-              color: const Color(0xFFE91E63),
-            ),
-          ],
-        ),
-        if (_selectedGenero == null)
+      constraints: const BoxConstraints(maxWidth: 500),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Padding(
-            padding: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.only(left: 8, bottom: 12),
             child: Text(
-              'Selecciona tu género',
+              'Género',
               style: TextStyle(
-                color: Colors.red.shade600,
-                fontSize: 12,
+                fontSize: isSmallScreen ? 14 : 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF6B5B5A),
+                letterSpacing: 0.5,
               ),
             ),
           ),
-      ],
+          Row(
+            children: [
+              _buildGenderOption(
+                value: "boy",
+                label: "Masculino",
+                icon: Icons.male_rounded,
+                color: const Color(0xFFB8956A),
+                isSmallScreen: isSmallScreen,
+              ),
+              const SizedBox(width: 12),
+              _buildGenderOption(
+                value: "girl",
+                label: "Femenino",
+                icon: Icons.female_rounded,
+                color: const Color(0xFFC4937A),
+                isSmallScreen: isSmallScreen,
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -386,6 +407,7 @@ class _RegisterScreenBodyState extends State<_RegisterScreenBody> {
     required String label,
     required IconData icon,
     required Color color,
+    required bool isSmallScreen,
   }) {
     final isSelected = _selectedGenero == value;
 
@@ -399,8 +421,7 @@ class _RegisterScreenBodyState extends State<_RegisterScreenBody> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeInOut,
-          height: 60,
-          margin: const EdgeInsets.symmetric(horizontal: 4),
+          height: isSmallScreen ? 54 : 60,
           decoration: BoxDecoration(
             gradient: isSelected
                 ? LinearGradient(
@@ -412,34 +433,28 @@ class _RegisterScreenBodyState extends State<_RegisterScreenBody> {
                     end: Alignment.bottomRight,
                   )
                 : null,
-            color: isSelected ? null : const Color(0xFFF8F9FA),
-            borderRadius: BorderRadius.circular(16),
+            color: isSelected ? null : Colors.white,
+            borderRadius: BorderRadius.circular(30),
             border: Border.all(
-              color: isSelected ? color : const Color(0xFFE9ECEF),
+              color: isSelected ? color : Colors.grey.shade300,
               width: isSelected ? 2 : 1,
             ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: color.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+            boxShadow: [
+              BoxShadow(
+                color: isSelected
+                    ? color.withOpacity(0.3)
+                    : Colors.black.withOpacity(0.1),
+                blurRadius: isSelected ? 8 : 4,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          child: Column(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? Colors.white.withOpacity(0.2)
@@ -449,16 +464,19 @@ class _RegisterScreenBodyState extends State<_RegisterScreenBody> {
                 child: Icon(
                   icon,
                   color: isSelected ? Colors.white : color,
-                  size: 20,
+                  size: isSmallScreen ? 18 : 20,
                 ),
               ),
-              const SizedBox(height: 3),
-              Text(
-                label,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : const Color(0xFF495057),
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  fontSize: 12,
+              SizedBox(width: isSmallScreen ? 6 : 8),
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : const Color(0xFF495057),
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: isSmallScreen ? 13 : 14,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -472,18 +490,20 @@ class _RegisterScreenBodyState extends State<_RegisterScreenBody> {
     return BlocBuilder<RegisterBloc, RegisterState>(
       builder: (context, state) {
         return Container(
+          width: double.infinity,
           height: 56,
+          constraints: const BoxConstraints(maxWidth: 500),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               colors: [
-                Color(0xFF4CAF50),
-                Color(0xFF2E7D32),
+                const Color(0xFFB8956A).withOpacity(0.9),
+                const Color(0xFFA6825C).withOpacity(0.9),
               ],
             ),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF4CAF50).withOpacity(0.3),
+                color: const Color(0xFFB8956A).withOpacity(0.4),
                 blurRadius: 12,
                 offset: const Offset(0, 6),
               ),
@@ -495,25 +515,37 @@ class _RegisterScreenBodyState extends State<_RegisterScreenBody> {
               backgroundColor: Colors.transparent,
               shadowColor: Colors.transparent,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(30),
               ),
             ),
             child: state is RegisterLoading
                 ? const SizedBox(
-                    height: 20,
-                    width: 20,
+                    height: 24,
+                    width: 24,
                     child: CircularProgressIndicator(
                       color: Colors.white,
-                      strokeWidth: 2,
+                      strokeWidth: 2.5,
                     ),
                   )
-                : const Text(
-                    'Crear Cuenta',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Registrarse',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(
+                        Icons.arrow_forward,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ],
                   ),
           ),
         );
@@ -521,31 +553,89 @@ class _RegisterScreenBodyState extends State<_RegisterScreenBody> {
     );
   }
 
-  Widget _buildLoginLink() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Text(
-          "¿Ya tienes cuenta? ",
-          style: TextStyle(
-            color: Color(0xFF9E9E9E),
-            fontSize: 14,
-          ),
-        ),
-        GestureDetector(
-          onTap: () {
-            Navigator.of(context).pushReplacementNamed('/login');
-          },
-          child: const Text(
-            "Inicia Sesión",
-            style: TextStyle(
-              color: Color(0xFF4CAF50),
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
+  Widget _buildOrDivider() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 500),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: 1,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF6B5B5A).withOpacity(0),
+                    const Color(0xFF6B5B5A).withOpacity(0.5),
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
-      ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'O',
+              style: TextStyle(
+                color: const Color(0xFF6B5B5A).withOpacity(0.8),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Container(
+              height: 1,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF6B5B5A).withOpacity(0.5),
+                    const Color(0xFF6B5B5A).withOpacity(0),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoginTextLink() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 500),
+      child: Column(
+        children: [
+          RichText(
+            textAlign: TextAlign.center,
+            text: TextSpan(
+              style: const TextStyle(
+                fontSize: 15,
+                color: Color(0xFF6B5B5A),
+              ),
+              children: [
+                const TextSpan(
+                  text: '¿Ya tienes una cuenta? ',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                TextSpan(
+                  text: 'Inicia sesión aquí',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFB8956A),
+                    decoration: TextDecoration.underline,
+                  ),
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () {
+                      Navigator.of(context).pushReplacementNamed('/login');
+                    },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
