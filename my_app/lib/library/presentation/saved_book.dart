@@ -456,12 +456,7 @@ class _SavedBooksPageState extends State<SavedBooksPage> {
   Widget _buildDefaultBookCover(SavedBookEntity book, ColorScheme colorScheme) {
     // Colores variados para las portadas por defecto
     final colors = [
-      [const Color(0xFF9D6055), const Color(0xFF7D4845)],
-      [const Color(0xFF6C63FF), const Color(0xFF4834DF)],
-      [const Color(0xFF48BB78), const Color(0xFF38A169)],
-      [const Color(0xFFED8936), const Color(0xFFDD6B20)],
-      [const Color(0xFF4299E1), const Color(0xFF3182CE)],
-      [const Color(0xFFED64A6), const Color(0xFFD53F8C)],
+      [const Color(0xFF9D6055), const Color(0xFF9D6055)],
     ];
     
     final colorIndex = book.title.length % colors.length;

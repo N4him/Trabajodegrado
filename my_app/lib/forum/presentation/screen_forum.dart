@@ -7,8 +7,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_app/forum/domain/entities/forum_entity.dart';
 import 'package:my_app/forum/presentation/bloc/forum_bloc.dart';
 import 'package:my_app/forum/presentation/bloc/forum_state.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 import 'bloc/forum_event.dart' as forum_event;
+
+const Color primaryColor = Color(0xFF5A65AD);
+const Color accentColor = Color(0xFF6E7CC0);
+const Color backgroundColor = Color(0xFFF8F9FD);
 
 class ForumScreen extends StatefulWidget {
   const ForumScreen({Key? key}) : super(key: key);
@@ -19,13 +24,24 @@ class ForumScreen extends StatefulWidget {
 
 class _ForumScreenState extends State<ForumScreen> {
   final user = FirebaseAuth.instance.currentUser;
-  String selectedTab = 'Popular';
+  String? selectedCategory;
   final TextEditingController _searchController = TextEditingController();
+  final Set<String> _loadedPostIds = {};
+  bool _showCategoryFilter = false;
+  bool _showMyPosts = false;
+
+  static const List<String> categories = [
+    'Popular',
+    'General',
+    'Help',
+    'Discussion',
+    'Announcement',
+  ];
 
   @override
   void initState() {
     super.initState();
-    context.read<ForumBloc>().add(forum_event.LoadForumPostsEvent());
+    context.read<ForumBloc>().add( forum_event.LoadForumPostsEvent());
   }
 
   @override
@@ -34,28 +50,73 @@ class _ForumScreenState extends State<ForumScreen> {
     super.dispose();
   }
 
-  void _onTabChanged(String tab) {
+  void _onCategoryChanged(String? category) {
     setState(() {
-      selectedTab = tab;
+      selectedCategory = category;
       _searchController.clear();
+      _loadedPostIds.clear();
+      _showMyPosts = false;
     });
 
-    if (tab == 'Popular') {
-      context.read<ForumBloc>().add(forum_event.LoadForumPostsEvent());
-    } else if (tab == 'Mis posts' && user != null) {
-      context.read<ForumBloc>().add(forum_event.LoadUserForumPostsEvent(user!.uid));
+    if (category == 'Popular') {
+      context.read<ForumBloc>().add(const forum_event.LoadPopularForumPostsEvent());
+    } else if (category != null) {
+      context.read<ForumBloc>().add(forum_event.LoadForumPostsByCategoryEvent(category));
+    } else {
+      context.read<ForumBloc>().add( forum_event.LoadForumPostsEvent());
     }
   }
 
   void _onSearchChanged(String query) {
+    setState(() {
+      _loadedPostIds.clear();
+    });
+
     if (query.isEmpty) {
-      if (selectedTab == 'Popular') {
-        context.read<ForumBloc>().add(forum_event.LoadForumPostsEvent());
-      } else if (selectedTab == 'Mis posts' && user != null) {
+      if (_showMyPosts && user != null) {
         context.read<ForumBloc>().add(forum_event.LoadUserForumPostsEvent(user!.uid));
+      } else if (selectedCategory == 'Popular') {
+        context.read<ForumBloc>().add(const forum_event.LoadPopularForumPostsEvent());
+      } else if (selectedCategory != null) {
+        context.read<ForumBloc>().add(forum_event.LoadForumPostsByCategoryEvent(selectedCategory!));
+      } else {
+        context.read<ForumBloc>().add( forum_event.LoadForumPostsEvent());
       }
     } else {
       context.read<ForumBloc>().add(forum_event.SearchForumPostsEvent(query));
+    }
+  }
+
+  void _toggleMyPosts() {
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: const [
+              Icon(Icons.login_rounded, color: Colors.white),
+              SizedBox(width: 12),
+              Text('Debes iniciar sesión para ver tus posts'),
+            ],
+          ),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _showMyPosts = !_showMyPosts;
+      _loadedPostIds.clear();
+      _searchController.clear();
+      selectedCategory = null;
+    });
+
+    if (_showMyPosts) {
+      context.read<ForumBloc>().add(forum_event.LoadUserForumPostsEvent(user!.uid));
+    } else {
+      context.read<ForumBloc>().add( forum_event.LoadForumPostsEvent());
     }
   }
 
@@ -63,13 +124,13 @@ class _ForumScreenState extends State<ForumScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: backgroundColor,
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
             _buildSearchBar(),
-            _buildTabBar(),
+            _buildHeader(),
+            _buildTitleBar(),
             Expanded(
               child: BlocConsumer<ForumBloc, ForumState>(
                 listener: (context, state) {
@@ -80,18 +141,18 @@ class _ForumScreenState extends State<ForumScreen> {
                   }
                   if (state is ForumPostCreated) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Post created successfully')),
+                      const SnackBar(content: Text('Post creado exitosamente')),
                     );
                   }
                   if (state is ForumPostDeleted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Post deleted')),
+                      const SnackBar(content: Text('Post eliminado')),
                     );
                   }
                 },
                 builder: (context, state) {
                   if (state is ForumLoading) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const Center(child: CircularProgressIndicator(color: primaryColor));
                   }
 
                   if (state is ForumLoaded) {
@@ -100,27 +161,42 @@ class _ForumScreenState extends State<ForumScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.forum_outlined, size: 80, color: Colors.grey[300]),
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: primaryColor.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.forum_outlined,
+                                size: 60,
+                                color: primaryColor.withOpacity(0.6),
+                              ),
+                            ),
                             const SizedBox(height: 16),
                             Text(
                               _searchController.text.isNotEmpty
-                                  ? 'No results found'
-                                  : selectedTab == 'Mis posts'
-                                      ? 'No posts yet'
-                                      : 'No posts yet',
-                              style: TextStyle(
+                                  ? 'No se encontraron resultados'
+                                  : _showMyPosts
+                                      ? 'No tienes posts aún'
+                                      : selectedCategory != null
+                                          ? 'No hay posts en esta categoría'
+                                          : 'No hay posts aún',
+                              style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.grey[600],
+                                color: Color(0xFF1A1D2E),
                               ),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               _searchController.text.isNotEmpty
-                                  ? 'Try searching with different keywords'
-                                  : selectedTab == 'Mis posts'
-                                      ? 'Create your first post'
-                                      : 'Be the first to start a discussion',
+                                  ? 'Intenta con otras palabras clave'
+                                  : _showMyPosts
+                                      ? 'Crea tu primer post'
+                                      : selectedCategory != null
+                                          ? 'Prueba con otra categoría'
+                                          : 'Sé el primero en iniciar una discusión',
                               style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                             ),
                           ],
@@ -130,27 +206,53 @@ class _ForumScreenState extends State<ForumScreen> {
 
                     return RefreshIndicator(
                       onRefresh: () async {
-                        if (selectedTab == 'Popular') {
-                          context.read<ForumBloc>().add(forum_event.LoadForumPostsEvent());
-                        } else if (user != null) {
-                          context.read<ForumBloc>().add(forum_event.LoadUserForumPostsEvent(user!.uid));
+                        _loadedPostIds.clear();
+                        if (_showMyPosts && user != null) {
+                          context.read<ForumBloc>().add(
+                            forum_event.LoadUserForumPostsEvent(user!.uid),
+                          );
+                        } else if (selectedCategory == 'Popular') {
+                          context.read<ForumBloc>().add(
+                            const forum_event.LoadPopularForumPostsEvent(),
+                          );
+                        } else if (selectedCategory != null) {
+                          context.read<ForumBloc>().add(
+                            forum_event.LoadForumPostsByCategoryEvent(selectedCategory!),
+                          );
+                        } else {
+                          context.read<ForumBloc>().add(
+                             forum_event.LoadForumPostsEvent(),
+                          );
                         }
                       },
-                      color: const Color(0xFF667EEA),
+                      color: primaryColor,
                       child: ListView(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         children: [
                           const SizedBox(height: 16),
-                          ...state.posts.map((post) => ModernForumPostCard(post: post)),
+                          ...state.posts.asMap().entries.map((entry) {
+                            final post = entry.value;
+                            return LazyForumPostCard(
+                              key: ValueKey(post.id),
+                              post: post,
+                              postId: post.id,
+                              isLoaded: _loadedPostIds.contains(post.id),
+                              onVisibilityChanged: (isVisible) {
+                                if (isVisible) {
+                                  setState(() {
+                                    _loadedPostIds.add(post.id);
+                                  });
+                                }
+                              },
+                            );
+                          }),
                           const SizedBox(height: 80),
                         ],
                       ),
                     );
                   }
 
-                  return const Center(
-                    child: Text('Loading...'),
-                  );
+                  return const Center(child: Text('Cargando...'));
                 },
               ),
             ),
@@ -159,14 +261,12 @@ class _ForumScreenState extends State<ForumScreen> {
       ),
       floatingActionButton: Container(
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-          ),
-          borderRadius: BorderRadius.circular(16),
+          color: primaryColor,
+          borderRadius: BorderRadius.circular(40),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF667EEA).withOpacity(0.5),
-              blurRadius: 20,
+              color: primaryColor.withOpacity(0.4),
+              blurRadius: 10,
               offset: const Offset(0, 10),
             ),
           ],
@@ -184,60 +284,58 @@ class _ForumScreenState extends State<ForumScreen> {
   Widget _buildHeader() {
     return Container(
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(24),
+      height: 150,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF667EEA).withOpacity(0.4),
-            blurRadius: 20,
+            color: primaryColor.withOpacity(0.3),
+            blurRadius: 40,
             offset: const Offset(0, 10),
           ),
         ],
+        image: const DecorationImage(
+          image: AssetImage('assets/images/foros_card5 (6).jpg'),
+          fit: BoxFit.cover,
+        ),
       ),
-      child: Row(
+      child: Stack(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Icons.forum_rounded,
-              color: Colors.white,
-              size: 40,
+              borderRadius: BorderRadius.circular(24),
+              color: Colors.black.withOpacity(0.0),
             ),
           ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Hi, ${user?.displayName ?? 'User'}',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 0.3,
+          const Padding(
+            padding: EdgeInsets.all(24),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    ' Tu Foro',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 0.8,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Welcome back to the forum',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
-                    fontWeight: FontWeight.w500,
+                  SizedBox(height: 8),
+                  Text(
+                    'Comunitario',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 0.0,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -247,246 +345,722 @@ class _ForumScreenState extends State<ForumScreen> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: primaryColor.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: TextField(
-          controller: _searchController,
-          onChanged: _onSearchChanged,
-          decoration: InputDecoration(
-            hintText: 'Search posts by title...',
-            hintStyle: TextStyle(
-              color: Colors.grey[400],
-              fontSize: 14,
+            child: TextField(
+              controller: _searchController,
+              onChanged: _onSearchChanged,
+              decoration: InputDecoration(
+                hintText: 'Buscar post por titulo...',
+                hintStyle: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: 14,
+                ),
+                prefixIcon: Icon(Icons.search, color: primaryColor.withOpacity(1)),
+                suffixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_searchController.text.isNotEmpty)
+                      IconButton(
+                        icon: Icon(Icons.clear, color: Colors.grey[400]),
+                        onPressed: () {
+                          _searchController.clear();
+                          _onSearchChanged('');
+                        },
+                      ),
+                    Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      child: IconButton(
+                        icon: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: _showCategoryFilter
+                                ? primaryColor.withOpacity(0.2)
+                                : Colors.grey[100],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.filter_list_rounded,
+                            color: _showCategoryFilter ? primaryColor : Colors.grey[600],
+                            size: 20,
+                          ),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _showCategoryFilter = !_showCategoryFilter;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+              ),
             ),
-            prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
-            suffixIcon: _searchController.text.isNotEmpty
-                ? IconButton(
-                    icon: Icon(Icons.clear, color: Colors.grey[400]),
-                    onPressed: () {
-                      _searchController.clear();
-                      _onSearchChanged('');
-                    },
-                  )
-                : null,
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 16),
           ),
-        ),
+          if (_showCategoryFilter)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: primaryColor.withOpacity(0.1),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(12),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: GestureDetector(
+                          onTap: () => _onCategoryChanged(null),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: selectedCategory == null ? primaryColor : Colors.grey[200],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'Todos',
+                                style: TextStyle(
+                                  color: selectedCategory == null ? Colors.white : Colors.grey[700],
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      ...categories.map((category) {
+                        final isSelected = selectedCategory == category;
+                        final categoryColor = _getCategoryColorFromString(category);
+                        
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: GestureDetector(
+                            onTap: () => _onCategoryChanged(category),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? categoryColor.withOpacity(0.2)
+                                    : Colors.white,
+                                border: Border.all(
+                                  color: isSelected
+                                      ? categoryColor
+                                      : Colors.grey[300]!,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    _getCategoryIcon(category),
+                                    size: 14,
+                                    color: isSelected ? categoryColor : Colors.grey[600],
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    category,
+                                    style: TextStyle(
+                                      color: isSelected ? categoryColor : Colors.grey[600],
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
 
-  Widget _buildTabBar() {
+  Widget _buildTitleBar() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          Expanded(child: _buildTab('Popular', selectedTab == 'Popular')),
-          Expanded(child: _buildTab('Mis posts', selectedTab == 'Mis posts')),
+          const Text(
+            'Posts',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A1D2E),
+              letterSpacing: 0.3,
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: _toggleMyPosts,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: _showMyPosts ? primaryColor : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: _showMyPosts ? primaryColor : Colors.grey[300]!,
+                  width: 2,
+                ),
+                boxShadow: _showMyPosts
+                    ? [
+                        BoxShadow(
+                          color: primaryColor.withOpacity(0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : [
+                        BoxShadow(
+                          color: primaryColor.withOpacity(0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.person_rounded,
+                    size: 18,
+                    color: _showMyPosts ? Colors.white : primaryColor,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Mis Posts',
+                    style: TextStyle(
+                      color: _showMyPosts ? Colors.white : primaryColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildTab(String title, bool isSelected) {
-    return GestureDetector(
-      onTap: () => _onTabChanged(title),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          gradient: isSelected
-              ? const LinearGradient(
-                  colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-                )
-              : null,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF667EEA).withOpacity(0.4),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          title,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey[600],
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            fontSize: 13,
-          ),
-        ),
-      ),
-    );
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'Popular':
+        return Icons.trending_up_rounded;
+      case 'General':
+        return Icons.chat_bubble_rounded;
+      case 'Help':
+        return Icons.help_rounded;
+      case 'Discussion':
+        return Icons.forum_rounded;
+      case 'Announcement':
+        return Icons.campaign_rounded;
+      default:
+        return Icons.category_rounded;
+    }
+  }
+
+  Color _getCategoryColorFromString(String category) {
+    switch (category) {
+      case 'Popular':
+        return const Color(0xFFE91E63);
+      case 'General':
+        return const Color(0xFF5A65AD);
+      case 'Help':
+        return const Color(0xFF4CAF50);
+      case 'Discussion':
+        return const Color(0xFFFF9800);
+      case 'Announcement':
+        return const Color(0xFFF44336);
+      default:
+        return const Color(0xFF5A65AD);
+    }
   }
 
   void _showCreatePostDialog(BuildContext context) {
     final titleController = TextEditingController();
     final contentController = TextEditingController();
     String selectedCategory = 'General';
-    String categoryColor = '#2196F3';
+    String categoryColor = '#5A65AD';
     final user = FirebaseAuth.instance.currentUser;
+    final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Create Post',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleController,
-                decoration: InputDecoration(
-                  labelText: 'Title',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[50],
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 550, maxHeight: 700),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                BoxShadow(
+                  color: primaryColor.withOpacity(0.25),
+                  blurRadius: 50,
+                  offset: const Offset(0, 20),
+                  spreadRadius: 5,
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: contentController,
-                decoration: InputDecoration(
-                  labelText: 'Content',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                ),
-                maxLines: 5,
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: selectedCategory,
-                decoration: InputDecoration(
-                  labelText: 'Category',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'General', child: Text('General')),
-                  DropdownMenuItem(value: 'Help', child: Text('Help')),
-                  DropdownMenuItem(value: 'Discussion', child: Text('Discussion')),
-                  DropdownMenuItem(value: 'Announcement', child: Text('Announcement')),
-                ],
-                onChanged: (value) {
-                  selectedCategory = value!;
-                  categoryColor = _getCategoryColor(value);
-                },
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text('Cancel', style: TextStyle(color: Colors.grey[600])),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF667EEA),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ],
             ),
-            onPressed: () async {
-              if (titleController.text.isNotEmpty &&
-                  contentController.text.isNotEmpty &&
-                  user != null) {
-                final userDoc = await FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(user.uid)
-                    .get();
-
-                final userData = userDoc.data();
-                final displayName = userData?['displayName'] ?? 'Anonymous User';
-                final photoUrl = userData?['photoUrl'];
-
-                context.read<ForumBloc>().add(
-                      forum_event.CreateForumPostEvent(
-                        title: titleController.text,
-                        content: contentController.text,
-                        authorId: user.uid,
-                        authorName: displayName,
-                        authorPhotoUrl: photoUrl,
-                        category: selectedCategory,
-                        categoryColor: categoryColor,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+                  decoration: BoxDecoration(
+                    color: primaryColor,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(32),
+                      topRight: Radius.circular(32),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: primaryColor.withOpacity(0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
                       ),
-                    );
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.25),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.3),
+                            width: 2,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.create_rounded,
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                      ),
+                      const SizedBox(width: 18),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Crear Publicación',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                                height: 1.2,
+                              ),
+                            ),
+                            SizedBox(height: 6),
+                            Text(
+                              'Comparte tus ideas',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white70,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Form(
+                      key: formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildFieldLabel('Título', Icons.title_rounded, true),
+                          const SizedBox(height: 10),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: primaryColor.withOpacity(0.15),
+                                width: 2,
+                              ),
+                            ),
+                            child: TextFormField(
+                              controller: titleController,
+                              maxLength: 100,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1A1D2E),
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Ej: ¿Cómo mejorar mi productividad?',
+                                hintStyle: TextStyle(
+                                  color: Colors.grey[400],
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.all(18),
+                                counterStyle: TextStyle(
+                                  color: Colors.grey[500],
+                                  fontSize: 12,
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Por favor ingresa un título';
+                                }
+                                if (value.trim().length < 5) {
+                                  return 'El título debe tener al menos 5 caracteres';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          _buildFieldLabel('Categoría', Icons.category_rounded, true),
+                          const SizedBox(height: 10),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: primaryColor.withOpacity(0.15),
+                                width: 2,
+                              ),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: selectedCategory,
+                                isExpanded: true,
+                                icon: const Icon(Icons.keyboard_arrow_down_rounded, color: primaryColor),
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1A1D2E),
+                                ),
+                                dropdownColor: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                items: [
+                                  _buildCategoryItem('General', Icons.chat_bubble_rounded, const Color(0xFF5A65AD)),
+                                  _buildCategoryItem('Ayuda', Icons.help_rounded, const Color(0xFF4CAF50)),
+                                  _buildCategoryItem('Discusión', Icons.forum_rounded, const Color(0xFFFF9800)),
+                                  _buildCategoryItem('Anuncio', Icons.campaign_rounded, const Color(0xFFF44336)),
+                                ],
+                                onChanged: (value) {
+                                  setState(() {
+                                    selectedCategory = value!;
+                                    categoryColor = _getCategoryColorFromValue(value);
+                                  });
+                                },
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          _buildFieldLabel('Descripción', Icons.description_rounded, true),
+                          const SizedBox(height: 10),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: primaryColor.withOpacity(0.15),
+                                width: 2,
+                              ),
+                            ),
+                            child: TextFormField(
+                              controller: contentController,
+                              maxLines: 8,
+                              maxLength: 500,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                height: 1.6,
+                                color: Color(0xFF1A1D2E),
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Describe tu publicación de manera detallada...',
+                                hintStyle: TextStyle(
+                                  color: Colors.grey[400],
+                                  fontSize: 14,
+                                  height: 1.5,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.all(18),
+                                counterStyle: TextStyle(
+                                  color: Colors.grey[500],
+                                  fontSize: 12,
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Por favor ingresa el contenido';
+                                }
+                                if (value.trim().length < 10) {
+                                  return 'El contenido debe tener al menos 10 caracteres';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(32),
+                      bottomRight: Radius.circular(32),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(dialogContext),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            side: BorderSide(color: Colors.grey[300]!, width: 2),
+                          ),
+                          child: const Text('Cancelar'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            if (formKey.currentState!.validate() && user != null) {
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (ctx) => const Center(
+                                  child: CircularProgressIndicator(color: Colors.white),
+                                ),
+                              );
 
-                Navigator.pop(dialogContext);
-              }
-            },
-            child: const Text('Create', style: TextStyle(fontWeight: FontWeight.bold)),
+                              try {
+                                final userDoc = await FirebaseFirestore.instance
+                                    .collection('users')
+                                    .doc(user.uid)
+                                    .get();
+
+                                final userData = userDoc.data();
+                                final displayName = userData?['displayName'] ?? 'Usuario Anónimo';
+                                final photoUrl = userData?['photoUrl'];
+
+                                context.read<ForumBloc>().add(
+                                      forum_event.CreateForumPostEvent(
+                                        title: titleController.text.trim(),
+                                        content: contentController.text.trim(),
+                                        authorId: user.uid,
+                                        authorName: displayName,
+                                        authorPhotoUrl: photoUrl,
+                                        category: selectedCategory,
+                                        categoryColor: categoryColor,
+                                      ),
+                                    );
+
+                                Navigator.pop(context);
+                                Navigator.pop(dialogContext);
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withOpacity(0.2),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: const Icon(
+                                            Icons.check_circle_rounded,
+                                            color: Colors.white,
+                                            size: 20,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        const Text(
+                                          '¡Publicación creada exitosamente!',
+                                          style: TextStyle(fontWeight: FontWeight.w600),
+                                        ),
+                                      ],
+                                    ),
+                                    backgroundColor: const Color(0xFF4CAF50),
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                );
+                              } catch (e) {
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error: $e'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: const Text(
+                            'Publicar',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFieldLabel(String text, IconData icon, bool required) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: primaryColor.withOpacity(0.7)),
+        const SizedBox(width: 8),
+        Text(
+          text,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1A1D2E),
+          ),
+        ),
+        if (required) ...[
+          const SizedBox(width: 4),
+          const Text('*', style: TextStyle(color: Color(0xFFF44336), fontSize: 14)),
+        ],
+      ],
+    );
+  }
+
+  DropdownMenuItem<String> _buildCategoryItem(String value, IconData icon, Color color) {
+    return DropdownMenuItem(
+      value: value,
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: color),
+          ),
+          const SizedBox(width: 12),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
 
-  String _getCategoryColor(String category) {
+  String _getCategoryColorFromValue(String category) {
     switch (category) {
       case 'General':
-        return '#2196F3';
-      case 'Help':
+        return '#5A65AD';
+      case 'Ayuda':
         return '#4CAF50';
-      case 'Discussion':
+      case 'Discusión':
         return '#FF9800';
-      case 'Announcement':
+      case 'Anuncio':
         return '#F44336';
       default:
-        return '#2196F3';
+        return '#5A65AD';
     }
   }
 }
 
-// Updated ModernForumPostCard as StatefulWidget
-class ModernForumPostCard extends StatefulWidget {
+// Widget con Lazy Loading
+class LazyForumPostCard extends StatefulWidget {
   final ForumEntity post;
+  final String postId;
+  final bool isLoaded;
+  final Function(bool) onVisibilityChanged;
 
-  const ModernForumPostCard({Key? key, required this.post}) : super(key: key);
+  const LazyForumPostCard({
+    Key? key,
+    required this.post,
+    required this.postId,
+    required this.isLoaded,
+    required this.onVisibilityChanged,
+  }) : super(key: key);
 
   @override
-  State<ModernForumPostCard> createState() => _ModernForumPostCardState();
+  State<LazyForumPostCard> createState() => _LazyForumPostCardState();
 }
 
-class _ModernForumPostCardState extends State<ModernForumPostCard> {
+class _LazyForumPostCardState extends State<LazyForumPostCard> {
   late int localLikes;
   bool? hasLiked;
   bool isLoading = true;
@@ -495,16 +1069,28 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
   void initState() {
     super.initState();
     localLikes = widget.post.likes;
-    _checkIfLiked();
+    if (widget.isLoaded) {
+      _checkIfLiked();
+    }
+  }
+
+  @override
+  void didUpdateWidget(LazyForumPostCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.isLoaded && widget.isLoaded && hasLiked == null) {
+      _checkIfLiked();
+    }
   }
 
   Future<void> _checkIfLiked() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      setState(() {
-        hasLiked = false;
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          hasLiked = false;
+          isLoading = false;
+        });
+      }
       return;
     }
 
@@ -515,7 +1101,7 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
           .collection('likes')
           .doc(user.uid)
           .get();
-      
+
       if (mounted) {
         setState(() {
           hasLiked = doc.exists;
@@ -536,7 +1122,6 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null || hasLiked == null) return;
 
-    // Optimistic update
     setState(() {
       if (hasLiked!) {
         localLikes = (localLikes > 0) ? localLikes - 1 : 0;
@@ -547,44 +1132,33 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
       }
     });
 
-    // Perform backend update
     try {
       if (hasLiked!) {
-        // Add like
         await FirebaseFirestore.instance
             .collection('forums')
             .doc(widget.post.id)
             .collection('likes')
             .doc(user.uid)
-            .set({
-          'userId': user.uid,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-        
+            .set({'userId': user.uid, 'createdAt': FieldValue.serverTimestamp()});
+
         await FirebaseFirestore.instance
             .collection('forums')
             .doc(widget.post.id)
-            .update({
-          'likes': FieldValue.increment(1),
-        });
+            .update({'likes': FieldValue.increment(1)});
       } else {
-        // Remove like
         await FirebaseFirestore.instance
             .collection('forums')
             .doc(widget.post.id)
             .collection('likes')
             .doc(user.uid)
             .delete();
-        
+
         await FirebaseFirestore.instance
             .collection('forums')
             .doc(widget.post.id)
-            .update({
-          'likes': FieldValue.increment(-1),
-        });
+            .update({'likes': FieldValue.increment(-1)});
       }
     } catch (e) {
-      // Revert optimistic update on error
       if (mounted) {
         setState(() {
           if (hasLiked!) {
@@ -595,19 +1169,122 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
             hasLiked = true;
           }
         });
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update like: $e')),
-        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final categoryColor = Color(
-      int.parse(widget.post.categoryColor.replaceFirst('#', '0xFF')),
+    return VisibilityDetector(
+      key: ValueKey(widget.postId),
+      onVisibilityChanged: (info) {
+        if (info.visibleFraction > 0.5) {
+          widget.onVisibilityChanged(true);
+        }
+      },
+      child: widget.isLoaded
+          ? ModernForumPostCard(
+              post: widget.post,
+              localLikes: localLikes,
+              hasLiked: hasLiked,
+              isLoading: isLoading,
+              onLikeTap: _handleLike,
+            )
+          : _buildLoadingPlaceholder(),
     );
+  }
+
+  Widget _buildLoadingPlaceholder() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.grey[200],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 100,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: 60,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              height: 18,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ModernForumPostCard extends StatelessWidget {
+  final ForumEntity post;
+  final int localLikes;
+  final bool? hasLiked;
+  final bool isLoading;
+  final VoidCallback onLikeTap;
+
+  const ModernForumPostCard({
+    Key? key,
+    required this.post,
+    required this.localLikes,
+    required this.hasLiked,
+    required this.isLoading,
+    required this.onLikeTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final categoryColor = Color(int.parse(post.categoryColor.replaceFirst('#', '0xFF')));
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -616,7 +1293,7 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: primaryColor.withOpacity(0.08),
             blurRadius: 20,
             offset: const Offset(0, 5),
           ),
@@ -634,35 +1311,22 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
               children: [
                 Row(
                   children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [
-                            categoryColor.withOpacity(0.3),
-                            categoryColor.withOpacity(0.1),
-                          ],
-                        ),
-                      ),
-                      child: CircleAvatar(
-                        radius: 24,
-                        backgroundImage: widget.post.authorPhotoUrl != null
-                            ? NetworkImage(widget.post.authorPhotoUrl!)
-                            : null,
-                        backgroundColor: Colors.transparent,
-                        child: widget.post.authorPhotoUrl == null
-                            ? Text(
-                               widget.post.authorName.isNotEmpty 
-    ? widget.post.authorName[0].toUpperCase() 
-    : 'U',
-                                style: TextStyle(
-                                  color: categoryColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              )
-                            : null,
-                      ),
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundImage: post.authorPhotoUrl != null
+                          ? NetworkImage(post.authorPhotoUrl!)
+                          : null,
+                      backgroundColor: categoryColor.withOpacity(0.2),
+                      child: post.authorPhotoUrl == null
+                          ? Text(
+                              post.authorName.isNotEmpty ? post.authorName[0].toUpperCase() : 'U',
+                              style: TextStyle(
+                                color: categoryColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            )
+                          : null,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -670,40 +1334,29 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            widget.post.authorName,
+                            post.authorName,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
                               color: Color(0xFF1A1D2E),
                             ),
                           ),
-                          const SizedBox(height: 2),
                           Text(
-                            _formatDate(widget.post.createdAt),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                              fontWeight: FontWeight.w500,
-                            ),
+                            _formatDate(post.createdAt),
+                            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                           ),
                         ],
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: categoryColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: categoryColor.withOpacity(0.3),
-                          width: 1,
-                        ),
+                        border: Border.all(color: categoryColor.withOpacity(0.3)),
                       ),
                       child: Text(
-                        widget.post.category,
+                        post.category,
                         style: TextStyle(
                           color: categoryColor,
                           fontSize: 11,
@@ -715,7 +1368,7 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  widget.post.title,
+                  post.title,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -727,41 +1380,52 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  widget.post.content,
+                  post.content,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                    height: 1.5,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 14, height: 1.5),
                 ),
                 const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8F9FA),
+                    color: primaryColor.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
                       GestureDetector(
-                        onTap: isLoading ? null : _handleLike,
-                        child: _buildStatItem(
-                          hasLiked == true 
-                              ? Icons.favorite_rounded 
-                              : Icons.favorite_border_rounded,
-                          '$localLikes',
-                          const Color(0xFFFF6B9D),
+                        onTap: isLoading ? null : onLikeTap,
+                        child: Row(
+                          children: [
+                            Icon(
+                              hasLiked == true ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                              size: 18,
+                              color: hasLiked == true ? primaryColor : Colors.grey[400],
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '$localLikes',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(width: 20),
-                      _buildStatItem(
-                        Icons.chat_bubble_rounded,
-                        '${widget.post.replies}',
-                        const Color(0xFF667EEA),
+                      Icon(Icons.chat_bubble_rounded, size: 18, color: primaryColor),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${post.replies}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[700],
+                        ),
                       ),
-                      const Spacer(),
                     ],
                   ),
                 ),
@@ -773,34 +1437,15 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
     );
   }
 
-  Widget _buildStatItem(IconData icon, String count, Color color) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: color),
-        const SizedBox(width: 6),
-        Text(
-          count,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey[700],
-          ),
-        ),
-      ],
-    );
-  }
-
   void _showPostDetails(BuildContext context) {
     final replyController = TextEditingController();
     final user = FirebaseAuth.instance.currentUser;
-    final categoryColor = Color(
-      int.parse(widget.post.categoryColor.replaceFirst('#', '0xFF')),
-    );
+    final categoryColor = Color(int.parse(post.categoryColor.replaceFirst('#', '0xFF')));
 
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => Scaffold(
-          backgroundColor: const Color(0xFFF5F7FA),
+          backgroundColor: backgroundColor,
           appBar: AppBar(
             backgroundColor: Colors.white,
             elevation: 0,
@@ -808,28 +1453,18 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
               icon: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.arrow_back, color: Color(0xFF1A1D2E), size: 20),
+                child: const Icon(Icons.arrow_back, color: primaryColor, size: 20),
               ),
               onPressed: () => Navigator.pop(context),
             ),
             title: const Text(
-              'Post Details',
-              style: TextStyle(
-                color: Color(0xFF1A1D2E),
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              'Detalles',
+              style: TextStyle(color: primaryColor, fontSize: 18, fontWeight: FontWeight.bold),
             ),
             centerTitle: true,
-            actions: [
-              IconButton(
-                icon: Icon(Icons.more_vert, color: Colors.grey[600]),
-                onPressed: () {},
-              ),
-            ],
           ),
           body: Column(
             children: [
@@ -837,7 +1472,6 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
                         decoration: BoxDecoration(
@@ -845,7 +1479,7 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.06),
+                              color: primaryColor.withOpacity(0.08),
                               blurRadius: 15,
                               offset: const Offset(0, 4),
                             ),
@@ -857,34 +1491,18 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
                           children: [
                             Row(
                               children: [
-                                Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        categoryColor.withOpacity(0.3),
-                                        categoryColor.withOpacity(0.1),
-                                      ],
-                                    ),
-                                  ),
-                                  child: CircleAvatar(
-                                    radius: 22,
-                                    backgroundImage: widget.post.authorPhotoUrl != null
-                                        ? NetworkImage(widget.post.authorPhotoUrl!)
-                                        : null,
-                                    backgroundColor: Colors.transparent,
-                                    child: widget.post.authorPhotoUrl == null
-                                        ? Text(
-                                         widget.post.authorName.isNotEmpty 
-    ? widget.post.authorName[0].toUpperCase() 
-    : 'U',
-                                            style: TextStyle(
-                                              color: categoryColor,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          )
-                                        : null,
-                                  ),
+                                CircleAvatar(
+                                  radius: 22,
+                                  backgroundImage: post.authorPhotoUrl != null
+                                      ? NetworkImage(post.authorPhotoUrl!)
+                                      : null,
+                                  backgroundColor: categoryColor.withOpacity(0.2),
+                                  child: post.authorPhotoUrl == null
+                                      ? Text(
+                                          post.authorName.isNotEmpty ? post.authorName[0].toUpperCase() : 'U',
+                                          style: TextStyle(color: categoryColor, fontWeight: FontWeight.bold),
+                                        )
+                                      : null,
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -892,36 +1510,25 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        widget.post.authorName,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 15,
-                                        ),
+                                        post.authorName,
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                       ),
                                       Text(
-                                        _formatDate(widget.post.createdAt),
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey[500],
-                                        ),
+                                        _formatDate(post.createdAt),
+                                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                                       ),
                                     ],
                                   ),
                                 ),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
                                     color: categoryColor.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: categoryColor.withOpacity(0.3),
-                                    ),
+                                    border: Border.all(color: categoryColor.withOpacity(0.3)),
                                   ),
                                   child: Text(
-                                    widget.post.category,
+                                    post.category,
                                     style: TextStyle(
                                       color: categoryColor,
                                       fontSize: 11,
@@ -933,38 +1540,53 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
                             ),
                             const SizedBox(height: 20),
                             Text(
-                              widget.post.title,
+                              post.title,
                               style: const TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
                                 color: Color(0xFF1A1D2E),
-                                height: 1.3,
                               ),
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              widget.post.content,
-                              style: TextStyle(
-                                fontSize: 15,
-                                height: 1.6,
-                                color: Colors.grey[700],
-                              ),
+                              post.content,
+                              style: TextStyle(fontSize: 15, height: 1.6, color: Colors.grey[700]),
                             ),
                             const SizedBox(height: 16),
                             Row(
                               children: [
-                                _buildStatChip(
-                                  hasLiked == true 
-                                      ? Icons.favorite_rounded 
-                                      : Icons.favorite_border_rounded,
-                                  '$localLikes',
-                                  const Color(0xFFFF6B9D),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: primaryColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        hasLiked == true ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                        size: 16,
+                                        color: primaryColor,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text('$localLikes', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
-                                _buildStatChip(
-                                  Icons.chat_bubble_rounded,
-                                  '${widget.post.replies}',
-                                  const Color(0xFF667EEA),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: primaryColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.chat_bubble_rounded, size: 16, color: primaryColor),
+                                      const SizedBox(width: 6),
+                                      Text('${post.replies}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
@@ -976,13 +1598,6 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.06),
-                              blurRadius: 15,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
                         ),
                         padding: const EdgeInsets.all(20),
                         child: Column(
@@ -990,15 +1605,11 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.comment_rounded, size: 20, color: Color(0xFF667EEA)),
+                                const Icon(Icons.comment_rounded, size: 20, color: primaryColor),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Replies (${widget.post.replies})',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1A1D2E),
-                                  ),
+                                  'Respuestas (${post.replies})',
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
@@ -1006,141 +1617,53 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
                             StreamBuilder<QuerySnapshot>(
                               stream: FirebaseFirestore.instance
                                   .collection('forums')
-                                  .doc(widget.post.id)
+                                  .doc(post.id)
                                   .collection('replies')
                                   .orderBy('createdAt', descending: false)
                                   .snapshots(),
                               builder: (context, snapshot) {
-                                if (snapshot.connectionState == ConnectionState.waiting) {
-                                  return const Center(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(20),
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                  );
-                                }
-
                                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                                  return Padding(
-                                    padding: const EdgeInsets.all(20),
-                                    child: Center(
-                                      child: Column(
-                                        children: [
-                                          Icon(Icons.chat_bubble_outline, 
-                                            size: 48, 
-                                            color: Colors.grey[300],
-                                          ),
-                                          const SizedBox(height: 12),
-                                          Text(
-                                            'No replies yet',
-                                            style: TextStyle(
-                                              color: Colors.grey[500],
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            'Be the first to comment',
-                                            style: TextStyle(
-                                              color: Colors.grey[400],
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                  return Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(20),
+                                      child: Text('No hay respuestas', style: TextStyle(color: Colors.grey[500])),
                                     ),
                                   );
                                 }
-
-                                final replies = snapshot.data!.docs;
 
                                 return ListView.separated(
                                   shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: replies.length,
-                                  separatorBuilder: (context, index) => Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
-                                    child: Divider(
-                                      color: Colors.grey[200],
-                                      height: 1,
-                                    ),
-                                  ),
+                                  itemCount: snapshot.data!.docs.length,
+                                  separatorBuilder: (_, __) => const SizedBox(height: 12),
                                   itemBuilder: (context, index) {
-                                    final reply = replies[index].data() as Map<String, dynamic>;
-                                    final replyColor = categoryColor;
-
+                                    final reply = snapshot.data!.docs[index].data() as Map<String, dynamic>;
                                     return Container(
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        color: Colors.grey[50],
+                                        color: primaryColor.withOpacity(0.03),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Container(
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              gradient: LinearGradient(
-                                                colors: [
-                                                  replyColor.withOpacity(0.2),
-                                                  replyColor.withOpacity(0.05),
-                                                ],
-                                              ),
-                                            ),
-                                            child: CircleAvatar(
-                                              radius: 18,
-                                              backgroundImage: reply['authorPhotoUrl'] != null
-                                                  ? NetworkImage(reply['authorPhotoUrl'])
-                                                  : null,
-                                              backgroundColor: Colors.transparent,
-                                              child: reply['authorPhotoUrl'] == null
-                                                  ? Text(
-                                                      (reply['authorName'] ?? 'U')[0].toUpperCase(),
-                                                      style: TextStyle(
-                                                        fontSize: 14,
-                                                        color: replyColor,
-                                                        fontWeight: FontWeight.bold,
-                                                      ),
-                                                    )
-                                                  : null,
-                                            ),
+                                          CircleAvatar(
+                                            radius: 18,
+                                            backgroundImage: reply['authorPhotoUrl'] != null
+                                                ? NetworkImage(reply['authorPhotoUrl'])
+                                                : null,
                                           ),
                                           const SizedBox(width: 12),
                                           Expanded(
                                             child: Column(
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
-                                                Row(
-                                                  children: [
-                                                    Text(
-                                                      reply['authorName'] ?? 'User',
-                                                      style: const TextStyle(
-                                                        fontWeight: FontWeight.bold,
-                                                        fontSize: 14,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    Text(
-                                                      _formatDate(
-                                                        (reply['createdAt'] as Timestamp).toDate(),
-                                                      ),
-                                                      style: TextStyle(
-                                                        fontSize: 11,
-                                                        color: Colors.grey[500],
-                                                      ),
-                                                    ),
-                                                  ],
+                                                Text(
+                                                  reply['authorName'] ?? 'Usuario',
+                                                  style: const TextStyle(fontWeight: FontWeight.bold),
                                                 ),
-                                                const SizedBox(height: 6),
                                                 Text(
                                                   reply['content'] ?? '',
-                                                  style: TextStyle(
-                                                    fontSize: 13,
-                                                    color: Colors.grey[700],
-                                                    height: 1.4,
-                                                  ),
+                                                  style: TextStyle(fontSize: 13, color: Colors.grey[700]),
                                                 ),
                                               ],
                                             ),
@@ -1155,92 +1678,57 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 80),
                     ],
                   ),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 10,
-                      offset: const Offset(0, -2),
+                color: Colors.white,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: replyController,
+                        decoration: InputDecoration(
+                          hintText: 'Escribe tu comentario...',
+                          filled: true,
+                          fillColor: backgroundColor,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(25),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      decoration: const BoxDecoration(color: primaryColor, shape: BoxShape.circle),
+                      child: IconButton(
+                        icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                        onPressed: () async {
+                          if (replyController.text.isNotEmpty && user != null) {
+                            final userDoc = await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(user.uid)
+                                .get();
+
+                            final userData = userDoc.data();
+                            context.read<ForumBloc>().add(
+                                  forum_event.ReplyToForumPostEvent(
+                                    forumId: post.id,
+                                    authorId: user.uid,
+                                    authorName: userData?['displayName'] ?? 'Usuario',
+                                    authorPhotoUrl: userData?['photoUrl'],
+                                    content: replyController.text,
+                                  ),
+                                );
+                            replyController.clear();
+                          }
+                        },
+                      ),
                     ),
                   ],
-                ),
-                child: SafeArea(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8F9FA),
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                          child: TextField(
-                            controller: replyController,
-                            decoration: InputDecoration(
-                              hintText: 'Write your comment...',
-                              hintStyle: TextStyle(
-                                color: Colors.grey[400],
-                                fontSize: 14,
-                              ),
-                              prefixIcon: Icon(Icons.edit_outlined, 
-                                color: Colors.grey[400],
-                                size: 20,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 12,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-                          ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
-                          onPressed: () async {
-                            if (replyController.text.isNotEmpty && user != null) {
-                              final userDoc = await FirebaseFirestore.instance
-                                  .collection('users')
-                                  .doc(user.uid)
-                                  .get();
-
-                              final userData = userDoc.data();
-                              final displayName =
-                                  userData?['displayName'] ?? 'Anonymous User';
-                              final photoUrl = userData?['photoUrl'];
-
-                              context.read<ForumBloc>().add(
-                                    forum_event.ReplyToForumPostEvent(
-                                      forumId: widget.post.id,
-                                      authorId: user.uid,
-                                      authorName: displayName,
-                                      authorPhotoUrl: photoUrl,
-                                      content: replyController.text,
-                                    ),
-                                  );
-
-                              replyController.clear();
-                            }
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
             ],
@@ -1250,46 +1738,12 @@ class _ModernForumPostCardState extends State<ModernForumPostCard> {
     );
   }
 
-  Widget _buildStatChip(IconData icon, String count, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 6),
-          Text(
-            count,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   String _formatDate(DateTime date) {
     final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'Now';
-    }
+    final diff = now.difference(date);
+    if (diff.inDays > 0) return '${diff.inDays}d atrás';
+    if (diff.inHours > 0) return '${diff.inHours}h atrás';
+    if (diff.inMinutes > 0) return '${diff.inMinutes}m atrás';
+    return 'Ahora';
   }
 }

@@ -14,6 +14,8 @@ abstract class ForumRepository {
   });
 
   Future<Either<Exception, List<ForumEntity>>> getForumPosts();
+    Future<Either<Exception, List<ForumEntity>>> getPopularForumPosts();
+
 
   /// Buscar posts por título
   Future<Either<Exception, List<ForumEntity>>> searchForumPostsByTitle(String query);
@@ -42,4 +44,8 @@ abstract class ForumRepository {
   Future<Either<Exception, List<ReplyEntity>>> getForumReplies(String forumId);
 
   Future<Either<Exception, void>> deleteForumPost(String forumId);
+
+   Future<Either<Exception, List<ForumEntity>>> getForumPostsByCategory(
+    String category,
+  );
 }

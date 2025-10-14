@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 import 'package:my_app/core/di/injector.dart';
 import 'package:my_app/library/presentation/blocs/library_bloc.dart';
 import 'package:my_app/library/presentation/blocs/library_event.dart';
@@ -38,6 +39,13 @@ class _LibraryPageState extends State<LibraryPage>
   
   late String _userId;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // Variables para lazy loading
+  int _displayedBooksCount = 3;
+  final int _booksPerPage = 3;
+  bool _isLoadingMore = false;
+  List<dynamic> _allBooks = [];
+  final Set<String> _loadedBookIds = {}; // Track loaded books
 
   @override
   void initState() {
@@ -78,6 +86,33 @@ class _LibraryPageState extends State<LibraryPage>
     if (_userId.isNotEmpty) {
       context.read<SavedBookBloc>().add(GetUserSavedBooksEvent(_userId));
     }
+
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 300) {
+      _loadMoreBooks();
+    }
+  }
+
+  void _loadMoreBooks() {
+    if (!_isLoadingMore && _displayedBooksCount < _allBooks.length) {
+      setState(() {
+        _isLoadingMore = true;
+      });
+
+      Future.delayed(const Duration(milliseconds: 300), () {
+        setState(() {
+          _displayedBooksCount += _booksPerPage;
+          if (_displayedBooksCount > _allBooks.length) {
+            _displayedBooksCount = _allBooks.length;
+          }
+          _isLoadingMore = false;
+        });
+      });
+    }
   }
 
   @override
@@ -97,12 +132,18 @@ class _LibraryPageState extends State<LibraryPage>
     } else {
       _libraryBloc.add(GetBooksEvent());
     }
+    setState(() {
+      _displayedBooksCount = 3;
+      _loadedBookIds.clear();
+    });
     await Future.delayed(const Duration(milliseconds: 500));
   }
 
   void _handleSearch(String query) {
     setState(() {
       currentSearchQuery = query.trim();
+      _displayedBooksCount = 3;
+      _loadedBookIds.clear();
       if (query.trim().isNotEmpty) {
         selectedCategory = 'Todos';
       }
@@ -119,6 +160,8 @@ class _LibraryPageState extends State<LibraryPage>
     setState(() {
       selectedCategory = category;
       currentSearchQuery = '';
+      _displayedBooksCount = 3;
+      _loadedBookIds.clear();
     });
 
     if (category == 'Todos') {
@@ -132,6 +175,8 @@ class _LibraryPageState extends State<LibraryPage>
     setState(() {
       currentSearchQuery = '';
       selectedCategory = 'Todos';
+      _displayedBooksCount = 3;
+      _loadedBookIds.clear();
     });
     _libraryBloc.add(GetBooksEvent());
   }
@@ -179,11 +224,15 @@ class _LibraryPageState extends State<LibraryPage>
 
   Widget _buildLibraryView(ColorScheme colorScheme, bool isDark) {
     return SafeArea(
-      child: SingleChildScrollView(
-        controller: _scrollController,
-
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: RefreshIndicator(
+        onRefresh: _refreshLibrary,
+        color: const Color(0xFF9D6055),
+        backgroundColor: colorScheme.surface,
+        strokeWidth: 3,
+        displacement: 40,
+        child: ListView(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
           children: [
             _buildFeaturedBannerWithSearch(),
             
@@ -198,13 +247,17 @@ class _LibraryPageState extends State<LibraryPage>
             
             if (currentSearchQuery.isEmpty) const SizedBox(height: 24),
             
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: BlocConsumer<LibraryBloc, LibraryState>(
-                listener: (context, state) {},
-                builder: (context, state) {
-                  if (state is LibraryLoading) {
-                    return Center(
+            BlocConsumer<LibraryBloc, LibraryState>(
+              listener: (context, state) {
+                if (state is LibraryLoaded) {
+                  _allBooks = state.books;
+                }
+              },
+              builder: (context, state) {
+                if (state is LibraryLoading) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: Center(
                       child: Padding(
                         padding: const EdgeInsets.all(60.0),
                         child: Column(
@@ -224,44 +277,60 @@ class _LibraryPageState extends State<LibraryPage>
                           ],
                         ),
                       ),
+                    ),
+                  );
+                } else if (state is LibraryLoaded) {
+                  if (state.books.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      child: _buildEmptyState(),
                     );
-                  } else if (state is LibraryLoaded) {
-                    if (state.books.isEmpty) {
-                      return _buildEmptyState();
-                    }
-
-                    // RefreshIndicator solo para la lista de libros
-                    return RefreshIndicator(
-                      onRefresh: _refreshLibrary,
-                      color: const Color(0xFF9D6055),
-                      backgroundColor: colorScheme.surface,
-                      strokeWidth: 3,
-                      displacement: 40,
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        itemCount: state.books.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final book = state.books[index];
-                          return BookCardWidget(
-                            key: Key('book_${book.id}'),
-                            book: book,
-                            onTap: () => _navigateToBookDetail(context, book.id),
-                          );
-                        },
-                      ),
-                    );
-                  } else if (state is LibraryError) {
-                    return _buildErrorState(state.message);
                   }
-                  
-                  return const SizedBox();
-                },
-              ),
+
+                  final displayedBooks = state.books.take(_displayedBooksCount).toList();
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: Column(
+                      children: [
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: displayedBooks.length,
+                          separatorBuilder: (context, index) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final book = displayedBooks[index];
+                            return LazyBookCard(
+                              key: ValueKey(book.id),
+                              book: book,
+                              bookId: book.id,
+                              isLoaded: _loadedBookIds.contains(book.id),
+                              onVisibilityChanged: (isVisible) {
+                                if (isVisible) {
+                                  setState(() {
+                                    _loadedBookIds.add(book.id);
+                                  });
+                                }
+                              },
+                            );
+                          },
+                        ),
+
+                      ],
+                    ),
+                  );
+                } else if (state is LibraryError) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: _buildErrorState(state.message),
+                  );
+                }
+                
+                return const SizedBox();
+              },
             ),
 
-            const SizedBox(height: 80),
+            const SizedBox(height: 120),
           ],
         ),
       ),
@@ -576,6 +645,117 @@ class _LibraryPageState extends State<LibraryPage>
       context,
       AppRouter.bookDetail,
       arguments: bookId,
+    );
+  }
+}
+
+// Nuevo widget con Lazy Loading - SIN ANIMACIÓN
+class LazyBookCard extends StatefulWidget {
+  final dynamic book;
+  final String bookId;
+  final bool isLoaded;
+  final Function(bool) onVisibilityChanged;
+
+  const LazyBookCard({
+    Key? key,
+    required this.book,
+    required this.bookId,
+    required this.isLoaded,
+    required this.onVisibilityChanged,
+  }) : super(key: key);
+
+  @override
+  State<LazyBookCard> createState() => _LazyBookCardState();
+}
+
+class _LazyBookCardState extends State<LazyBookCard> {
+  @override
+  Widget build(BuildContext context) {
+    return VisibilityDetector(
+      key: ValueKey(widget.bookId),
+      onVisibilityChanged: (info) {
+        if (info.visibleFraction > 0.5) {
+          widget.onVisibilityChanged(true);
+        }
+      },
+      child: widget.isLoaded
+          ? BookCardWidget(
+              key: Key('book_${widget.book.id}'),
+              book: widget.book,
+              onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  AppRouter.bookDetail,
+                  arguments: widget.book.id,
+                );
+              },
+            )
+          : _buildLoadingPlaceholder(),
+    );
+  }
+
+  Widget _buildLoadingPlaceholder() {
+    return Container(
+      height: 130,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Container(
+              width: 80,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  Container(
+                    width: 200,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  Container(
+                    width: 150,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  Container(
+                    width: 100,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

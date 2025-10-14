@@ -24,6 +24,7 @@ dependencies:
   syncfusion_flutter_pdfviewer: ^31.1.21
   syncfusion_flutter_pdf: ^31.1.21
   adaptive_theme: ^3.7.1+2
+  visibility_detector: ^0.4.0+2
 
 
 dev_dependencies:

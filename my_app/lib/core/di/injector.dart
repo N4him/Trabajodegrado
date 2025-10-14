@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:my_app/forum/domain/usescases/create_forum_post.dart';
 import 'package:my_app/forum/domain/usescases/delete_forum_post.dart';
+import 'package:my_app/forum/domain/usescases/get_forum_by_category.dart';
+import 'package:my_app/forum/domain/usescases/get_forum_popular.dart';
 import 'package:my_app/forum/domain/usescases/get_forum_posts.dart';
 import 'package:my_app/forum/domain/usescases/get_user_forum_posts.dart';
 import 'package:my_app/forum/domain/usescases/like_forum_post.dart';
@@ -178,6 +180,7 @@ Future<void> setupDI() async {
   getIt.registerLazySingleton<CheckBookSavedUseCase>(
     () => CheckBookSavedUseCase(getIt()),
   );
+  
 
   // Forum Use Cases
   getIt.registerLazySingleton<GetForumPosts>(
@@ -200,6 +203,12 @@ Future<void> setupDI() async {
   );
   getIt.registerLazySingleton<GetUserForumPosts>(
     () => GetUserForumPosts(getIt()),
+  );
+  getIt.registerLazySingleton<GetForumPostsByCategory>(
+    () => GetForumPostsByCategory(getIt()),
+  );
+  getIt.registerLazySingleton<GetPopularForumPosts>( // ➕ Agregar
+    () => GetPopularForumPosts(getIt()),
   );
 
   // ==============================================
@@ -245,6 +254,8 @@ Future<void> setupDI() async {
       deleteForumPostUseCase: getIt<DeleteForumPost>(),
       searchForumPostsUseCase: getIt<SearchForumPosts>(),
       getUserForumPostsUseCase: getIt<GetUserForumPosts>(),
+      getForumPostsByCategoryUseCase: getIt<GetForumPostsByCategory>(),
+      getPopularForumPostsUseCase: getIt<GetPopularForumPosts>(), // ➕ Agregar
     ),
   );
 }

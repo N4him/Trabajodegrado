@@ -228,7 +228,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
             ),
             child: Icon(
               Icons.arrow_back_ios_new,
-              color: colorScheme.onSurface,
+              color: const Color.fromARGB(255, 255, 255, 255),
               size: 20,
             ),
           ),
@@ -249,7 +249,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
               ),
               child: Icon(
                 Icons.more_horiz,
-                color: colorScheme.onSurface,
+                color: const Color.fromARGB(255, 255, 255, 255),
                 size: 20,
               ),
             ),
