@@ -14,22 +14,46 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<OnboardingData> _pages = [
     OnboardingData(
-      image: Icons.rocket_launch,
+      imagePath: 'assets/images/onboard1 (1).png',
       title: "Bienvenido a nuestra App",
       description: "Descubre una nueva forma de gestionar tu día a día de manera simple y eficiente.",
-      color: Colors.blue,
+      backgroundColor: Color.fromARGB(255, 172, 187, 160),
+      cardColor: Color.fromARGB(255, 172, 187, 160),
     ),
     OnboardingData(
-      image: Icons.security,
+      imagePath: 'assets/images/board-2 (2).png',
       title: "Seguridad Garantizada",
       description: "Tus datos están protegidos con la mejor tecnología Firebase de Google.",
-      color: Colors.green,
+      backgroundColor: Color.fromARGB(255, 172, 187, 160),
+      cardColor: Color.fromARGB(255, 172, 187, 160),
     ),
     OnboardingData(
-      image: Icons.speed,
+      imagePath: 'assets/images/board-3 (2).png',
       title: "Rápido y Fácil",
       description: "Interfaz intuitiva diseñada para que puedas empezar a usar la app inmediatamente.",
-      color: Colors.orange,
+      backgroundColor: Color.fromARGB(255, 172, 187, 160),
+      cardColor: Color.fromARGB(255, 172, 187, 160),
+    ),
+    OnboardingData(
+      imagePath: 'assets/images/board-4 (1).png',
+      title: "Rápido y Fácil",
+      description: "Interfaz intuitiva diseñada para que puedas empezar a usar la app inmediatamente.",
+      backgroundColor: Color.fromARGB(255, 172, 187, 160),
+      cardColor: Color.fromARGB(255, 172, 187, 160),
+    ),
+    OnboardingData(
+      imagePath: 'assets/images/board-5.png',
+      title: "Rápido y Fácil",
+      description: "Interfaz intuitiva diseñada para que puedas empezar a usar la app inmediatamente.",
+      backgroundColor: Color.fromARGB(255, 172, 187, 160),
+      cardColor: Color.fromARGB(255, 172, 187, 160),
+    ),
+    OnboardingData(
+      imagePath: 'assets/images/board-6.png',
+      title: "Rápido y Fácil",
+      description: "Interfaz intuitiva diseñada para que puedas empezar a usar la app inmediatamente.",
+      backgroundColor: Color.fromARGB(255, 172, 187, 160),
+      cardColor: Color.fromARGB(255, 172, 187, 160),
     ),
   ];
 
@@ -50,15 +74,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
-  void _previousPage() {
-    if (_currentPage > 0) {
-      _pageController.previousPage(
-        duration: Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
-  }
-
   void _goToLogin() async {
     // Marcar que el usuario ya vio el onboarding
     await OnboardingService.setOnboardingSeen();
@@ -70,196 +85,194 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isSmallScreen = size.height < 700;
+    
     return Scaffold(
+      backgroundColor: _pages[_currentPage].backgroundColor,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Skip button
-            Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Logo pequeño o espacio vacío
-                  SizedBox(
-                    width: 60,
-                    child: Text(
-                      'Logo',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[600],
-                      ),
-                    ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Column(
+              children: [
+                // PageView content
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (int page) {
+                      setState(() {
+                        _currentPage = page;
+                      });
+                    },
+                    itemCount: _pages.length,
+                    itemBuilder: (context, index) {
+                      return _buildOnboardingPage(
+                        _pages[index], 
+                        constraints,
+                        isSmallScreen,
+                      );
+                    },
                   ),
-                  // Botón Skip
-                  TextButton(
-                    onPressed: _goToLogin,
-                    child: Text(
-                      'Saltar',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // PageView content
-            Expanded(
-              flex: 8,
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: (int page) {
-                  setState(() {
-                    _currentPage = page;
-                  });
-                },
-                itemCount: _pages.length,
-                itemBuilder: (context, index) {
-                  return _buildOnboardingPage(_pages[index]);
-                },
-              ),
-            ),
-
-            // Dots indicator
-            Expanded(
-              flex: 1,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  _pages.length,
-                  (index) => _buildDot(index),
                 ),
-              ),
-            ),
 
-            // Navigation buttons
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  children: [
-                    // Next/Get Started button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _nextPage,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _pages[_currentPage].color,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 2,
-                        ),
-                        child: Text(
-                          _currentPage == _pages.length - 1 
-                              ? 'Comenzar'
-                              : 'Siguiente',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
+                // Dots indicator and Navigation button
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: size.width * 0.06,
+                    vertical: isSmallScreen ? 16.0 : 20.0,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Dots indicator
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                          _pages.length,
+                          (index) => _buildDot(index, isSmallScreen),
                         ),
                       ),
-                    ),
-                    SizedBox(height: 12),
-
-                    // Back button (except on first page)
-                    if (_currentPage > 0)
+                      SizedBox(height: isSmallScreen ? 16 : 20),
+                      
+                      // Next/Get Started button
                       SizedBox(
                         width: double.infinity,
-                        height: 50,
-                        child: OutlinedButton(
-                          onPressed: _previousPage,
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: _pages[_currentPage].color),
+                        height: isSmallScreen ? 48 : 50,
+                        child: ElevatedButton(
+                          onPressed: _nextPage,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color.fromARGB(255, 79, 95, 74),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
+                            elevation: 2,
                           ),
                           child: Text(
-                            'Anterior',
+                            _currentPage == _pages.length - 1 
+                                ? 'Comenzar'
+                                : 'Siguiente',
                             style: TextStyle(
-                              fontSize: 16,
-                              color: _pages[_currentPage].color,
+                              fontSize: isSmallScreen ? 15 : 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
                             ),
                           ),
                         ),
                       ),
-                    
-                    SizedBox(height: 20),
-                  ],
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOnboardingPage(
+    OnboardingData data, 
+    BoxConstraints constraints,
+    bool isSmallScreen,
+  ) {
+    final size = MediaQuery.of(context).size;
+    final horizontalPadding = size.width * 0.06;
+    
+    // Calcular el tamaño de la imagen basado en el espacio disponible
+    final availableHeight = constraints.maxHeight * 0.6;
+    final availableWidth = size.width - (horizontalPadding * 2);
+    final imageSize = availableHeight < availableWidth 
+        ? availableHeight 
+        : availableWidth;
+    
+    return SingleChildScrollView(
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
+          vertical: isSmallScreen ? 8.0 : 16.0,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(height: isSmallScreen ? 8 : 16),
+            
+            // Image
+            Container(
+              height: imageSize,
+              width: imageSize,
+              constraints: BoxConstraints(
+                maxHeight: 550,
+                maxWidth: 550,
+              ),
+              decoration: BoxDecoration(
+                color: data.cardColor,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.asset(
+                  data.imagePath,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Center(
+                      child: Icon(
+                        Icons.image,
+                        size: imageSize * 0.2,
+                        color: Colors.grey[400],
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
+            SizedBox(height: isSmallScreen ? 16 : 24),
+
+            // Title
+            Text(
+              data.title,
+              style: TextStyle(
+                fontSize: isSmallScreen ? 24 : 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[800],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: isSmallScreen ? 12 : 16),
+
+            // Description
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: size.width * 0.02,
+              ),
+              child: Text(
+                data.description,
+                style: TextStyle(
+                  fontSize: isSmallScreen ? 14 : 16,
+                  color: Colors.grey[600],
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            SizedBox(height: isSmallScreen ? 8 : 16),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildOnboardingPage(OnboardingData data) {
-    return Padding(
-      padding: EdgeInsets.all(24.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Icon/Image
-          Container(
-            height: 200,
-            width: 200,
-            decoration: BoxDecoration(
-              color: data.color.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              data.image,
-              size: 100,
-              color: data.color,
-            ),
-          ),
-          SizedBox(height: 48),
-
-          // Title
-          Text(
-            data.title,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 16),
-
-          // Description
-          Text(
-            data.description,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDot(int index) {
+  Widget _buildDot(int index, bool isSmallScreen) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 4),
-      height: 8,
-      width: _currentPage == index ? 24 : 8,
+      margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 3 : 4),
+      height: isSmallScreen ? 7 : 8,
+      width: _currentPage == index 
+          ? (isSmallScreen ? 20 : 24) 
+          : (isSmallScreen ? 7 : 8),
       decoration: BoxDecoration(
         color: _currentPage == index 
-            ? _pages[_currentPage].color
+            ? const Color.fromARGB(255, 79, 95, 74)
             : Colors.grey[300],
         borderRadius: BorderRadius.circular(4),
       ),
@@ -269,15 +282,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
 // Modelo de datos para cada página del onboarding
 class OnboardingData {
-  final IconData image;
+  final String imagePath;
   final String title;
   final String description;
-  final Color color;
+  final Color backgroundColor;
+  final Color cardColor;
 
   OnboardingData({
-    required this.image,
+    required this.imagePath,
     required this.title,
     required this.description,
-    required this.color,
+    required this.backgroundColor,
+    required this.cardColor,
   });
 }
