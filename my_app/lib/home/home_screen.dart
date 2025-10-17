@@ -401,9 +401,9 @@ Widget _buildProgressCard({required VoidCallback onTap}) {
 
 Widget _buildHabitsCard({required VoidCallback onTap}) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
-  
+
   return InkWell(
-    onTap: onTap,
+    onTap: () => Navigator.of(context).pushNamed('/habits'),
     borderRadius: BorderRadius.circular(20),
     child: Ink(
       decoration: BoxDecoration(

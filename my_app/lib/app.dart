@@ -5,6 +5,7 @@ import 'package:my_app/library/domain/usescases/get_books.dart';
 import 'package:my_app/library/domain/usescases/get_books_by_category.dart';
 import 'package:my_app/library/domain/usescases/search_books.dart';
 import 'package:my_app/library/presentation/blocs/library_bloc.dart';
+import 'package:my_app/habits/presentation/blocs/habit_bloc.dart'; 
 
 import 'core/di/injector.dart';
 import 'config/app_router.dart';
@@ -52,6 +53,9 @@ class MyApp extends StatelessWidget {
           ),
           BlocProvider<ForumBloc>(
             create: (_) => getIt<ForumBloc>(),
+          ),
+          BlocProvider<HabitBloc>(
+            create: (_) => getIt<HabitBloc>(),
           ),
         ],
         child: MaterialApp(

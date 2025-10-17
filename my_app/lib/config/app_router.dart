@@ -8,6 +8,8 @@ import '../login/presentation/pages/login_screen.dart';
 import '../register/presentation/register_screen.dart';
 import '../home/home_screen.dart';
 import '../library/presentation/library_screen.dart';
+import '../habits/presentation/screens/habits_home_screen.dart';
+import '../habits/presentation/screens/habit_creation_screen.dart';
 
 class AppRouter {
   static const String splash = '/';
@@ -17,7 +19,9 @@ class AppRouter {
   static const String home = '/home';
   static const String library = '/library';
   static const String foro = '/foro';
-    static const String bookDetail = '/book-detail'; // 👈 nueva ruta
+  static const String bookDetail = '/book-detail';
+  static const String habitsHome = '/habits';
+  static const String habitCreation = '/habit-creation';
 
 
   static Map<String, WidgetBuilder> routes = {
@@ -28,7 +32,9 @@ class AppRouter {
     home: (_) => HomeScreen(),
     library: (_) => LibraryPage(),
     foro: (_) => ForumScreen(),
-     bookDetail: (context) {
+    habitsHome: (_) => const HabitsHomeScreen(),
+    habitCreation: (_) => HabitCreationScreen(),
+    bookDetail: (context) {
       final bookId = ModalRoute.of(context)!.settings.arguments as String;
       return BookDetailPage(bookId: bookId);
     },

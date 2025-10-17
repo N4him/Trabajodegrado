@@ -10,6 +10,18 @@ import 'package:my_app/forum/domain/usescases/reply_forum_post.dart';
 import 'package:my_app/forum/domain/usescases/search_forum_posts.dart';
 
 // ==============================================
+// HABITS
+// ==============================================
+import 'package:my_app/habits/data/datasources/habit_remote_datasource.dart';
+import 'package:my_app/habits/data/repositories/habit_repository_impl.dart';
+import 'package:my_app/habits/domain/repositories/habit_repository.dart';
+import 'package:my_app/habits/domain/usecases/create_habit_usecase.dart';
+import 'package:my_app/habits/domain/usecases/register_completion_usecase.dart';
+import 'package:my_app/habits/domain/usecases/get_habits_by_user_usecase.dart';
+import 'package:my_app/habits/domain/usecases/get_habit_progress_usecase.dart';
+import 'package:my_app/habits/presentation/blocs/habit_bloc.dart';
+
+// ==============================================
 // LIBRARY
 // ==============================================
 import 'package:my_app/library/data/datasources/library_remote_datasource.dart';
@@ -87,6 +99,11 @@ Future<void> setupDI() async {
     () => ForumRemoteDataSourceImpl(firestore: getIt()),
   );
 
+  
+  getIt.registerLazySingleton<HabitDataSource>(
+    () => HabitFirestoreDataSource(firestore: getIt()),
+  );
+
   // ==============================================
   // REPOSITORIES
   // ==============================================
@@ -112,6 +129,10 @@ Future<void> setupDI() async {
   getIt.registerLazySingleton<ForumRepository>(
     () => ForumRepositoryImpl(remoteDataSource: getIt()),
   );
+
+  getIt.registerLazySingleton<HabitRepository>(
+  () => HabitRepositoryImpl(dataSource: getIt()), // 🔑 CORREGIDO: Usar 'dataSource: '
+);
 
   // ==============================================
   // USE CASES
@@ -164,6 +185,22 @@ getIt.registerLazySingleton<GetUserForumPosts>(
   () => GetUserForumPosts(getIt()),
 );
 
+getIt.registerLazySingleton<CreateHabitUseCase>(
+  () => CreateHabitUseCase(repository: getIt()),
+);
+
+getIt.registerLazySingleton<RegisterCompletionUseCase>(
+  () => RegisterCompletionUseCase(getIt()),
+);
+
+getIt.registerLazySingleton<GetHabitsByUserUseCase>(
+  () => GetHabitsByUserUseCase(repository: getIt()),
+);
+
+getIt.registerLazySingleton<GetHabitProgressUseCase>(
+  () => GetHabitProgressUseCase(repository: getIt()),
+);
+
   // ==============================================
   // BLOCS - FACTORY REGISTRATION
   // ==============================================
@@ -198,6 +235,16 @@ getIt.registerLazySingleton<GetUserForumPosts>(
       getUserForumPostsUseCase: getIt<GetUserForumPosts>(),
     ),
   );
+
+  getIt.registerFactory<HabitBloc>(
+    () => HabitBloc(
+      createHabitUseCase: getIt(),
+      registerCompletionUseCase: getIt(),
+      getHabitsByUserUseCase: getIt(),
+      getHabitProgressUseCase: getIt(),
+    ),
+  );
+
 }
 
 // ==============================================
@@ -208,6 +255,7 @@ RegisterBloc getRegisterBloc() => getIt<RegisterBloc>();
 ProfileBloc getProfileBloc() => getIt<ProfileBloc>();
 LibraryBloc getLibraryBloc() => getIt<LibraryBloc>();
 ForumBloc getForumBloc() => getIt<ForumBloc>();
+HabitBloc getHabitBloc() => getIt<HabitBloc>(); 
 
 // ==============================================
 // FUNCIÓN PARA LIMPIAR DEPENDENCIAS (OPCIONAL)
