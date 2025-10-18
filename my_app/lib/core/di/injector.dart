@@ -10,6 +10,7 @@ import 'package:my_app/forum/domain/usescases/get_user_forum_posts.dart';
 import 'package:my_app/forum/domain/usescases/like_forum_post.dart';
 import 'package:my_app/forum/domain/usescases/reply_forum_post.dart';
 import 'package:my_app/forum/domain/usescases/search_forum_posts.dart';
+import 'package:my_app/gamification/data/repositories/insignia_repository_impl.dart';
 
 // ==============================================
 // LIBRARY
@@ -69,7 +70,25 @@ import 'package:my_app/forum/data/repositories/forum_repository_impl.dart';
 import 'package:my_app/forum/domain/repositories/forum_repository.dart';
 import 'package:my_app/forum/presentation/bloc/forum_bloc.dart';
 
+// ==============================================
+// GAMIFICACIÓN
+// ==============================================
+import 'package:my_app/gamification/data/datasources/gamificacion_remote_data_source.dart';
+import 'package:my_app/gamification/data/datasources/insignias_remote_data_source.dart';
+import 'package:my_app/gamification/data/repositories/gamificacion_repository_impl.dart';
+import 'package:my_app/gamification/domain/repositories/gamificacion_repository.dart';
+import 'package:my_app/gamification/domain/repositories/insignia_repository.dart';
+import 'package:my_app/gamification/domain/usecases/get_gamificacion_data.dart';
+import 'package:my_app/gamification/domain/usecases/update_modulo_progress.dart';
+import 'package:my_app/gamification/domain/usecases/add_event_to_historial.dart';
+import 'package:my_app/gamification/domain/usecases/check_and_unlock_insignias.dart';
+import 'package:my_app/gamification/domain/usecases/get_user_insignias.dart';
+import 'package:my_app/gamification/presentation/bloc/gamificacion_bloc.dart';
+
 final getIt = GetIt.instance;
+
+// Fix 1: Specify generic types explicitly in all getIt() calls
+// Fix 2: Ensure proper registration order
 
 Future<void> setupDI() async {
   // ==============================================
@@ -82,42 +101,51 @@ Future<void> setupDI() async {
   // DATA SOURCES
   // ==============================================
   getIt.registerLazySingleton<LoginRemoteDataSource>(
-    () => LoginRemoteDataSourceImpl(firebaseAuth: getIt()),
+    () => LoginRemoteDataSourceImpl(firebaseAuth: getIt<FirebaseAuth>()),
   );
 
   getIt.registerLazySingleton<LibraryRemoteDataSource>(
-    () => LibraryRemoteDataSourceImpl(firestore: getIt()),
+    () => LibraryRemoteDataSourceImpl(firestore: getIt<FirebaseFirestore>()),
   );
 
   getIt.registerLazySingleton<RegisterRemoteDataSource>(
     () => RegisterRemoteDataSourceImpl(
-      firebaseAuth: getIt(),
-      firestore: getIt(),
+      firebaseAuth: getIt<FirebaseAuth>(),
+      firestore: getIt<FirebaseFirestore>(),
     ),
   );
 
   getIt.registerLazySingleton<ForumRemoteDataSource>(
-    () => ForumRemoteDataSourceImpl(firestore: getIt()),
+    () => ForumRemoteDataSourceImpl(firestore: getIt<FirebaseFirestore>()),
   );
 
   // Saved Books DataSource
   getIt.registerLazySingleton<SavedBookRemoteDataSource>(
-    () => SavedBookRemoteDataSourceImpl(getIt()),
+    () => SavedBookRemoteDataSourceImpl(getIt<FirebaseFirestore>()),
+  );
+
+  // Gamificación DataSources
+  getIt.registerLazySingleton<GamificacionRemoteDataSource>(
+    () => GamificacionRemoteDataSourceImpl(firestore: getIt<FirebaseFirestore>()),
+  );
+
+  getIt.registerLazySingleton<InsigniasRemoteDataSource>(
+    () => InsigniasRemoteDataSourceImpl(firestore: getIt<FirebaseFirestore>()),
   );
 
   // ==============================================
   // REPOSITORIES
   // ==============================================
   getIt.registerLazySingleton<LoginRepository>(
-    () => LoginRepositoryImpl(remoteDataSource: getIt()),
+    () => LoginRepositoryImpl(remoteDataSource: getIt<LoginRemoteDataSource>()),
   );
 
   getIt.registerLazySingleton<LibraryRepository>(
-    () => LibraryRepositoryImpl(remoteDataSource: getIt()),
+    () => LibraryRepositoryImpl(remoteDataSource: getIt<LibraryRemoteDataSource>()),
   );
   
   getIt.registerLazySingleton<RegisterRepository>(
-    () => RegisterRepositoryImpl(remoteDataSource: getIt()),
+    () => RegisterRepositoryImpl(remoteDataSource: getIt<RegisterRemoteDataSource>()),
   );
   
   getIt.registerLazySingleton<ProfileRepository>(
@@ -128,102 +156,136 @@ Future<void> setupDI() async {
   );
 
   getIt.registerLazySingleton<ForumRepository>(
-    () => ForumRepositoryImpl(remoteDataSource: getIt()),
+    () => ForumRepositoryImpl(remoteDataSource: getIt<ForumRemoteDataSource>()),
   );
 
   // Saved Books Repository
   getIt.registerLazySingleton<SavedBookRepository>(
-    () => SavedBookRepositoryImpl(getIt()),
+    () => SavedBookRepositoryImpl(getIt<SavedBookRemoteDataSource>()),
+  );
+
+  // Gamificación Repositories - FIX: Add explicit type to getIt()
+  getIt.registerLazySingleton<GamificacionRepository>(
+    () => GamificacionRepositoryImpl(
+      remoteDataSource: getIt<GamificacionRemoteDataSource>(),
+    ),
+  );
+
+  getIt.registerLazySingleton<InsigniaRepository>(
+    () => InsigniaRepositoryImpl(remoteDataSource: getIt<InsigniasRemoteDataSource>()),
   );
 
   // ==============================================
   // USE CASES
   // ==============================================
   getIt.registerLazySingleton<LoginUser>(
-    () => LoginUser(getIt()),
+    () => LoginUser(getIt<LoginRepository>()),
   );
   
   getIt.registerLazySingleton<RegisterUser>(
-    () => RegisterUser(getIt()),
+    () => RegisterUser(getIt<RegisterRepository>()),
   );
 
   // Library Use Cases
   getIt.registerLazySingleton<GetBooks>(
-    () => GetBooks(getIt()),
+    () => GetBooks(getIt<LibraryRepository>()),
   );
 
   getIt.registerLazySingleton<GetBookById>(
-    () => GetBookById(getIt()),
+    () => GetBookById(getIt<LibraryRepository>()),
   );
 
   getIt.registerLazySingleton<GetBooksByCategory>(
-    () => GetBooksByCategory(getIt()),
+    () => GetBooksByCategory(getIt<LibraryRepository>()),
   );
 
   getIt.registerLazySingleton<SearchBooks>(
-    () => SearchBooks(getIt()),
+    () => SearchBooks(getIt<LibraryRepository>()),
   );
 
   // Saved Books Use Cases
   getIt.registerLazySingleton<SaveBookUseCase>(
-    () => SaveBookUseCase(getIt()),
+    () => SaveBookUseCase(getIt<SavedBookRepository>()),
   );
 
   getIt.registerLazySingleton<GetUserSavedBooksUseCase>(
-    () => GetUserSavedBooksUseCase(getIt()),
+    () => GetUserSavedBooksUseCase(getIt<SavedBookRepository>()),
   );
 
   getIt.registerLazySingleton<DeleteSavedBookUseCase>(
-    () => DeleteSavedBookUseCase(getIt()),
+    () => DeleteSavedBookUseCase(getIt<SavedBookRepository>()),
   );
 
   getIt.registerLazySingleton<CheckBookSavedUseCase>(
-    () => CheckBookSavedUseCase(getIt()),
+    () => CheckBookSavedUseCase(getIt<SavedBookRepository>()),
   );
   
-
   // Forum Use Cases
   getIt.registerLazySingleton<GetForumPosts>(
-    () => GetForumPosts(getIt()),
+    () => GetForumPosts(getIt<ForumRepository>()),
   );
   getIt.registerLazySingleton<CreateForumPost>(
-    () => CreateForumPost(getIt()),
+    () => CreateForumPost(getIt<ForumRepository>()),
   );
   getIt.registerLazySingleton<LikeForumPost>(
-    () => LikeForumPost(getIt()),
+    () => LikeForumPost(getIt<ForumRepository>()),
   );
   getIt.registerLazySingleton<ReplyForumPost>(
-    () => ReplyForumPost(getIt()),
+    () => ReplyForumPost(getIt<ForumRepository>()),
   );
   getIt.registerLazySingleton<DeleteForumPost>(
-    () => DeleteForumPost(getIt()),
+    () => DeleteForumPost(getIt<ForumRepository>()),
   );
   getIt.registerLazySingleton<SearchForumPosts>(
-    () => SearchForumPosts(getIt()),
+    () => SearchForumPosts(getIt<ForumRepository>()),
   );
   getIt.registerLazySingleton<GetUserForumPosts>(
-    () => GetUserForumPosts(getIt()),
+    () => GetUserForumPosts(getIt<ForumRepository>()),
   );
   getIt.registerLazySingleton<GetForumPostsByCategory>(
-    () => GetForumPostsByCategory(getIt()),
+    () => GetForumPostsByCategory(getIt<ForumRepository>()),
   );
-  getIt.registerLazySingleton<GetPopularForumPosts>( // ➕ Agregar
-    () => GetPopularForumPosts(getIt()),
+  getIt.registerLazySingleton<GetPopularForumPosts>(
+    () => GetPopularForumPosts(getIt<ForumRepository>()),
+  );
+
+  // Gamificación Use Cases
+  getIt.registerLazySingleton<GetGamificacionData>(
+    () => GetGamificacionData(repository: getIt<GamificacionRepository>()),
+  );
+
+  getIt.registerLazySingleton<UpdateModuloProgress>(
+    () => UpdateModuloProgress(repository: getIt<GamificacionRepository>()),
+  );
+
+  getIt.registerLazySingleton<AddEventToHistorial>(
+    () => AddEventToHistorial(repository: getIt<GamificacionRepository>()),
+  );
+
+  getIt.registerLazySingleton<CheckAndUnlockInsignias>(
+    () => CheckAndUnlockInsignias(
+      insigniaRepository: getIt<InsigniaRepository>(),
+      gamificacionRepository: getIt<GamificacionRepository>(),
+    ),
+  );
+
+  getIt.registerLazySingleton<GetUserInsignias>(
+    () => GetUserInsignias(repository: getIt<InsigniaRepository>()),
   );
 
   // ==============================================
   // BLOCS - FACTORY REGISTRATION
   // ==============================================
   getIt.registerFactory<LoginBloc>(
-    () => LoginBloc(loginUser: getIt()),
+    () => LoginBloc(loginUser: getIt<LoginUser>()),
   );
   
   getIt.registerFactory<RegisterBloc>(
-    () => RegisterBloc(registerUser: getIt()),
+    () => RegisterBloc(registerUser: getIt<RegisterUser>()),
   );
   
   getIt.registerFactory<ProfileBloc>(
-    () => ProfileBloc(profileRepository: getIt()),
+    () => ProfileBloc(profileRepository: getIt<ProfileRepository>()),
   );
 
   getIt.registerFactory<LibraryBloc>(
@@ -255,7 +317,18 @@ Future<void> setupDI() async {
       searchForumPostsUseCase: getIt<SearchForumPosts>(),
       getUserForumPostsUseCase: getIt<GetUserForumPosts>(),
       getForumPostsByCategoryUseCase: getIt<GetForumPostsByCategory>(),
-      getPopularForumPostsUseCase: getIt<GetPopularForumPosts>(), // ➕ Agregar
+      getPopularForumPostsUseCase: getIt<GetPopularForumPosts>(),
+    ),
+  );
+
+  // Gamificación BLoC
+  getIt.registerFactory<GamificacionBloc>(
+    () => GamificacionBloc(
+      getGamificacionData: getIt<GetGamificacionData>(),
+      updateModuloProgress: getIt<UpdateModuloProgress>(),
+      addEventToHistorial: getIt<AddEventToHistorial>(),
+      checkAndUnlockInsignias: getIt<CheckAndUnlockInsignias>(),
+      getUserInsignias: getIt<GetUserInsignias>(),
     ),
   );
 }
@@ -269,6 +342,7 @@ ProfileBloc getProfileBloc() => getIt<ProfileBloc>();
 LibraryBloc getLibraryBloc() => getIt<LibraryBloc>();
 SavedBookBloc getSavedBookBloc() => getIt<SavedBookBloc>();
 ForumBloc getForumBloc() => getIt<ForumBloc>();
+GamificacionBloc getGamificacionBloc() => getIt<GamificacionBloc>();
 
 // ==============================================
 // FUNCIÓN PARA LIMPIAR DEPENDENCIAS (OPCIONAL)

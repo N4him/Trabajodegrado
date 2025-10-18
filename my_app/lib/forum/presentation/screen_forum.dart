@@ -7,6 +7,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_app/forum/domain/entities/forum_entity.dart';
 import 'package:my_app/forum/presentation/bloc/forum_bloc.dart';
 import 'package:my_app/forum/presentation/bloc/forum_state.dart';
+import 'package:my_app/gamification/domain/entities/modulo_progreso.dart';
+import 'package:my_app/gamification/presentation/bloc/gamificacion_bloc.dart';
+import 'package:my_app/gamification/presentation/bloc/gamificacion_event.dart';
 import 'package:my_app/widgets/cache_avatar_forum.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
@@ -874,82 +877,98 @@ void _preloadVisibleAvatars(List<ForumEntity> posts) {
           Expanded(
             flex: 2,
             child: ElevatedButton(
-              onPressed: () async {
-                if (formKey.currentState!.validate() && user != null) {
-                  showDialog(
-                    context: screenContext,
-                    barrierDismissible: false,
-                    builder: (ctx) => const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    ),
-                  );
+              // Reemplaza la sección de onPressed en _buildDialogButtons:
 
-                  try {
-                    final userDoc = await FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(user.uid)
-                        .get();
+// Reemplaza la sección de onPressed en _buildDialogButtons:
 
-                    final userData = userDoc.data();
-                    final displayName = userData?['displayName'] ?? 'Usuario Anónimo';
-                    final photoUrl = userData?['photoUrl'];
+onPressed: () async {
+  if (formKey.currentState!.validate() && user != null) {
+    showDialog(
+      context: screenContext,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      ),
+    );
 
-                    screenContext.read<ForumBloc>().add(
-                          forum_event.CreateForumPostEvent(
-                            title: titleController.text.trim(),
-                            content: contentController.text.trim(),
-                            authorId: user.uid,
-                            authorName: displayName,
-                            authorPhotoUrl: photoUrl,
-                            category: selectedCategory,
-                            categoryColor: categoryColor,
-                          ),
-                        );
+    try {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
 
-                    Navigator.pop(screenContext);
-                    Navigator.pop(dialogContext);
+      final userData = userDoc.data();
+      final displayName = userData?['displayName'] ?? 'Usuario Anónimo';
+      final photoUrl = userData?['photoUrl'];
 
-                    ScaffoldMessenger.of(screenContext).showSnackBar(
-                      SnackBar(
-                        content: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.check_circle_rounded,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              '¡Publicación creada exitosamente!',
-                              style: TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                        backgroundColor: const Color(0xFF4CAF50),
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    );
-                  } catch (e) {
-                    Navigator.pop(screenContext);
-                    ScaffoldMessenger.of(screenContext).showSnackBar(
-                      SnackBar(
-                        content: Text('Error: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
+      // 1️⃣ Crear el post en ForumBloc
+      screenContext.read<ForumBloc>().add(
+            forum_event.CreateForumPostEvent(
+              title: titleController.text.trim(),
+              content: contentController.text.trim(),
+              authorId: user.uid,
+              authorName: displayName,
+              authorPhotoUrl: photoUrl,
+              category: selectedCategory,
+              categoryColor: categoryColor,
+            ),
+          );
+
+      // 2️⃣ Actualizar progreso del módulo foro (incrementar publicaciones)
+      screenContext.read<GamificacionBloc>().add(
+            UpdateModuloProgressEvent(
+              userId: user.uid,
+              moduloKey: 'foro',
+              progreso: ModuloProgreso(
+                publicaciones: 1, // Incrementa en 1 publicación
+              ),
+            ),
+          );
+
+      Navigator.pop(screenContext);
+      Navigator.pop(dialogContext);
+
+      ScaffoldMessenger.of(screenContext).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                '¡Publicación creada exitosamente!',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFF4CAF50),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    } catch (e) {
+      Navigator.pop(screenContext);
+      ScaffoldMessenger.of(screenContext).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+},
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
                 padding: const EdgeInsets.symmetric(vertical: 18),

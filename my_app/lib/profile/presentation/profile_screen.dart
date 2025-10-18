@@ -1,10 +1,19 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:my_app/gamification/presentation/widgets/heatmap_habitos_widget.dart';
+import 'package:my_app/gamification/presentation/widgets/insignias_grid.dart';
+import 'package:my_app/gamification/presentation/widgets/planta_animation_widget.dart';
 import 'package:my_app/profile/presentation/bloc/profile_bloc.dart';
 import 'package:my_app/profile/presentation/bloc/profile_state.dart';
 import 'package:my_app/profile/presentation/bloc/profile_event.dart';
+import 'package:my_app/gamification/presentation/bloc/gamificacion_bloc.dart';
+import 'package:my_app/gamification/presentation/bloc/gamificacion_state.dart';
+import 'package:my_app/gamification/presentation/bloc/gamificacion_event.dart';
 import 'package:my_app/widgets/edit_profile_dialog.dart';
 import 'dart:async';
+import 'package:cupertino_icons/cupertino_icons.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -20,7 +29,12 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 1, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
+    
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId != null) {
+      context.read<GamificacionBloc>().add(LoadGamificacionData(userId: userId));
+    }
   }
 
   @override
@@ -152,9 +166,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildProfileHeader(profile, isUpdating),
-            const SizedBox(height: 16),
-            _buildTabSection(profile),
+            _buildCompactProfileHeader(profile, isUpdating),
+            _buildTabSection(),
           ],
         ),
       ),
@@ -163,6 +176,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Future<void> _handleRefresh() async {
     final completer = Completer<void>();
+    final userId = FirebaseAuth.instance.currentUser?.uid;
 
     late StreamSubscription subscription;
     subscription = context.read<ProfileBloc>().stream.listen((state) {
@@ -175,100 +189,174 @@ class _ProfileScreenState extends State<ProfileScreen>
     });
 
     context.read<ProfileBloc>().add(LoadProfile());
+    
+    if (userId != null) {
+      context.read<GamificacionBloc>().add(RefreshGamificacionData(userId: userId));
+    }
 
     return completer.future;
   }
 
-  Widget _buildProfileHeader(dynamic profile, bool isUpdating) {
+  Widget _buildCompactProfileHeader(dynamic profile, bool isUpdating) {
     final userName = profile.name ?? '';
-    final level = profile.level ?? 1;
-    final points = profile.points ?? 0;
     final photoUrl = profile.photoUrl ?? '';
     final gender = profile.gender ?? 'boy';
 
-    return Stack(
-      children: [
-        // Contenedor exterior con sombra interna (efecto hundido)
-        Container(
-          decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 235, 233, 243),
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(70),
-              bottomRight: Radius.circular(70),
-            ),
-            boxShadow: [
-              // Sombra interior oscura (arriba-izquierda)
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                offset: const Offset(4, 4),
-                blurRadius: 8,
-                spreadRadius: 0,
-              ),
-              // Sombra interior clara (abajo-derecha) - efecto hundido
-              BoxShadow(
-                color: Colors.white.withOpacity(0.7),
-                offset: const Offset(-4, -4),
-                blurRadius: 8,
-                spreadRadius: 0,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 60, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildProfileAvatar(photoUrl, userName, isUpdating, gender),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                                        const SizedBox(height: 12),
+
+                    Text(
+                      userName.isNotEmpty ? userName : 'Usuario',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+
+                    _buildLevelProgressBar(),
+                  ],
+                ),
               ),
             ],
           ),
-          child: Container(
-            margin: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(56),
-                bottomRight: Radius.circular(56),
-              ),
-              boxShadow: [
-                // Sombra interna adicional para profundidad
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  offset: const Offset(2, 2),
-                  blurRadius: 6,
-                  spreadRadius: -2,
-                ),
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.3),
-                  offset: const Offset(-2, -2),
-                  blurRadius: 6,
-                  spreadRadius: -2,
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  const SizedBox(height: 40),
-                  _buildProfileAvatar(photoUrl, userName, isUpdating, gender),
-                  const SizedBox(height: 16),
-                  _buildProfileInfo(userName, gender),
-                  const SizedBox(height: 24),
-                  _buildProgressBar(level, points),
-                ],
-              ),
-            ),
-          ),
-        ),
-        if (isUpdating) _buildUpdatingOverlay(),
-      ],
+          const SizedBox(height: 16),
+          _buildGamificationStatsCompact(),
+        ],
+      ),
     );
   }
 
+  Widget _buildLevelProgressBar() {
+    return BlocBuilder<GamificacionBloc, GamificacionState>(
+      builder: (context, state) {
+        if (state is GamificacionLoaded) {
+          final puntosTotales = state.gamificacion.modulos.values
+              .fold<int>(0, (sum, modulo) => sum + (modulo.puntosObtenidos ?? 0));
+          
+          final nivelActual = (puntosTotales ~/ 1000) + 1;
+          final puntosEnNivel = puntosTotales % 1000;
+          final porcentaje = puntosEnNivel / 1000;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Level $nivelActual',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: porcentaje,
+                  minHeight: 12,
+                  backgroundColor: Colors.grey[300],
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    Color(0xFF7C4DFF),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+Widget _buildGamificationStatsCompact() {
+  return BlocBuilder<GamificacionBloc, GamificacionState>(
+    builder: (context, state) {
+      if (state is GamificacionLoaded) {
+        // Obtener el conteo de insignias desbloqueadas
+        final insigniasCount = state.gamificacion.insigniasUsuario.length;
+        
+        // Calcular racha actual (días consecutivos con actividad)
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Racha de fuego
+            Icon(
+              Icons.local_fire_department,
+              size: 16,
+              color: const Color(0xFF7C4DFF),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              'rachaActual',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(width: 12),
+            
+            // Insignias desbloqueadas
+            Icon(
+              Icons.emoji_events,
+              size: 16,
+              color: const Color(0xFFFFB800),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '$insigniasCount',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        );
+      }
+      
+      return const SizedBox.shrink();
+    },
+  );
+}
+
   Widget _buildProfileAvatar(String photoUrl, String userName, bool isUpdating, String gender) {
     return SizedBox(
-      width: 120,
-      height: 120,
+      width: 100,
+      height: 100,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           CircleAvatar(
-            radius: 60,
+            radius: 50,
+            backgroundColor: Colors.grey[100],
             backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
             child: photoUrl.isEmpty
-                ? Icon(Icons.person, size: 60, color: Colors.grey[400])
+                ? Icon(Icons.person, size: 50, color: Colors.grey[400])
                 : null,
           ),
           if (isUpdating) _buildAvatarLoadingOverlay(),
@@ -301,26 +389,27 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Widget _buildEditButton(String userName, String photoUrl, bool isUpdating, String gender) {
     return Positioned(
-      bottom: 0,
-      right: 0,
+      bottom: -4,
+      right: -4,
       child: GestureDetector(
         onTap: isUpdating ? null : () => _showEditDialog(userName, photoUrl, gender),
         child: Container(
           decoration: BoxDecoration(
-            color: isUpdating ? Colors.grey[300] : Colors.white,
+            color: isUpdating ? Colors.grey[300] : const Color(0xFF7C4DFF),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.2),
-                blurRadius: 4,
+                blurRadius: 6,
+                offset: const Offset(2, 2),
               ),
             ],
           ),
-          padding: const EdgeInsets.all(6),
+          padding: const EdgeInsets.all(8),
           child: Icon(
             Icons.edit,
-            size: 20,
-            color: isUpdating ? Colors.grey[500] : Colors.black,
+            size: 16,
+            color: isUpdating ? Colors.grey[500] : Colors.white,
           ),
         ),
       ),
@@ -337,121 +426,239 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildProfileInfo(String userName, String gender) {
-    return Column(
-      children: [
-        Text(
-          userName.isNotEmpty ? userName : 'Usuario',
-          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
-        ),
-        const SizedBox(height: 4),
-      ],
-    );
-  }
-
-  Widget _buildProgressBar(int level, int points) {
-    final progress = (points % 100) / 100;
-
-    return Row(
-      children: [
-        const SizedBox(width: 8),
-        Text(
-          'Lv. $level',
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: Colors.grey[200],
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(Color(0xFF7C4DFF)),
-              minHeight: 8,
+Widget _buildTabSection() {
+  return Column(
+    children: [
+      Container(
+        color: const Color.fromARGB(255, 235, 233, 243),
+        child: TabBar(
+          controller: _tabController,
+          labelColor: const Color(0xFF4CAF50),
+          unselectedLabelColor: Colors.grey[400],
+          indicatorColor: const Color(0xFF7C4DFF),
+          indicatorWeight: 4,
+          indicatorSize: TabBarIndicatorSize.tab,
+          labelPadding: EdgeInsets.zero,
+          isScrollable: false,
+          tabs: [
+            Tab(
+              icon: Icon(
+                CupertinoIcons.tree,
+                color: const Color(0xFF4CAF50), // Verde
+              ),
             ),
-          ),
-        ),
-        const SizedBox(width: 8),
-      ],
-    );
-  }
-
-  Widget _buildUpdatingOverlay() {
-    return Positioned.fill(
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.7),
-          borderRadius: const BorderRadius.only(
-            bottomLeft: Radius.circular(60),
-            bottomRight: Radius.circular(60),
-          ),
-        ),
-        child: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(
-                color: Color(0xFF7C4DFF),
+            Tab(
+              icon: Icon(
+                Icons.local_activity_sharp,
+                color: const Color(0xFF2196F3), // Azul
               ),
-              SizedBox(height: 16),
-              Text(
-                'Actualizando perfil...',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF7C4DFF),
-                  fontWeight: FontWeight.w500,
-                ),
+            ),
+            Tab(
+              icon: Icon(
+                Icons.emoji_events,
+                color: const Color(0xFFFF9800), // Naranja
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+      SizedBox(
+        height: MediaQuery.of(context).size.height * 0.65,
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildPlantaTab(),
+            _buildActividadTab(),
+            _buildInsigniasTab(),
+          ],
+        ),
+      ),
+    ],
+  );
+}
 
-  Widget _buildTabSection(dynamic profile) {
-    final points = profile.points ?? 0;
-    final level = profile.level ?? 1;
-    final gender = profile.gender ?? 'boy';
+  Widget _buildPlantaTab() {
+    return BlocBuilder<GamificacionBloc, GamificacionState>(
+      builder: (context, state) {
+        if (state is GamificacionLoading) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF7C4DFF)),
+          );
+        }
 
-    return SizedBox(
-      height: 500,
-      child: Column(
-        children: [
-          TabBar(
-            controller: _tabController,
-            labelColor: const Color(0xFF7C4DFF),
-            unselectedLabelColor: Colors.grey[600],
-            indicatorColor: const Color(0xFF7C4DFF),
-            indicatorWeight: 3,
-            tabs: const [Tab(text: 'Stats')],
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
+        if (state is GamificacionLoaded) {
+          final estadoGeneral = state.gamificacion.estadoGeneral;
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
               children: [
-                _buildStatsTab(points, level, gender),
+                PlantaAnimationWidget(
+                  plantaValor: estadoGeneral.plantaValor,
+                  salud: estadoGeneral.salud,
+                  etapa: estadoGeneral.etapa,
+                  size: 200,
+                ),
+                const SizedBox(height: 24),
+                PlantaInfoCard(
+                  etapa: estadoGeneral.etapa,
+                  salud: estadoGeneral.salud,
+                  plantaValor: estadoGeneral.plantaValor,
+                ),
               ],
             ),
+          );
+        }
+
+        return Center(
+          child: Text(
+            'No se pudieron cargar los datos',
+            style: TextStyle(color: Colors.grey[600]),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildStatsTab(int points, int level, String gender) {
-    return const Padding(
-      padding: EdgeInsets.all(16.0),
-      child: Column(
-        children: [],
-      ),
+  Widget _buildProgresoTab() {
+    return BlocBuilder<GamificacionBloc, GamificacionState>(
+      builder: (context, state) {
+        if (state is GamificacionLoading) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF7C4DFF)),
+          );
+        }
+
+        if (state is GamificacionLoaded) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                HeatmapStatsCompact(
+                  historialEventos: state.gamificacion.historialEventos,
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Center(
+          child: Text(
+            'No se pudieron cargar los datos',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildActividadTab() {
+    return BlocBuilder<GamificacionBloc, GamificacionState>(
+      builder: (context, state) {
+        if (state is GamificacionLoading) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF7C4DFF)),
+          );
+        }
+
+        if (state is GamificacionLoaded) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Calendario de Actividad',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF7C4DFF),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                HeatmapHabitosWidget(
+                  historialEventos: state.gamificacion.historialEventos,
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Center(
+          child: Text(
+            'No se pudieron cargar los datos',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildInsigniasTab() {
+    return BlocBuilder<GamificacionBloc, GamificacionState>(
+      builder: (context, state) {
+        if (state is GamificacionLoading) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF7C4DFF)),
+          );
+        }
+
+        if (state is GamificacionLoaded) {
+          final insignias = state.insignias ?? [];
+
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                if (state.insigniasRecienDesbloqueadas != null &&
+                    state.insigniasRecienDesbloqueadas!.isNotEmpty) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF6C63FF), Color(0xFF4CAF50)],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.celebration, color: Colors.white, size: 32),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            '¡${state.insigniasRecienDesbloqueadas!.length} nueva(s) insignia(s) desbloqueada(s)!',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                InsigniasRecentesWidget(
+                  insignias: insignias,
+                  maxToShow: 5,
+                ),
+                const SizedBox(height: 16),
+                InsigniasGrid(
+                  insignias: insignias,
+                  crossAxisCount: 3,
+                  showOnlyUnlocked: false,
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Center(
+          child: Text(
+            'No se pudieron cargar las insignias',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+        );
+      },
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_app/forum/presentation/bloc/forum_bloc.dart';
+import 'package:my_app/gamification/presentation/bloc/gamificacion_bloc.dart';
 import 'package:my_app/library/domain/repositories/saved_book_entity.dart';
 import 'package:my_app/library/domain/usescases/check_book_saved_usecase.dart';
 import 'package:my_app/library/domain/usescases/delete_saved_book_usecase.dart';
@@ -38,6 +39,9 @@ class MyApp extends StatelessWidget {
       ],
       child: MultiBlocProvider(
         providers: [
+          BlocProvider<GamificacionBloc>(
+            create: (context) => getGamificacionBloc(),
+          ),
           BlocProvider<SplashBloc>(
             create: (_) => SplashBloc()..add(StartSplash()),
           ),
