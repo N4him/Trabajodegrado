@@ -11,6 +11,7 @@ import 'package:my_app/library/domain/usescases/get_user_saved_books_usecase.dar
 import 'package:my_app/library/domain/usescases/save_book_usecase.dart';
 import 'package:my_app/library/domain/usescases/search_books.dart';
 import 'package:my_app/library/presentation/blocs/library_bloc.dart';
+import 'package:my_app/habits/presentation/blocs/habit_bloc.dart'; 
 import 'package:my_app/library/presentation/blocs/saved_book_bloc.dart';
 
 import 'core/di/injector.dart';
@@ -69,6 +70,9 @@ class MyApp extends StatelessWidget {
           ),
           BlocProvider<ForumBloc>(
             create: (_) => getIt<ForumBloc>(),
+          ),
+          BlocProvider<HabitBloc>(
+            create: (_) => getIt<HabitBloc>(),
           ),
         ],
         child: MaterialApp(
