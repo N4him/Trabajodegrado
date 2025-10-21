@@ -12,71 +12,69 @@ class CategoryChipWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const iconColor =  Color.fromARGB(255, 160, 93, 85);
+    
     final categories = [
-      {'name': 'Todos', 'icon': Icons.apps, 'color': const Color(0xFF5E35B1)},
-      {'name': 'Ficción', 'icon': Icons.auto_stories, 'color': const Color(0xFFD32F2F)},
-      {'name': 'Historia', 'icon': Icons.history_edu, 'color': const Color(0xFF7B1FA2)},
-      {'name': 'Ciencia', 'icon': Icons.science, 'color': const Color(0xFF00796B)},
-      {'name': 'Arte', 'icon': Icons.palette, 'color': const Color(0xFFF57C00)},
+      {'name': 'Todos', 'icon': Icons.library_books_rounded},
+      {'name': 'HOLA', 'icon': Icons.menu_book},
+      {'name': 'reading', 'icon': Icons.favorite},
+      {'name': 'space', 'icon': Icons.language},
+      {'name': 'more', 'icon': Icons.apps},
     ];
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const Text(
-          'Explorar por Categoría',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF2C1810),
-          ),
-        ),
         const SizedBox(height: 16),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: categories.map((category) {
-              final isSelected = selectedCategory == category['name'];
-              return GestureDetector(
-                onTap: () => onCategoryChanged(category['name'] as String),
-                child: Container(
-                  margin: const EdgeInsets.only(right: 16),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: isSelected ? category['color'] as Color : Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: [
-                      BoxShadow(
-                        color: isSelected
-                            ? (category['color'] as Color).withOpacity(0.3)
-                            : Colors.black.withOpacity(0.05),
-                        blurRadius: isSelected ? 15 : 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        category['icon'] as IconData,
-                        color: isSelected ? Colors.white : category['color'] as Color,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        category['name'] as String,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: isSelected ? Colors.white : const Color(0xFF2C1810),
+        Center(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: categories.map((category) {
+                final isSelected = selectedCategory == category['name'];
+                return GestureDetector(
+                  onTap: () => onCategoryChanged(category['name'] as String),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isSelected ? iconColor : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isSelected
+                              ? iconColor.withOpacity(0.3)
+                              : Colors.black.withOpacity(0.05),
+                          blurRadius: isSelected ? 15 : 8,
+                          offset: const Offset(0, 4),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          category['icon'] as IconData,
+                          color: isSelected ? Colors.white : iconColor,
+                          size: 28,
+                        ),
+                        const SizedBox(height: 0),
+                        Text(
+                          category['name'] as String,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: isSelected ? Colors.white : const Color(0xFF2C1810),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            }).toList(),
+                );
+              }).toList(),
+            ),
           ),
         ),
       ],

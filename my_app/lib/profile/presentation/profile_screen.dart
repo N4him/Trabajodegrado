@@ -1,10 +1,19 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:my_app/gamification/presentation/widgets/heatmap_habitos_widget.dart';
+import 'package:my_app/gamification/presentation/widgets/insignias_grid.dart';
+import 'package:my_app/gamification/presentation/widgets/planta_animation_widget.dart';
 import 'package:my_app/profile/presentation/bloc/profile_bloc.dart';
 import 'package:my_app/profile/presentation/bloc/profile_state.dart';
 import 'package:my_app/profile/presentation/bloc/profile_event.dart';
+import 'package:my_app/gamification/presentation/bloc/gamificacion_bloc.dart';
+import 'package:my_app/gamification/presentation/bloc/gamificacion_state.dart';
+import 'package:my_app/gamification/presentation/bloc/gamificacion_event.dart';
 import 'package:my_app/widgets/edit_profile_dialog.dart';
 import 'dart:async';
+import 'package:my_app/widgets/profile_avatar_widget.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -14,13 +23,21 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   late TabController _tabController;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 1, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
+    
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId != null) {
+      context.read<GamificacionBloc>().add(LoadGamificacionData(userId: userId));
+    }
   }
 
   @override
@@ -39,11 +56,12 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 235, 233, 243),
       body: BlocConsumer<ProfileBloc, ProfileState>(
         listener: _handleStateChanges,
         builder: (context, state) {
-          // Mostrar loading hasta que esté completamente cargado
           if (state is ProfileLoading) {
             return const Center(
               child: CircularProgressIndicator(
@@ -71,7 +89,6 @@ class _ProfileScreenState extends State<ProfileScreen>
       _showErrorSnackBar(state.message);
     }
 
-    // Mostrar mensaje de éxito solo después de una actualización
     if (state is ProfileLoaded) {
       final previousState = context.read<ProfileBloc>().state;
       if (previousState is ProfileUpdating) {
@@ -153,9 +170,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildProfileHeader(profile, isUpdating),
-            const SizedBox(height: 16),
-            _buildTabSection(profile),
+            _buildCompactProfileHeader(profile, isUpdating),
+            _buildTabSection(),
           ],
         ),
       ),
@@ -164,8 +180,8 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Future<void> _handleRefresh() async {
     final completer = Completer<void>();
+    final userId = FirebaseAuth.instance.currentUser?.uid;
 
-    // Escuchar cambios de estado para completar el refresh
     late StreamSubscription subscription;
     subscription = context.read<ProfileBloc>().stream.listen((state) {
       if (state is ProfileLoaded || state is ProfileError) {
@@ -176,69 +192,185 @@ class _ProfileScreenState extends State<ProfileScreen>
       }
     });
 
-    // Disparar el evento de carga
     context.read<ProfileBloc>().add(LoadProfile());
+    
+    if (userId != null) {
+      context.read<GamificacionBloc>().add(RefreshGamificacionData(userId: userId));
+    }
 
     return completer.future;
   }
 
-  Widget _buildProfileHeader(dynamic profile, bool isUpdating) {
+  Widget _buildCompactProfileHeader(dynamic profile, bool isUpdating) {
     final userName = profile.name ?? '';
-    final level = profile.level ?? 1;
-    final points = profile.points ?? 0;
     final photoUrl = profile.photoUrl ?? '';
-    final gender = profile.gender ?? 'boy'; // Obtener gender del perfil
+    final gender = profile.gender ?? 'boy';
 
-    return Stack(
-      children: [
-        Card(
-          elevation: 4,
-          margin: EdgeInsets.zero,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(60),
-              bottomRight: Radius.circular(60),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                const SizedBox(height: 40),
-                _buildProfileAvatar(photoUrl, userName, isUpdating, gender),
-                const SizedBox(height: 16),
-                _buildProfileInfo(userName, gender), // Pasar gender
-                const SizedBox(height: 24),
-                _buildProgressBar(level, points),
-              ],
-            ),
-          ),
-        ),
-        if (isUpdating) _buildUpdatingOverlay(),
-      ],
-    );
-  }
-
-  Widget _buildProfileAvatar(String photoUrl, String userName, bool isUpdating, String gender) {
-    return SizedBox(
-      width: 120,
-      height: 120,
-      child: Stack(
-        clipBehavior: Clip.none,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 60, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 60,
-            backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
-            child: photoUrl.isEmpty
-                ? Icon(Icons.person, size: 60, color: Colors.grey[400])
-                : null,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildProfileAvatar(photoUrl, userName, isUpdating, gender),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 12),
+                    Text(
+                      userName.isNotEmpty ? userName : 'Usuario',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    _buildLevelProgressBar(),
+                  ],
+                ),
+              ),
+            ],
           ),
-          if (isUpdating) _buildAvatarLoadingOverlay(),
-          _buildEditButton(userName, photoUrl, isUpdating, gender),
+          const SizedBox(height: 16),
+          _buildGamificationStatsCompact(),
         ],
       ),
     );
   }
+
+  Widget _buildLevelProgressBar() {
+    return BlocBuilder<GamificacionBloc, GamificacionState>(
+      buildWhen: (previous, current) =>
+          previous is! GamificacionLoaded || current is! GamificacionLoaded ||
+          _calculatePoints(previous) != _calculatePoints(current),
+      builder: (context, state) {
+        if (state is GamificacionLoaded) {
+          final puntosTotales = state.gamificacion.modulos.values
+              .fold<int>(0, (sum, modulo) => sum + (modulo.puntosObtenidos));
+          
+          final nivelActual = (puntosTotales ~/ 1000) + 1;
+          final puntosEnNivel = puntosTotales % 1000;
+          final porcentaje = puntosEnNivel / 1000;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Level $nivelActual',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: porcentaje,
+                  minHeight: 12,
+                  backgroundColor: Colors.grey[300],
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    Color(0xFF7C4DFF),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  int _calculatePoints(GamificacionState state) {
+    if (state is GamificacionLoaded) {
+      return state.gamificacion.modulos.values
+          .fold<int>(0, (sum, modulo) => sum + (modulo.puntosObtenidos));
+    }
+    return 0;
+  }
+
+  Widget _buildGamificationStatsCompact() {
+    return BlocBuilder<GamificacionBloc, GamificacionState>(
+      buildWhen: (previous, current) =>
+          previous is! GamificacionLoaded || current is! GamificacionLoaded ||
+          previous.gamificacion.insigniasUsuario.length !=
+              current.gamificacion.insigniasUsuario.length,
+      builder: (context, state) {
+        if (state is GamificacionLoaded) {
+          final insigniasCount = state.gamificacion.insigniasUsuario.length;
+
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.local_fire_department,
+                size: 16,
+                color: const Color(0xFF7C4DFF),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'rachaActual',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Icon(
+                Icons.emoji_events,
+                size: 16,
+                color: const Color(0xFFFFB800),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '$insigniasCount',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+Widget _buildProfileAvatar(String photoUrl, String userName, bool isUpdating, String gender) {
+  return SizedBox(
+    width: 100,
+    height: 100,
+    child: Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Reemplaza el CircleAvatar con ProfileAvatarWidget
+        ProfileAvatarWidget(
+          photoUrl: photoUrl.isNotEmpty ? photoUrl : null,
+          radius: 50,
+        ),
+        if (isUpdating) _buildAvatarLoadingOverlay(),
+        _buildEditButton(userName, photoUrl, isUpdating, gender),
+      ],
+    ),
+  );
+}
 
   Widget _buildAvatarLoadingOverlay() {
     return Positioned.fill(
@@ -263,26 +395,27 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Widget _buildEditButton(String userName, String photoUrl, bool isUpdating, String gender) {
     return Positioned(
-      bottom: 0,
-      right: 0,
+      bottom: -4,
+      right: -4,
       child: GestureDetector(
         onTap: isUpdating ? null : () => _showEditDialog(userName, photoUrl, gender),
         child: Container(
           decoration: BoxDecoration(
-            color: isUpdating ? Colors.grey[300] : Colors.white,
+            color: isUpdating ? Colors.grey[300] : const Color(0xFF7C4DFF),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.2),
-                blurRadius: 4,
+                blurRadius: 6,
+                offset: const Offset(2, 2),
               ),
             ],
           ),
-          padding: const EdgeInsets.all(6),
+          padding: const EdgeInsets.all(8),
           child: Icon(
             Icons.edit,
-            size: 20,
-            color: isUpdating ? Colors.grey[500] : Colors.black,
+            size: 16,
+            color: isUpdating ? Colors.grey[500] : Colors.white,
           ),
         ),
       ),
@@ -294,255 +427,262 @@ class _ProfileScreenState extends State<ProfileScreen>
       context,
       currentName: userName,
       currentPhotoUrl: photoUrl,
-      gender: gender, // Pasar el gender al diálogo
+      gender: gender,
       onSave: _handleProfileUpdate,
     );
   }
 
-  Widget _buildProfileInfo(String userName, String gender) {
-    // Determinar el título basado en el género
-    String title = 'Experto';
-    if (gender.toLowerCase() == 'boy' || gender.toLowerCase() == 'male') {
-      title = 'Experto';
-    } else if (gender.toLowerCase() == 'girl' || gender.toLowerCase() == 'female') {
-      title = 'Experta';
-    }
-
+  Widget _buildTabSection() {
     return Column(
       children: [
-        Text(
-          userName.isNotEmpty ? userName : 'Usuario',
-          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          title,
-          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-        ),
-        // Mostrar género como información adicional
-      ],
-    );
-  }
+        Container(
+          color: const Color.fromARGB(255, 235, 233, 243),
+          child: TabBar(
+            controller: _tabController,
+            labelColor: const Color(0xFF4CAF50),
+            unselectedLabelColor: Colors.grey[400],
+            indicatorColor: const Color(0xFF7C4DFF),
+            indicatorWeight: 4,
+            indicatorSize: TabBarIndicatorSize.tab,
+            labelPadding: EdgeInsets.zero,
+            isScrollable: false,
+            tabs: [
 
-  Widget _buildProgressBar(int level, int points) {
-    final progress = (points % 100) / 100;
-
-    return Row(
-      children: [
-        const SizedBox(width: 8),
-        Text(
-          'Lv. $level',
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: Colors.grey[200],
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(Color(0xFF7C4DFF)),
-              minHeight: 8,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-      ],
-    );
-  }
-
-  Widget _buildUpdatingOverlay() {
-    return Positioned.fill(
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.7),
-          borderRadius: const BorderRadius.only(
-            bottomLeft: Radius.circular(60),
-            bottomRight: Radius.circular(60),
-          ),
-        ),
-        child: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(
-                color: Color(0xFF7C4DFF),
+              Tab(
+                icon: Icon(
+                  Icons.local_activity_sharp,
+                  color: const Color(0xFF2196F3),
+                ),
               ),
-              SizedBox(height: 16),
-              Text(
-                'Actualizando perfil...',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF7C4DFF),
-                  fontWeight: FontWeight.w500,
+                            Tab(
+                icon: Icon(
+                  CupertinoIcons.tree,
+                  color: const Color(0xFF4CAF50),
+                ),
+              ),
+              Tab(
+                icon: Icon(
+                  Icons.emoji_events,
+                  color: const Color(0xFFFF9800),
                 ),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildTabSection(dynamic profile) {
-    final points = profile.points ?? 0;
-    final level = profile.level ?? 1;
-    final gender = profile.gender ?? 'boy'; // Obtener gender para stats
-
-    return SizedBox(
-      height: 500,
-      child: Column(
-        children: [
-          TabBar(
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.65,
+          child: TabBarView(
             controller: _tabController,
-            labelColor: const Color(0xFF7C4DFF),
-            unselectedLabelColor: Colors.grey[600],
-            indicatorColor: const Color(0xFF7C4DFF),
-            indicatorWeight: 3,
-            tabs: const [Tab(text: 'Stats')],
+            children: [
+              _KeepAliveWrapper(child: _buildActividadTab()),
+                            _KeepAliveWrapper(child: _buildPlantaTab()),
+
+              _KeepAliveWrapper(child: _buildInsigniasTab()),
+            ],
           ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildStatsTab(points, level, gender),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _buildStatsTab(int points, int level, String gender) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          _buildStatCard(
-            icon: Icons.star,
-            title: 'Puntos Totales',
-            value: '$points',
+  Widget _buildPlantaTab() {
+    return BlocBuilder<GamificacionBloc, GamificacionState>(
+      buildWhen: (previous, current) {
+        if (current is! GamificacionLoaded || previous is! GamificacionLoaded) {
+          return true;
+        }
+        final prevEstado = previous.gamificacion.estadoGeneral;
+        final currEstado = current.gamificacion.estadoGeneral;
+        return prevEstado.plantaValor != currEstado.plantaValor ||
+               prevEstado.salud != currEstado.salud ||
+               prevEstado.etapa != currEstado.etapa;
+      },
+      builder: (context, state) {
+        if (state is GamificacionLoading) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF7C4DFF)),
+          );
+        }
+
+        if (state is GamificacionLoaded) {
+          final estadoGeneral = state.gamificacion.estadoGeneral;
+
+          return Column(
+            children: [
+              Expanded(
+                child: PlantaAnimationWidget(
+                  plantaValor: estadoGeneral.plantaValor,
+                  salud: estadoGeneral.salud,
+                  etapa: estadoGeneral.etapa,
+                  size: 200,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: PlantaInfoCard(
+                  etapa: estadoGeneral.etapa,
+                  salud: estadoGeneral.salud,
+                  plantaValor: estadoGeneral.plantaValor,
+                ),
+              ),
+            ],
+          );
+        }
+
+        return Center(
+          child: Text(
+            'No se pudieron cargar los datos',
+            style: TextStyle(color: Colors.grey[600]),
           ),
-          const SizedBox(height: 16),
-          _buildStatCard(
-            icon: Icons.trending_up,
-            title: 'Nivel Actual',
-            value: 'Nivel $level',
-          ),
-          const SizedBox(height: 16),
-          _buildProgressCard(points, level),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildStatCard({
-    required IconData icon,
-    required String title,
-    required String value,
-  }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: const Color(0xFF7C4DFF),
-              size: 30,
-            ),
-            const SizedBox(width: 16),
-            Column(
+  Widget _buildActividadTab() {
+    return BlocBuilder<GamificacionBloc, GamificacionState>(
+      buildWhen: (previous, current) {
+        if (current is! GamificacionLoaded || previous is! GamificacionLoaded) {
+          return true;
+        }
+        return previous.gamificacion.historialEventos !=
+            current.gamificacion.historialEventos;
+      },
+      builder: (context, state) {
+        if (state is GamificacionLoading) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF7C4DFF)),
+          );
+        }
+
+        if (state is GamificacionLoaded) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
+                  'Calendario de Actividad',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF7C4DFF),
                   ),
                 ),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF7C4DFF),
-                  ),
+                const SizedBox(height: 16),
+                HeatmapHabitosWidget(
+                  historialEventos: state.gamificacion.historialEventos,
                 ),
               ],
             ),
-          ],
-        ),
-      ),
+          );
+        }
+
+        return Center(
+          child: Text(
+            'No se pudieron cargar los datos',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildProgressCard(int points, int level) {
-    final progressPoints = points % 100;
-    final progress = progressPoints / 100;
+  Widget _buildInsigniasTab() {
+    return BlocBuilder<GamificacionBloc, GamificacionState>(
+      buildWhen: (previous, current) {
+        if (current is! GamificacionLoaded || previous is! GamificacionLoaded) {
+          return true;
+        }
+        return previous.insignias != current.insignias ||
+            previous.insigniasRecienDesbloqueadas !=
+                current.insigniasRecienDesbloqueadas;
+      },
+      builder: (context, state) {
+        if (state is GamificacionLoading) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF7C4DFF)),
+          );
+        }
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+        if (state is GamificacionLoaded) {
+          final insignias = state.insignias ?? [];
+
+          return SingleChildScrollView(
+            child: Column(
               children: [
-                const Icon(
-                  Icons.bar_chart,
-                  color: Color(0xFF7C4DFF),
-                  size: 24,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Progreso al Nivel ${level + 1}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                if (state.insigniasRecienDesbloqueadas != null &&
+                    state.insigniasRecienDesbloqueadas!.isNotEmpty) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF6C63FF), Color(0xFF4CAF50)],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.celebration, color: Colors.white, size: 32),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            '¡${state.insigniasRecienDesbloqueadas!.length} nueva(s) insignia(s) desbloqueada(s)!',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                ],
+                InsigniasRecentesWidget(
+                  insignias: insignias,
+                  maxToShow: 5,
+                ),
+                const SizedBox(height: 16),
+                InsigniasGrid(
+                  insignias: insignias,
+                  crossAxisCount: 3,
+                  showOnlyUnlocked: false,
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor: Colors.grey[200],
-                valueColor:
-                    const AlwaysStoppedAnimation<Color>(Color(0xFF7C4DFF)),
-                minHeight: 8,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '$progressPoints/100 puntos',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
-      ),
+          );
+        }
+
+        return Center(
+          child: Text(
+            'No se pudieron cargar las insignias',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+        );
+      },
     );
+  }
+}
+
+// Widget para mantener el estado de los tabs
+class _KeepAliveWrapper extends StatefulWidget {
+  final Widget child;
+
+  const _KeepAliveWrapper({required this.child});
+
+  @override
+  State<_KeepAliveWrapper> createState() => _KeepAliveWrapperState();
+}
+
+class _KeepAliveWrapperState extends State<_KeepAliveWrapper>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_app/login/presentation/blocs/login_state.dart';
 import 'package:my_app/login/presentation/blocs/login_event.dart';
@@ -27,6 +28,11 @@ class _LoginScreenContentState extends State<LoginScreenContent> {
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
 
+  // Paleta de colores coherente
+  static const Color primaryColor = Color(0xFF82A69F); // Verde-gris principal
+  static const Color primaryDark = Color(0xFF5A7A73); // Verde-gris oscuro
+  static const Color backgroundColor = Color.fromARGB(255, 236, 232, 227); // Beige muy claro
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -52,34 +58,42 @@ class _LoginScreenContentState extends State<LoginScreenContent> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isSmallScreen = size.height < 700;
+
     return Scaffold(
+      backgroundColor: backgroundColor,
       body: BlocListener<LoginBloc, LoginState>(
         listener: _handleStateChanges,
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF9C88FF),
-                Color(0xFFB8A9FF),
-                Color(0xFFD4BBFF),
-                Color(0xFFE8D5FF),
-              ],
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: size.width * 0.06,
+              vertical: isSmallScreen ? 8 : 12,
             ),
-          ),
-          child: SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildHeader(),
-                    _buildLoginForm(),
-                  ],
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    child: Column(
+                      children: [
+                        SizedBox(height: isSmallScreen ? 8 : 60),
+                        _buildIllustration(context, isSmallScreen),
+                        SizedBox(height: isSmallScreen ? 12 : 16),
+                        _buildTitle(isSmallScreen),
+                        SizedBox(height: isSmallScreen ? 16 : 20),
+                        _buildLoginForm(isSmallScreen),
+                        SizedBox(height: isSmallScreen ? 8 : 12),
+                        _buildOrDivider(),
+                        SizedBox(height: isSmallScreen ? 6 : 8),
+                        _buildCreateAccountTextLink(),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
@@ -107,144 +121,168 @@ class _LoginScreenContentState extends State<LoginScreenContent> {
     }
   }
 
-  Widget _buildHeader() {
-    return Container(
-      height: 120,
-      width: 120,
-      margin: const EdgeInsets.only(bottom: 40),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF6C63FF), Color(0xFF4C4AFF)],
-        ),
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF6C63FF).withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: const Icon(
-        Icons.person,
-        size: 60,
-        color: Colors.white,
+  Widget _buildIllustration(BuildContext context, bool isSmallScreen) {
+    final size = MediaQuery.of(context).size;
+
+    double illustrationSize;
+    if (size.height < 600) {
+      illustrationSize = size.width * 0.3;
+    } else if (isSmallScreen) {
+      illustrationSize = size.width * 0.38;
+    } else {
+      illustrationSize = size.width * 0.55;
+    }
+
+    illustrationSize = illustrationSize.clamp(100.0, 280.0);
+
+    return SizedBox(
+      height: illustrationSize,
+      width: illustrationSize,
+      child: Image.asset(
+        'assets/images/ajolote_signin.png',
+        fit: BoxFit.contain,
       ),
     );
   }
 
-  Widget _buildLoginForm() {
-    return Container(
-      width: 380,
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(60),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildTitle(),
-            const SizedBox(height: 32),
-            _buildEmailField(),
-            const SizedBox(height: 20),
-            _buildPasswordField(),
-            const SizedBox(height: 16),
-            _buildForgotPasswordButton(),
-            const SizedBox(height: 24),
-            _buildLoginButton(),
-            const SizedBox(height: 32),
-            _buildRegisterLink(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTitle() {
-    return const Text(
-      'Iniciar Sesión',
+  Widget _buildTitle(bool isSmallScreen) {
+    return Text(
+      '¡Bienvenido de vuelta!',
       style: TextStyle(
-        fontSize: 32,
+        fontSize: isSmallScreen ? 26 : 32,
         fontWeight: FontWeight.bold,
-        color: Color(0xFF2D2D2D),
+        color: primaryDark,
+        letterSpacing: 0.5,
       ),
       textAlign: TextAlign.center,
     );
   }
 
+  Widget _buildLoginForm(bool isSmallScreen) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        children: [
+          _buildEmailField(),
+          SizedBox(height: isSmallScreen ? 10 : 14),
+          _buildPasswordField(),
+          SizedBox(height: isSmallScreen ? 16 : 20),
+          _buildLoginButton(),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEmailField() {
-    return _buildInputField(
-      controller: _emailController,
-      hintText: 'creative@builnest',
-      icon: Icons.alternate_email,
-      keyboardType: TextInputType.emailAddress,
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Por favor ingresa tu email';
-        }
-        if (!value.contains('@')) {
-          return 'Por favor ingresa un email válido';
-        }
-        return null;
-      },
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 500),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.12),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: _emailController,
+        keyboardType: TextInputType.emailAddress,
+        style: const TextStyle(
+          fontSize: 15,
+          color: Color(0xFF2D2D2D),
+        ),
+        decoration: InputDecoration(
+          hintText: 'johnsondoe@nomail.com',
+          hintStyle: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 15,
+          ),
+          prefixIcon: Padding(
+            padding: const EdgeInsets.only(left: 20, right: 12),
+            child: Icon(
+              Icons.person_outline,
+              color: primaryColor,
+              size: 22,
+            ),
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 22,
+          ),
+        ),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Por favor ingresa tu email';
+          }
+          if (!value.contains('@')) {
+            return 'Por favor ingresa un email válido';
+          }
+          return null;
+        },
+      ),
     );
   }
 
   Widget _buildPasswordField() {
     return Container(
+      constraints: const BoxConstraints(maxWidth: 500),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.12),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: TextFormField(
         controller: _passwordController,
         obscureText: _obscurePassword,
         style: const TextStyle(
-          fontSize: 16,
+          fontSize: 15,
           color: Color(0xFF2D2D2D),
         ),
         decoration: InputDecoration(
-          hintText: '••••••••••••',
-          hintStyle: const TextStyle(
-            color: Color(0xFF9E9E9E),
-            fontSize: 16,
+          hintText: '••••••••••••••••',
+          hintStyle: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 15,
           ),
-          prefixIcon: Container(
-            padding: const EdgeInsets.all(12),
-            child: const Icon(
+          prefixIcon: Padding(
+            padding: const EdgeInsets.only(left: 20, right: 12),
+            child: Icon(
               Icons.lock_outline,
-              color: Color(0xFF6C63FF),
-              size: 20,
+              color: primaryColor,
+              size: 22,
             ),
           ),
-          suffixIcon: IconButton(
-            icon: Icon(
-              _obscurePassword
-                  ? Icons.visibility_outlined
-                  : Icons.visibility_off_outlined,
-              color: const Color(0xFF9E9E9E),
-              size: 20,
+          suffixIcon: Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: IconButton(
+              icon: Icon(
+                _obscurePassword
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+                color: primaryColor,
+                size: 22,
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscurePassword = !_obscurePassword;
+                });
+              },
             ),
-            onPressed: () {
-              setState(() {
-                _obscurePassword = !_obscurePassword;
-              });
-            },
           ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 20,
-            vertical: 16,
+            vertical: 22,
           ),
         ),
         validator: (value) {
@@ -260,87 +298,24 @@ class _LoginScreenContentState extends State<LoginScreenContent> {
     );
   }
 
-  Widget _buildInputField({
-    required TextEditingController controller,
-    required String hintText,
-    required IconData icon,
-    required String? Function(String?) validator,
-    TextInputType? keyboardType,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        style: const TextStyle(
-          fontSize: 16,
-          color: Color(0xFF2D2D2D),
-        ),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: const TextStyle(
-            color: Color(0xFF9E9E9E),
-            fontSize: 16,
-          ),
-          prefixIcon: Container(
-            padding: const EdgeInsets.all(12),
-            child: Icon(
-              icon,
-              color: const Color(0xFF6C63FF),
-              size: 20,
-            ),
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 16,
-          ),
-        ),
-        validator: validator,
-      ),
-    );
-  }
-
-  Widget _buildForgotPasswordButton() {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: TextButton(
-        onPressed: () {
-          CustomSnackBar.showInfo(
-            context: context,
-            message: 'Función próximamente disponible',
-          );
-        },
-        child: const Text(
-          'Forget Password?',
-          style: TextStyle(
-            color: Color(0xFF9E9E9E),
-            fontSize: 14,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildLoginButton() {
     return BlocBuilder<LoginBloc, LoginState>(
       builder: (context, state) {
         return Container(
+          width: double.infinity,
           height: 56,
+          constraints: const BoxConstraints(maxWidth: 500),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               colors: [
-                Color(0xFF6C63FF),
-                Color(0xFF4C4AFF),
+                primaryColor.withOpacity(0.95),
+                primaryDark.withOpacity(0.95),
               ],
             ),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF6C63FF).withOpacity(0.3),
+                color: primaryColor.withOpacity(0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 6),
               ),
@@ -352,25 +327,37 @@ class _LoginScreenContentState extends State<LoginScreenContent> {
               backgroundColor: Colors.transparent,
               shadowColor: Colors.transparent,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(30),
               ),
             ),
             child: state is LoginLoading
                 ? const SizedBox(
-                    height: 20,
-                    width: 20,
+                    height: 24,
+                    width: 24,
                     child: CircularProgressIndicator(
                       color: Colors.white,
-                      strokeWidth: 2,
+                      strokeWidth: 2.5,
                     ),
                   )
-                : const Text(
-                    'Login',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Continuar',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(
+                        Icons.arrow_forward,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ],
                   ),
           ),
         );
@@ -378,31 +365,85 @@ class _LoginScreenContentState extends State<LoginScreenContent> {
     );
   }
 
-  Widget _buildRegisterLink() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          "¿No tienes cuenta? ",
-          style: TextStyle(
-            color: Colors.black.withOpacity(0.8),
-            fontSize: 14,
-          ),
-        ),
-        GestureDetector(
-          onTap: () {
-            Navigator.of(context).pushNamed('/register');
-          },
-          child: const Text(
-            "Regístrate",
-            style: TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
+  Widget _buildOrDivider() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 500),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: 1,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    primaryColor.withOpacity(0),
+                    primaryColor.withOpacity(0.3),
+                  ],
+                ),
+              ),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'O',
+              style: TextStyle(
+                color: primaryColor.withOpacity(0.7),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Container(
+              height: 1,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    primaryColor.withOpacity(0.3),
+                    primaryColor.withOpacity(0),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCreateAccountTextLink() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 500),
+      child: RichText(
+        textAlign: TextAlign.center,
+        text: TextSpan(
+          style: const TextStyle(
+            fontSize: 15,
+            color: primaryDark,
+          ),
+          children: [
+            const TextSpan(
+              text: '¿No tienes una cuenta? ',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            TextSpan(
+              text: 'Crea una aquí',
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                color: primaryColor,
+                decoration: TextDecoration.underline,
+              ),
+              recognizer: TapGestureRecognizer()
+                ..onTap = () {
+                  Navigator.of(context).pushNamed('/register');
+                },
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

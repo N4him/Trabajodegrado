@@ -133,4 +133,26 @@ class ForumRepositoryImpl implements ForumRepository {
       return Left(Exception('Error deleting forum post: $e'));
     }
   }
+
+   @override
+  Future<Either<Exception, List<ForumEntity>>> getForumPostsByCategory(
+    String category,
+  ) async {
+    try {
+      final posts = await remoteDataSource.getForumPostsByCategory(category);
+      return Right(posts);
+    } catch (e) {
+      return Left(Exception('Error getting forum posts by category: $e'));
+    }
+  }
+
+    @override
+  Future<Either<Exception, List<ForumEntity>>> getPopularForumPosts() async {
+    try {
+      final posts = await remoteDataSource.getPopularForumPosts();
+      return Right(posts);
+    } catch (e) {
+      return Left(Exception('Error getting popular forum posts: $e'));
+    }
+  }
 }

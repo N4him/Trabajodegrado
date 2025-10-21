@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -9,86 +10,81 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue,
       body: BlocListener<SplashBloc, SplashState>(
         listener: (context, state) {
           if (state is SplashNavigateToOnboarding) {
             Navigator.of(context).pushReplacementNamed('/onboarding');
           } else if (state is SplashNavigateToLogin) {
             Navigator.of(context).pushReplacementNamed('/login');
+          } else if (state is SplashNavigateToHome) {
+            Navigator.of(context).pushReplacementNamed('/home');
           }
         },
         child: BlocBuilder<SplashBloc, SplashState>(
           builder: (context, state) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+            return Container(
+              decoration: BoxDecoration(
+                color: Color.fromARGB(255, 235, 233, 243),
+              ),
+              child: Stack(
                 children: [
-                  // Logo o ícono de la app
-                  Icon(
-                    Icons.flutter_dash,
-                    size: 100,
-                    color: Colors.white,
-                  ),
-                  SizedBox(height: 24),
-                  
-                  // Nombre de la app
-                  Text(
-                    'Mi App Flutter',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  // Contenido central
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Logo
+                        Image.asset(
+                          'assets/images/logo_app.png',
+                          width: 680,
+                          height: 680,
+                          fit: BoxFit.contain,
+                        ),
+                        SizedBox(height: 24),
+                        
+                        // Nombre de la app: FlowNest debajo del logo
+                        Text(
+                          'FlowNest',
+                          style: TextStyle(
+                            fontSize: 42,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF424242),
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(height: 40),
                   
-                  // Loading indicator
+                  // Estado de Firebase y Auth
                   if (state is SplashLoading)
-                    CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  
-                  if (state is SplashLoading)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16.0),
-                      child: Text(
-                        'Cargando...',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
+                    Positioned(
+                      bottom: 30,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: FutureBuilder(
+                          future: _checkFirebaseAndAuth(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.done) {
+
+                        
+                              return Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              );
+                            }
+                            return SizedBox.shrink();
+                          },
                         ),
                       ),
                     ),
-                    
-                  // Estado de Firebase
-                  SizedBox(height: 20),
-                  FutureBuilder(
-                    future: _checkFirebase(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.done) {
-                        return Container(
-                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: snapshot.data == true 
-                              ? Colors.green.withOpacity(0.2)
-                              : Colors.red.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            snapshot.data == true 
-                              ? '✅ Firebase Conectado'
-                              : '❌ Firebase Error',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                          ),
-                        );
-                      }
-                      return SizedBox.shrink();
-                    },
-                  ),
                 ],
               ),
             );
@@ -97,13 +93,20 @@ class SplashScreen extends StatelessWidget {
       ),
     );
   }
-  
-  Future<bool> _checkFirebase() async {
+
+  Future<Map<String, dynamic>> _checkFirebaseAndAuth() async {
     try {
       Firebase.app();
-      return true;
+      final user = FirebaseAuth.instance.currentUser;
+      return {
+        'connected': true,
+        'hasUser': user != null,
+      };
     } catch (e) {
-      return false;
+      return {
+        'connected': false,
+        'hasUser': false,
+      };
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/forum/presentation/screen_forum.dart';
 import 'package:my_app/library/presentation/book_detail_page.dart';
+import 'package:my_app/library/presentation/saved_book.dart';
 
 import '../splash/splash_screen.dart';
 import '../onboarding/onboarding_screen.dart';
@@ -18,6 +19,7 @@ class AppRouter {
   static const String register = '/register';
   static const String home = '/home';
   static const String library = '/library';
+  static const String savedBooks = '/saved-books';
   static const String foro = '/foro';
   static const String bookDetail = '/book-detail';
   static const String habitsHome = '/habits';
@@ -31,6 +33,7 @@ class AppRouter {
     register: (_) => RegisterScreen(),
     home: (_) => HomeScreen(),
     library: (_) => LibraryPage(),
+    savedBooks: (_) => const SavedBooksPage(),
     foro: (_) => ForumScreen(),
     habitsHome: (_) => const HabitsHomeScreen(),
     habitCreation: (_) => HabitCreationScreen(),

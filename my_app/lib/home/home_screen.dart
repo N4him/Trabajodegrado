@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:my_app/forum/presentation/screen_forum.dart';
+import 'package:my_app/library/presentation/library_screen.dart';
 import 'package:my_app/profile/presentation/bloc/profile_bloc.dart';
 import 'package:my_app/profile/presentation/bloc/profile_event.dart';
 import 'package:my_app/profile/presentation/bloc/profile_state.dart';
+import 'package:my_app/widgets/profile_avatar_widget.dart';
+import 'package:page_transition/page_transition.dart';
 import '../widgets/bar_navigation.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tzdata;
 import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
@@ -20,6 +26,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Inicializar la base de datos de zonas horarias
+    tzdata.initializeTimeZones();
     _currentScreen = const HomeContent();
     context.read<ProfileBloc>().add(LoadProfile());
   }
@@ -33,10 +41,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: const Color.fromARGB(255, 235, 233, 243),
       bottomNavigationBar: CustomNavigationBar(
         initialIndex: _currentIndex,
         onTap: _updateScreen,
@@ -123,54 +129,60 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
-Widget _buildHeaderSection(ProfileLoaded state) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-  return Container(
-    padding: const EdgeInsets.only(left: 5, right: 5, top: 35, bottom: 0),
-    clipBehavior: Clip.antiAliasWithSaveLayer,
-    decoration: BoxDecoration(
-      color: isDark ? const Color(0xFF1A1A2E) : const Color.fromARGB(255, 235, 233, 243),
-      borderRadius: const BorderRadius.only(
-        bottomLeft: Radius.circular(30),
-        bottomRight: Radius.circular(30),
+  Widget _buildHeaderSection(ProfileLoaded state) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.only(left: 5, right: 5, top: 35, bottom: 0),
+      clipBehavior: Clip.antiAliasWithSaveLayer,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1A1A2E) : const Color.fromARGB(255, 235, 233, 243),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
+        ),
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: 10),
+          _buildUserProfile(state),
+          SizedBox(height: 10),
+          _buildCarousel(),
+        ],
+      ),
+    );
+  }
 
+  String _getGreeting() {
+    // Obtener la hora en la zona horaria de Colombia (Bogotá)
+    final location = tz.getLocation('America/Bogota');
+    final now = tz.TZDateTime.now(location);
+    final hour = now.hour;
 
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(height: 10),
-        _buildUserProfile(state),
-        SizedBox(height: 10),
-        _buildCarousel(),
-      ],
-    ),
-  );
-}
-  Widget _buildUserProfile(ProfileLoaded state) {
-    final colorScheme = Theme.of(context).colorScheme;
-    
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
+    if (hour >= 6 && hour < 12) {
+      return 'Buenos días,';
+    } else if (hour >= 12 && hour < 17) {
+      return 'Buenas tardes,';
+    } else {
+      return 'Buenas noches,';
+    }
+  }
+
+Widget _buildUserProfile(ProfileLoaded state) {
+  final colorScheme = Theme.of(context).colorScheme;
+
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 15),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        CircleAvatar(
-          radius: 40,
-          backgroundImage: state.profile.photoUrl?.isNotEmpty == true
-              ? NetworkImage(state.profile.photoUrl!)
-              : null,
-          child: state.profile.photoUrl?.isEmpty != false
-              ? const Icon(Icons.person, size: 40, color: Colors.grey)
-              : null,
-        ),
-        const SizedBox(width: 21),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Hola,',
+              _getGreeting(),
               style: TextStyle(
                 fontSize: 25,
                 color: colorScheme.onSurface.withOpacity(0.6),
@@ -186,14 +198,20 @@ Widget _buildHeaderSection(ProfileLoaded state) {
             ),
           ],
         ),
+        // Widget con caché de imagen en SharedPreferences
+        ProfileAvatarWidget(
+          photoUrl: state.profile.photoUrl,
+          radius: 40,
+        ),
       ],
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildCarousel() {
     return SizedBox(
       width: double.infinity,
-      height: 215,
+      height: 200,
       child: Stack(
         children: [
           PageView.builder(
@@ -215,9 +233,9 @@ Widget _buildHeaderSection(ProfileLoaded state) {
 
   Widget _buildCarouselItem(String imagePath) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 0),
+      margin: const EdgeInsets.symmetric(horizontal: 5),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(30),
         child: Image.asset(
           imagePath,
           fit: BoxFit.cover,
@@ -236,9 +254,9 @@ Widget _buildHeaderSection(ProfileLoaded state) {
         mainAxisAlignment: MainAxisAlignment.center,
         children: _carouselImages.asMap().entries.map((entry) {
           return Container(
-            width: 5,
-            height: 10,
-            margin: const EdgeInsets.symmetric(horizontal: 4),
+            width: 10,
+            height: 5,
+            margin: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: _currentCarouselIndex == entry.key
@@ -272,78 +290,106 @@ Widget _buildHeaderSection(ProfileLoaded state) {
     );
   }
 
-  Widget _buildLibraryCard() {
-    return SizedBox(
-      width: MediaQuery.of(context).size.width * 0.4,
-      child: GestureDetector(
-        onTap: () => Navigator.of(context).pushNamed('/library'),
+Widget _buildLibraryCard() {
+  return SizedBox(
+    width: MediaQuery.of(context).size.width * 0.4,
+    child: GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          PageTransition(
+            type: PageTransitionType.fade,
+            duration: const Duration(milliseconds: 500),
+            reverseDuration: const Duration(milliseconds: 400),
+            child: const LibraryPage(), // Tu screen importado
+          ),
+        );
+      },
+      child: Container(
+        height: 295,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: const Color(0xFFA66059),
+            width: 3,
+          ),
+          image: const DecorationImage(
+            image: AssetImage('assets/images/biblio.jpg'),
+            fit: BoxFit.cover,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFA66059),
+              blurRadius: 0,
+              spreadRadius: 0,
+              offset: const Offset(6, 6),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.6),
+              blurRadius: 15,
+              spreadRadius: 1,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
         child: Container(
-          height: 295,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: const Color(0xFFA66059),
-              width: 3,
-            ),
-            image: const DecorationImage(
-              image: AssetImage('assets/images/biblio.jpg'),
-              fit: BoxFit.cover,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFA66059),
-                blurRadius: 0,
-                spreadRadius: 0,
-                offset: const Offset(6, 6),
-              ),
-              BoxShadow(
-                color: Colors.black.withOpacity(0.6),
-                blurRadius: 15,
-                spreadRadius: 1,
-                offset: const Offset(0, 8),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
+              const Text(
+                'Biblioteca Digital',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
-                const Text(
-                  'Biblioteca',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
-  Widget _buildRightColumn() {
-    return Expanded(
-      child: Column(
-        children: [
-          _buildProgressCard(onTap: () {}),
-          const SizedBox(height: 20),
-          _buildHabitsCard(onTap: () {}),
-        ],
-      ),
-    );
-  }
+Widget _buildRightColumn() {
+  return Expanded(
+    child: Column(
+      children: [
+        _buildProgressCard(onTap: () {
+          // Navega a tu screen de Equilibrio Mental
+          Navigator.push(
+            context,
+            PageTransition(
+              type: PageTransitionType.rightToLeft,
+              duration: const Duration(milliseconds: 400),
+            ),
+          );
+        }),
+        const SizedBox(height: 20),
+        _buildHabitsCard(onTap: () {
+          // Navega a tu screen de Hábitos
+          Navigator.push(
+            context,
+            PageTransition(
+              type: PageTransitionType.bottomToTop,
+              duration: const Duration(milliseconds: 350),
+            ),
+          );
+        }),
+      ],
+    ),
+  );
+}
 
 Widget _buildProgressCard({required VoidCallback onTap}) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
-  
+
   return InkWell(
     onTap: onTap,
     borderRadius: BorderRadius.circular(20),
@@ -455,63 +501,70 @@ Widget _buildHabitsCard({required VoidCallback onTap}) {
     ),
   );
 }
-  Widget _buildForumCard() {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).pushNamed('/foro');
-      },
+
+Widget _buildForumCard() {
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+          PageTransition(
+            type: PageTransitionType.fade,
+            duration: const Duration(milliseconds: 500),
+            reverseDuration: const Duration(milliseconds: 400),
+            child: const ForumScreen(), // Tu screen importado
+          ),
+      );
+    },
+    child: Container(
+      width: double.infinity,
+      height: 110,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFF5A65AD),
+          width: 3,
+        ),
+        image: const DecorationImage(
+          image: AssetImage('assets/images/foros_card5.jpg'),
+          fit: BoxFit.cover,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color.fromARGB(255, 77, 85, 150),
+            blurRadius: 0,
+            spreadRadius: 0,
+            offset: const Offset(6, 6),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 15,
+            spreadRadius: 1,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Container(
-        width: double.infinity,
-        height: 110,
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: const Color(0x5A65AD),
-            width: 3,
-          ),
-          image: const DecorationImage(
-            image: AssetImage('assets/images/foros_card5.jpg'),
-            fit: BoxFit.cover,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color.fromARGB(255, 77, 85, 150),
-              blurRadius: 0,
-              spreadRadius: 0,
-              offset: const Offset(6, 6),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(0),
             ),
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 15,
-              spreadRadius: 1,
-              offset: const Offset(0, 8),
+            const Text(
+              '    Foro de \n Comunidad',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-  
-              ),
-              const SizedBox(width: 20),
-              const Text(
-                '    Foro',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
