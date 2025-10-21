@@ -196,7 +196,6 @@ class InsigniasSeed {
       await insigniasCollection.add(insignia);
     }
 
-    print('✅ ${insignias.length} insignias creadas exitosamente');
   }
 }
 

@@ -13,11 +13,11 @@ class InsigniasGrid extends StatefulWidget {
   final bool showOnlyUnlocked;
 
   const InsigniasGrid({
-    Key? key,
+    super.key,
     required this.insignias,
     this.crossAxisCount = 3,
     this.showOnlyUnlocked = false,
-  }) : super(key: key);
+  });
 
   @override
   State<InsigniasGrid> createState() => _InsigniasGridState();
@@ -485,10 +485,10 @@ class InsigniasRecentesWidget extends StatelessWidget {
   final int maxToShow;
 
   const InsigniasRecentesWidget({
-    Key? key,
+    super.key,
     required this.insignias,
     this.maxToShow = 5,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

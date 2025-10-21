@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:animations/animations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +21,7 @@ const Color accentColor = Color(0xFF6E7CC0);
 const Color backgroundColor = Color(0xFFF8F9FD);
 
 class ForumScreen extends StatefulWidget {
-  const ForumScreen({Key? key}) : super(key: key);
+  const ForumScreen({super.key});
 
   @override
   State<ForumScreen> createState() => _ForumScreenState();
@@ -32,6 +33,7 @@ class _ForumScreenState extends State<ForumScreen> {
   final TextEditingController _searchController = TextEditingController();
   final Set<String> _loadedPostIds = {};
   final Set<String> _loadingPostIds = {};
+  final Set<String> _deletedPostIds = {};
   bool _showCategoryFilter = false;
   bool _showMyPosts = false;
 
@@ -61,6 +63,7 @@ class _ForumScreenState extends State<ForumScreen> {
       _searchController.clear();
       _loadedPostIds.clear();
       _loadingPostIds.clear();
+      _deletedPostIds.clear();
       _showMyPosts = false;
     });
 
@@ -72,19 +75,21 @@ class _ForumScreenState extends State<ForumScreen> {
       context.read<ForumBloc>().add(forum_event.LoadForumPostsEvent());
     }
   }
-void _preloadVisibleAvatars(List<ForumEntity> posts) {
-  // Precarga solo los primeros 10 posts (los visibles)
-  final urls = posts
-      .take(10)
-      .map((post) => post.authorPhotoUrl)
-      .toList();
-  
-  AvatarPreloader.preloadAvatars(urls);
-}
+
+  void _preloadVisibleAvatars(List<ForumEntity> posts) {
+    final urls = posts
+        .take(10)
+        .map((post) => post.authorPhotoUrl)
+        .toList();
+    
+    AvatarPreloader.preloadAvatars(urls);
+  }
+
   void _onSearchChanged(String query) {
     setState(() {
       _loadedPostIds.clear();
       _loadingPostIds.clear();
+      _deletedPostIds.clear();
     });
 
     if (query.isEmpty) {
@@ -125,6 +130,7 @@ void _preloadVisibleAvatars(List<ForumEntity> posts) {
       _showMyPosts = !_showMyPosts;
       _loadedPostIds.clear();
       _loadingPostIds.clear();
+      _deletedPostIds.clear();
       _searchController.clear();
       selectedCategory = null;
     });
@@ -172,10 +178,13 @@ void _preloadVisibleAvatars(List<ForumEntity> posts) {
                   }
 
                   if (state is ForumLoaded) {
-                     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _preloadVisibleAvatars(state.posts);
-    });
-                    if (state.posts.isEmpty) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      _preloadVisibleAvatars(state.posts);
+                    });
+
+                    final visiblePosts = state.posts.where((post) => !_deletedPostIds.contains(post.id)).toList();
+
+                    if (visiblePosts.isEmpty) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -227,6 +236,7 @@ void _preloadVisibleAvatars(List<ForumEntity> posts) {
                       onRefresh: () async {
                         _loadedPostIds.clear();
                         _loadingPostIds.clear();
+                        _deletedPostIds.clear();
                         if (_showMyPosts && user != null) {
                           context.read<ForumBloc>().add(
                             forum_event.LoadUserForumPostsEvent(user!.uid),
@@ -250,8 +260,199 @@ void _preloadVisibleAvatars(List<ForumEntity> posts) {
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         children: [
                           const SizedBox(height: 16),
-                          ...state.posts.asMap().entries.map((entry) {
+                          ...visiblePosts.asMap().entries.map((entry) {
                             final post = entry.value;
+                            
+                            if (_showMyPosts && user != null && post.authorId == user?.uid) {
+                              return Dismissible(
+                                key: Key(post.id),
+                                direction: DismissDirection.endToStart,
+                                background: Container(
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFFFF5252), Color(0xFFD32F2F)],
+                                      begin: Alignment.centerLeft,
+                                      end: Alignment.centerRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.only(right: 24),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: const [
+                                      Icon(
+                                        Icons.delete_rounded,
+                                        color: Colors.white,
+                                        size: 32,
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        'Eliminar',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                confirmDismiss: (direction) async {
+                                  return await showDialog<bool>(
+                                    context: context,
+                                    builder: (BuildContext dialogContext) {
+                                      return AlertDialog(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        title: Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(10),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFFF5252).withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              child: const Icon(
+                                                Icons.warning_rounded,
+                                                color: Color(0xFFFF5252),
+                                                size: 24,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            const Text(
+                                              '¿Eliminar post?',
+                                              style: TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        content: const Text(
+                                          'Esta acción no se puede deshacer. El post y todas sus respuestas serán eliminados permanentemente.',
+                                          style: TextStyle(fontSize: 15),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.of(dialogContext).pop(false),
+                                            style: TextButton.styleFrom(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 20,
+                                                vertical: 12,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              'Cancelar',
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () => Navigator.of(dialogContext).pop(true),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(0xFFFF5252),
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 20,
+                                                vertical: 12,
+                                              ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                            ),
+                                            child: const Text(
+                                              'Eliminar',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                },
+                                onDismissed: (direction) {
+                                  setState(() {
+                                    _deletedPostIds.add(post.id);
+                                    _loadedPostIds.remove(post.id);
+                                    _loadingPostIds.remove(post.id);
+                                  });
+                                  
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(0.2),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: const Icon(
+                                              Icons.check_circle_rounded,
+                                              color: Colors.white,
+                                              size: 20,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          const Expanded(
+                                            child: Text(
+                                              'Post eliminado correctamente',
+                                              style: TextStyle(fontWeight: FontWeight.w600),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      backgroundColor: const Color(0xFFFF5252),
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      margin: const EdgeInsets.all(16),
+                                      duration: const Duration(seconds: 2),
+                                    ),
+                                  );
+                                  
+                                  Future.delayed(const Duration(milliseconds: 300), () {
+                                    if (mounted) {
+                                      context.read<ForumBloc>().add(
+                                        forum_event.DeleteForumPostEvent(post.id),
+                                      );
+                                    }
+                                  });
+                                },
+                                child: LazyForumPostCard(
+                                  key: ValueKey(post.id),
+                                  post: post,
+                                  postId: post.id,
+                                  isLoaded: _loadedPostIds.contains(post.id),
+                                  onVisibilityChanged: (isVisible) {
+                                    if (isVisible && 
+                                        !_loadedPostIds.contains(post.id) && 
+                                        !_loadingPostIds.contains(post.id)) {
+                                      setState(() {
+                                        _loadingPostIds.add(post.id);
+                                      });
+                                      Future.delayed(const Duration(milliseconds: 50), () {
+                                        if (mounted) {
+                                          setState(() {
+                                            _loadedPostIds.add(post.id);
+                                            _loadingPostIds.remove(post.id);
+                                          });
+                                        }
+                                      });
+                                    }
+                                  },
+                                ),
+                              );
+                            }
+                            
                             return LazyForumPostCard(
                               key: ValueKey(post.id),
                               post: post,
@@ -264,7 +465,6 @@ void _preloadVisibleAvatars(List<ForumEntity> posts) {
                                   setState(() {
                                     _loadingPostIds.add(post.id);
                                   });
-                                  // Carga gradual para evitar picos
                                   Future.delayed(const Duration(milliseconds: 50), () {
                                     if (mounted) {
                                       setState(() {
@@ -290,25 +490,25 @@ void _preloadVisibleAvatars(List<ForumEntity> posts) {
           ],
         ),
       ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          color: primaryColor,
-          borderRadius: BorderRadius.circular(40),
-          boxShadow: [
-            BoxShadow(
-              color: primaryColor.withOpacity(0.4),
-              blurRadius: 10,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: FloatingActionButton(
-          onPressed: () => _showCreatePostDialog(context),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          child: const Icon(Icons.add_rounded, size: 32),
-        ),
+floatingActionButton: Container(
+  decoration: BoxDecoration(
+    color: primaryColor,
+    borderRadius: BorderRadius.circular(40),
+    boxShadow: [
+      BoxShadow(
+        color: primaryColor.withOpacity(0.4),
+        blurRadius: 10,
+        offset: const Offset(0, 10),
       ),
+    ],
+  ),
+  child: FloatingActionButton(
+    onPressed: () => _showCreatePostDialog(context),
+    backgroundColor: Colors.transparent,
+    elevation: 0,
+    child: const Icon(Icons.add_rounded, size: 32),
+  ),
+),
     );
   }
 
@@ -335,7 +535,6 @@ void _preloadVisibleAvatars(List<ForumEntity> posts) {
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
-
             ),
           ),
           const Padding(
@@ -463,7 +662,6 @@ void _preloadVisibleAvatars(List<ForumEntity> posts) {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-
                       ...categories.map((category) {
                         final isSelected = selectedCategory == category;
                         final categoryColor = _getCategoryColorFromString(category);
@@ -620,141 +818,145 @@ void _preloadVisibleAvatars(List<ForumEntity> posts) {
     }
   }
 
-  void _showCreatePostDialog(BuildContext context) {
-    final titleController = TextEditingController();
-    final contentController = TextEditingController();
-    String selectedCategory = 'General';
-    String categoryColor = '#5A65AD';
-    final user = FirebaseAuth.instance.currentUser;
-    final formKey = GlobalKey<FormState>();
+void _showCreatePostDialog(BuildContext context) {
+  final titleController = TextEditingController();
+  final contentController = TextEditingController();
+  String selectedCategory = 'General';
+  String categoryColor = '#5A65AD';
+  final user = FirebaseAuth.instance.currentUser;
+  final formKey = GlobalKey<FormState>();
 
-    showDialog(
-      context: context,
+  showModal(
+    context: context,
+    configuration: FadeScaleTransitionConfiguration(
+      transitionDuration: const Duration(milliseconds: 300),
+      reverseTransitionDuration: const Duration(milliseconds: 300),
       barrierDismissible: false,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) => Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 550, maxHeight: 700),
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(32),
-              boxShadow: [
-                BoxShadow(
-                  color: primaryColor.withOpacity(0.25),
-                  blurRadius: 50,
-                  offset: const Offset(0, 20),
-                  spreadRadius: 5,
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-                  decoration: BoxDecoration(
-                    color: primaryColor,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(32),
-                      topRight: Radius.circular(32),
+    ),
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (context, setState) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 550, maxHeight: 700),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: primaryColor.withOpacity(0.25),
+                blurRadius: 50,
+                offset: const Offset(0, 20),
+                spreadRadius: 5,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+                decoration: BoxDecoration(
+                  color: primaryColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(32),
+                    topRight: Radius.circular(32),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: primaryColor.withOpacity(0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: primaryColor.withOpacity(0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.25),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
-                            width: 2,
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.create_rounded,
-                          color: Colors.white,
-                          size: 32,
-                        ),
-                      ),
-                      const SizedBox(width: 18),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Crear Publicación',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                                letterSpacing: 0.5,
-                                height: 1.2,
-                              ),
-                            ),
-                            SizedBox(height: 6),
-                            Text(
-                              'Comparte tus ideas',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.white70,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                  ],
                 ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
-                    child: Form(
-                      key: formKey,
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.25),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 2,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.create_rounded,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                    ),
+                    const SizedBox(width: 18),
+                    const Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildFieldLabel('Título', Icons.title_rounded, true),
-                          const SizedBox(height: 10),
-                          _buildTextField(titleController, 'Ej: ¿Cómo mejorar mi productividad?', 100, false),
-                          const SizedBox(height: 24),
-                          _buildFieldLabel('Categoría', Icons.category_rounded, true),
-                          const SizedBox(height: 10),
-                          _buildCategoryDropdown((value) {
-                            setState(() {
-                              selectedCategory = value;
-                              categoryColor = _getCategoryColorFromValue(value);
-                            });
-                          }, selectedCategory),
-                          const SizedBox(height: 24),
-                          _buildFieldLabel('Descripción', Icons.description_rounded, true),
-                          const SizedBox(height: 10),
-                          _buildTextField(contentController, 'Describe tu publicación de manera detallada...', 500, true),
+                          Text(
+                            'Crear Publicación',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
+                              height: 1.2,
+                            ),
+                          ),
+                          SizedBox(height: 6),
+                          Text(
+                            'Comparte tus ideas',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white70,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ],
                       ),
                     ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildFieldLabel('Título', Icons.title_rounded, true),
+                        const SizedBox(height: 10),
+                        _buildTextField(titleController, 'Ej: ¿Cómo mejorar mi productividad?', 100, false),
+                        const SizedBox(height: 24),
+                        _buildFieldLabel('Categoría', Icons.category_rounded, true),
+                        const SizedBox(height: 10),
+                        _buildCategoryDropdown((value) {
+                          setState(() {
+                            selectedCategory = value;
+                            categoryColor = _getCategoryColorFromValue(value);
+                          });
+                        }, selectedCategory),
+                        const SizedBox(height: 24),
+                        _buildFieldLabel('Descripción', Icons.description_rounded, true),
+                        const SizedBox(height: 10),
+                        _buildTextField(contentController, 'Describe tu publicación de manera detallada...', 500, true),
+                      ],
+                    ),
                   ),
                 ),
-                _buildDialogButtons(titleController, contentController, selectedCategory, categoryColor, user, formKey, dialogContext, context),
-              ],
-            ),
+              ),
+              _buildDialogButtons(titleController, contentController, selectedCategory, categoryColor, user, formKey, dialogContext, context),
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildTextField(TextEditingController controller, String hint, int maxLength, bool isMultiline) {
     return Container(
@@ -877,98 +1079,92 @@ void _preloadVisibleAvatars(List<ForumEntity> posts) {
           Expanded(
             flex: 2,
             child: ElevatedButton(
-              // Reemplaza la sección de onPressed en _buildDialogButtons:
+              onPressed: () async {
+                if (formKey.currentState!.validate() && user != null) {
+                  showDialog(
+                    context: screenContext,
+                    barrierDismissible: false,
+                    builder: (ctx) => const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    ),
+                  );
 
-// Reemplaza la sección de onPressed en _buildDialogButtons:
+                  try {
+                    final userDoc = await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(user.uid)
+                        .get();
 
-onPressed: () async {
-  if (formKey.currentState!.validate() && user != null) {
-    showDialog(
-      context: screenContext,
-      barrierDismissible: false,
-      builder: (ctx) => const Center(
-        child: CircularProgressIndicator(color: Colors.white),
-      ),
-    );
+                    final userData = userDoc.data();
+                    final displayName = userData?['displayName'] ?? 'Usuario Anónimo';
+                    final photoUrl = userData?['photoUrl'];
 
-    try {
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
+                    screenContext.read<ForumBloc>().add(
+                          forum_event.CreateForumPostEvent(
+                            title: titleController.text.trim(),
+                            content: contentController.text.trim(),
+                            authorId: user.uid,
+                            authorName: displayName,
+                            authorPhotoUrl: photoUrl,
+                            category: selectedCategory,
+                            categoryColor: categoryColor,
+                          ),
+                        );
 
-      final userData = userDoc.data();
-      final displayName = userData?['displayName'] ?? 'Usuario Anónimo';
-      final photoUrl = userData?['photoUrl'];
+                    screenContext.read<GamificacionBloc>().add(
+                          UpdateModuloProgressEvent(
+                            userId: user.uid,
+                            moduloKey: 'foro',
+                            progreso: ModuloProgreso(
+                              publicaciones: 1,
+                            ),
+                          ),
+                        );
 
-      // 1️⃣ Crear el post en ForumBloc
-      screenContext.read<ForumBloc>().add(
-            forum_event.CreateForumPostEvent(
-              title: titleController.text.trim(),
-              content: contentController.text.trim(),
-              authorId: user.uid,
-              authorName: displayName,
-              authorPhotoUrl: photoUrl,
-              category: selectedCategory,
-              categoryColor: categoryColor,
-            ),
-          );
+                    Navigator.pop(screenContext);
+                    Navigator.pop(dialogContext);
 
-      // 2️⃣ Actualizar progreso del módulo foro (incrementar publicaciones)
-      screenContext.read<GamificacionBloc>().add(
-            UpdateModuloProgressEvent(
-              userId: user.uid,
-              moduloKey: 'foro',
-              progreso: ModuloProgreso(
-                publicaciones: 1, // Incrementa en 1 publicación
-              ),
-            ),
-          );
-
-      Navigator.pop(screenContext);
-      Navigator.pop(dialogContext);
-
-      ScaffoldMessenger.of(screenContext).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.check_circle_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                '¡Publicación creada exitosamente!',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-          backgroundColor: const Color(0xFF4CAF50),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
-    } catch (e) {
-      Navigator.pop(screenContext);
-      ScaffoldMessenger.of(screenContext).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-},
+                    ScaffoldMessenger.of(screenContext).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.check_circle_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              '¡Publicación creada exitosamente!',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                        backgroundColor: const Color(0xFF4CAF50),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    );
+                  } catch (e) {
+                    Navigator.pop(screenContext);
+                    ScaffoldMessenger.of(screenContext).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
                 padding: const EdgeInsets.symmetric(vertical: 18),
@@ -1056,12 +1252,12 @@ class LazyForumPostCard extends StatefulWidget {
   final Function(bool) onVisibilityChanged;
 
   const LazyForumPostCard({
-    Key? key,
+    super.key,
     required this.post,
     required this.postId,
     required this.isLoaded,
     required this.onVisibilityChanged,
-  }) : super(key: key);
+  });
 
   @override
   State<LazyForumPostCard> createState() => _LazyForumPostCardState();
@@ -1202,56 +1398,56 @@ class _LazyForumPostCardState extends State<LazyForumPostCard> {
   }
 
   Widget _buildLoadingPlaceholder() {
-  return Container(
-    margin: const EdgeInsets.only(bottom: 16),
-    height: 120, // Altura fija para evitar reflow
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.grey[200],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 100,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      height: 120,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
       ),
-    ),
-  );
-}
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.grey[200],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 100,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class ModernForumPostCard extends StatelessWidget {
@@ -1262,13 +1458,13 @@ class ModernForumPostCard extends StatelessWidget {
   final VoidCallback onLikeTap;
 
   const ModernForumPostCard({
-    Key? key,
+    super.key,
     required this.post,
     required this.localLikes,
     required this.hasLiked,
     required this.isLoading,
     required this.onLikeTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1300,14 +1496,12 @@ class ModernForumPostCard extends StatelessWidget {
                 Row(
                   children: [
                     OptimizedCachedAvatar(
-  photoUrl: post.authorPhotoUrl,
-  fallbackText: post.authorName,
-  radius: 24,
-  backgroundColor: categoryColor.withOpacity(0.2),
-  textColor: categoryColor,
-    showDebug: true, // 👈 ACTIVA ESTO TEMPORALMENTE
-
-),
+                      photoUrl: post.authorPhotoUrl,
+                      fallbackText: post.authorName,
+                      radius: 24,
+                      backgroundColor: categoryColor.withOpacity(0.2),
+                      textColor: categoryColor,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -1445,6 +1639,20 @@ class ModernForumPostCard extends StatelessWidget {
               style: TextStyle(color: primaryColor, fontSize: 18, fontWeight: FontWeight.bold),
             ),
             centerTitle: true,
+            actions: [
+              IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.flag_rounded, color: Colors.red, size: 20),
+                ),
+                onPressed: () => _showReportDialog(context, post),
+              ),
+              const SizedBox(width: 8),
+            ],
           ),
           body: Column(
             children: [
@@ -1472,14 +1680,12 @@ class ModernForumPostCard extends StatelessWidget {
                             Row(
                               children: [
                                 OptimizedCachedAvatar(
-  photoUrl: post.authorPhotoUrl,
-  fallbackText: post.authorName,
-  radius: 22,
-  backgroundColor: categoryColor.withOpacity(0.2),
-  textColor: categoryColor,
-    showDebug: true, // 👈 ACTIVA ESTO TEMPORALMENTE
-
-),
+                                  photoUrl: post.authorPhotoUrl,
+                                  fallbackText: post.authorName,
+                                  radius: 22,
+                                  backgroundColor: categoryColor.withOpacity(0.2),
+                                  textColor: categoryColor,
+                                ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
@@ -1622,13 +1828,11 @@ class ModernForumPostCard extends StatelessWidget {
                                       ),
                                       child: Row(
                                         children: [
-                                         OptimizedCachedAvatar(
-  photoUrl: reply['authorPhotoUrl'],
-  fallbackText: reply['authorName'] ?? 'Usuario',
-  radius: 18,
-    showDebug: true, // 👈 ACTIVA ESTO TEMPORALMENTE
-
-),
+                                          OptimizedCachedAvatar(
+                                            photoUrl: reply['authorPhotoUrl'],
+                                            fallbackText: reply['authorName'] ?? 'Usuario',
+                                            radius: 18,
+                                          ),
                                           const SizedBox(width: 12),
                                           Expanded(
                                             child: Column(
@@ -1722,5 +1926,215 @@ class ModernForumPostCard extends StatelessWidget {
     if (diff.inHours > 0) return '${diff.inHours}h atrás';
     if (diff.inMinutes > 0) return '${diff.inMinutes}m atrás';
     return 'Ahora';
+  }
+
+  void _showReportDialog(BuildContext context, ForumEntity post) {
+    final user = FirebaseAuth.instance.currentUser;
+    
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: const [
+              Icon(Icons.login_rounded, color: Colors.white),
+              SizedBox(width: 12),
+              Text('Debes iniciar sesión para reportar'),
+            ],
+          ),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
+    String? selectedReason;
+    final reasons = [
+      'Contenido inapropiado',
+      'Spam o publicidad',
+      'Acoso o intimidación',
+      'Información falsa',
+      'Contenido ofensivo',
+      'Otro',
+    ];
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.flag_rounded, color: Colors.red, size: 24),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Reportar publicación',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '¿Por qué deseas reportar esta publicación?',
+                style: TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: reasons.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final reason = entry.value;
+                    final isSelected = selectedReason == reason;
+                    
+                    return Column(
+                      children: [
+                        InkWell(
+                          onTap: () => setState(() => selectedReason = reason),
+                          borderRadius: BorderRadius.vertical(
+                            top: index == 0 ? const Radius.circular(16) : Radius.zero,
+                            bottom: index == reasons.length - 1 ? const Radius.circular(16) : Radius.zero,
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: isSelected ? Colors.red.withOpacity(0.05) : Colors.transparent,
+                              borderRadius: BorderRadius.vertical(
+                                top: index == 0 ? const Radius.circular(16) : Radius.zero,
+                                bottom: index == reasons.length - 1 ? const Radius.circular(16) : Radius.zero,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                                  color: isSelected ? Colors.red : Colors.grey,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    reason,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                      color: isSelected ? Colors.red : Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (index < reasons.length - 1)
+                          Divider(height: 1, color: Colors.grey[200]),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w600),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: selectedReason == null
+                  ? null
+                  : () async {
+                      Navigator.of(dialogContext).pop();
+                      
+                      try {
+                        await FirebaseFirestore.instance.collection('reports').add({
+                          'postId': post.id,
+                          'postTitle': post.title,
+                          'reportedBy': user.uid,
+                          'reporterName': user.displayName ?? 'Usuario',
+                          'reason': selectedReason,
+                          'createdAt': FieldValue.serverTimestamp(),
+                          'status': 'pending',
+                        });
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(
+                                    Icons.check_circle_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                const Expanded(
+                                  child: Text(
+                                    'Reporte enviado. Lo revisaremos pronto.',
+                                    style: TextStyle(fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            backgroundColor: const Color(0xFF4CAF50),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            margin: const EdgeInsets.all(16),
+                          ),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error al enviar reporte: $e'),
+                            backgroundColor: Colors.red,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        );
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                disabledBackgroundColor: Colors.grey[300],
+              ),
+              child: const Text(
+                'Enviar reporte',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

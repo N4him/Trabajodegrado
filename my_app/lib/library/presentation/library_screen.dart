@@ -338,7 +338,6 @@ class _LibraryPageState extends State<LibraryPage>
   }
 
   Widget _buildFeaturedBannerWithSearch() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
       height: 250,
@@ -639,14 +638,6 @@ class _LibraryPageState extends State<LibraryPage>
       ),
     );
   }
-
-  void _navigateToBookDetail(BuildContext context, String bookId) {
-    Navigator.pushNamed(
-      context,
-      AppRouter.bookDetail,
-      arguments: bookId,
-    );
-  }
 }
 
 // Nuevo widget con Lazy Loading - SIN ANIMACIÓN
@@ -657,12 +648,12 @@ class LazyBookCard extends StatefulWidget {
   final Function(bool) onVisibilityChanged;
 
   const LazyBookCard({
-    Key? key,
+    super.key,
     required this.book,
     required this.bookId,
     required this.isLoaded,
     required this.onVisibilityChanged,
-  }) : super(key: key);
+  });
 
   @override
   State<LazyBookCard> createState() => _LazyBookCardState();

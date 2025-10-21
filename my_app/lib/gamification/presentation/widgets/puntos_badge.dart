@@ -9,16 +9,15 @@ class PuntosBadge extends StatelessWidget {
   final double? size;
 
   const PuntosBadge({
-    Key? key,
+    super.key,
     required this.puntosTotales,
     this.backgroundColor,
     this.textColor,
     this.size,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final badgeSize = size ?? 80.0;
 
     return Container(
@@ -88,10 +87,10 @@ class PuntosBadgeCompact extends StatelessWidget {
   final IconData icon;
 
   const PuntosBadgeCompact({
-    Key? key,
+    super.key,
     required this.puntosTotales,
     this.icon = Icons.stars,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

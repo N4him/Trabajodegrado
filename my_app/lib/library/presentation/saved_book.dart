@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'package:my_app/core/di/injector.dart';
 import 'package:my_app/library/domain/entities/saved_book_entity.dart';
+import 'package:my_app/library/domain/usescases/get_reading_progress_usecase.dart';
 import 'package:my_app/library/presentation/blocs/saved_book_bloc.dart';
 import 'package:my_app/library/presentation/blocs/saved_book_event.dart';
 import 'package:my_app/library/presentation/blocs/saved_book_state.dart';
@@ -18,6 +19,10 @@ class _SavedBooksPageState extends State<SavedBooksPage> {
   late String _userId;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final ScrollController _scrollController = ScrollController();
+  
+  // Map para almacenar el progreso de cada libro
+  final Map<String, double> _bookProgress = {};
+  final Map<String, bool> _bookCompleted = {};
 
   @override
   void initState() {
@@ -35,8 +40,37 @@ class _SavedBooksPageState extends State<SavedBooksPage> {
     super.dispose();
   }
 
+  Future<void> _loadBookProgress(String bookId) async {
+    if (_userId.isEmpty) return;
+    
+    try {
+      final getProgressUseCase = getIt<GetReadingProgressUseCase>();
+      final result = await getProgressUseCase(bookId, _userId);
+      
+      result.fold(
+        (failure) => null,
+        (progress) {
+          if (progress != null && mounted) {
+            setState(() {
+              _bookProgress[bookId] = progress.progressPercentage;
+              _bookCompleted[bookId] = progress.isCompleted;
+            });
+          }
+        },
+      );
+    } catch (e) {
+      // Error al cargar progreso
+    }
+  }
+
   Future<void> _refreshBooks() async {
     if (_userId.isNotEmpty) {
+      // Limpiar el cache de progreso
+      setState(() {
+        _bookProgress.clear();
+        _bookCompleted.clear();
+      });
+      
       context.read<SavedBookBloc>().add(RefreshSavedBooksEvent(_userId));
       await Future.delayed(const Duration(milliseconds: 500));
     }
@@ -73,6 +107,7 @@ class _SavedBooksPageState extends State<SavedBooksPage> {
     );
 
     if (confirmed ?? false) {
+      // ignore: use_build_context_synchronously
       context.read<SavedBookBloc>().add(
         DeleteSavedBookEvent(bookId, _userId),
       );
@@ -124,6 +159,11 @@ class _SavedBooksPageState extends State<SavedBooksPage> {
           } else if (state is SavedBooksLoaded) {
             if (state.books.isEmpty) {
               return _buildEmptyState(colorScheme, isDark);
+            }
+
+            // Cargar el progreso de todos los libros
+            for (var book in state.books) {
+              _loadBookProgress(book.id);
             }
 
             return SafeArea(
@@ -201,6 +241,25 @@ class _SavedBooksPageState extends State<SavedBooksPage> {
           ),
           // El estante (tabla)
           _buildShelfBoard(colorScheme, isDark),
+          // Barras de progreso debajo del estante
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              for (int i = 0; i < 3; i++)
+                if (i < booksInShelf.length)
+                  Expanded(
+                    child: _buildProgressBar(
+                      booksInShelf[i],
+                      colorScheme,
+                      isDark,
+                    ),
+                  )
+                else
+                  const Expanded(child: SizedBox()),
+            ],
+          ),
         ],
       ),
     );
@@ -211,6 +270,8 @@ class _SavedBooksPageState extends State<SavedBooksPage> {
     ColorScheme colorScheme,
     bool isDark,
   ) {
+    final isCompleted = _bookCompleted[book.id] ?? false;
+
     return GestureDetector(
       onTap: () => _showBookOptions(book, colorScheme, isDark),
       child: Container(
@@ -267,6 +328,32 @@ class _SavedBooksPageState extends State<SavedBooksPage> {
                         ),
                       ),
                     ),
+                    
+                    // Badge de completado en la esquina superior
+                    if (isCompleted)
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: const  Color.fromARGB(255, 160, 93, 85),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.check,
+                            color: Colors.white,
+                            size: 14,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -277,7 +364,70 @@ class _SavedBooksPageState extends State<SavedBooksPage> {
     );
   }
 
+  Widget _buildProgressBar(
+    SavedBookEntity book,
+    ColorScheme colorScheme,
+    bool isDark,
+  ) {
+    final progress = _bookProgress[book.id] ?? 0.0;
+    final isCompleted = _bookCompleted[book.id] ?? false;
+    final hasProgress = _bookProgress.containsKey(book.id);
+
+    if (!hasProgress) {
+      return const SizedBox(height: 24);
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Column(
+        children: [
+          // Barra de progreso
+          Container(
+            height: 4,
+            decoration: BoxDecoration(
+              color: isDark 
+                  ? Colors.grey[800] 
+                  : Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: LinearProgressIndicator(
+                value: progress / 100,
+                backgroundColor: Colors.transparent,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  isCompleted
+                      ? Color.fromARGB(255, 160, 93, 85)
+                      : const Color.fromARGB(255, 160, 93, 85),
+                ),
+                minHeight: 4,
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          // Texto de porcentaje
+          Text(
+            isCompleted ? 'Leído' : '${progress.toInt()}%',
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              color: isCompleted
+                  ? Color.fromARGB(255, 160, 93, 85)
+                  : const Color.fromARGB(255, 160, 93, 85),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showBookOptions(SavedBookEntity book, ColorScheme colorScheme, bool isDark) {
+    final progress = _bookProgress[book.id] ?? 0.0;
+    final isCompleted = _bookCompleted[book.id] ?? false;
+    final hasProgress = _bookProgress.containsKey(book.id);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -381,6 +531,34 @@ class _SavedBooksPageState extends State<SavedBooksPage> {
                               color: colorScheme.onSurface.withOpacity(0.6),
                             ),
                           ),
+                          // Progreso
+                          if (hasProgress) ...[
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(
+                                  isCompleted ? Icons.check_circle : Icons.auto_stories,
+                                  size: 14,
+                                  color: isCompleted
+                                      ? const Color.fromARGB(255, 160, 93, 85)
+                                      : const Color.fromARGB(255, 160, 93, 85),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  isCompleted 
+                                      ? 'Completado' 
+                                      : 'Progreso: ${progress.toInt()}%',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: isCompleted
+                                        ? const Color.fromARGB(255, 160, 93, 85)
+                                        : const Color.fromARGB(255, 160, 93, 85),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -405,9 +583,9 @@ class _SavedBooksPageState extends State<SavedBooksPage> {
                     size: 22,
                   ),
                 ),
-                title: const Text(
-                  'Leer libro',
-                  style: TextStyle(
+                title: Text(
+                  hasProgress && !isCompleted ? 'Continuar leyendo' : 'Leer libro',
+                  style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
                   ),
@@ -454,7 +632,6 @@ class _SavedBooksPageState extends State<SavedBooksPage> {
   }
 
   Widget _buildDefaultBookCover(SavedBookEntity book, ColorScheme colorScheme) {
-    // Colores variados para las portadas por defecto
     final colors = [
       [const Color(0xFF9D6055), const Color(0xFF9D6055)],
     ];
@@ -517,7 +694,6 @@ class _SavedBooksPageState extends State<SavedBooksPage> {
     
     return Column(
       children: [
-        // Tabla principal del estante
         Container(
           height: 16,
           decoration: BoxDecoration(
@@ -533,7 +709,6 @@ class _SavedBooksPageState extends State<SavedBooksPage> {
           ),
           child: Stack(
             children: [
-              // Textura de madera (líneas)
               Positioned(
                 left: 0,
                 right: 0,
@@ -555,7 +730,6 @@ class _SavedBooksPageState extends State<SavedBooksPage> {
             ],
           ),
         ),
-        // Soporte del estante (borde inferior)
         Container(
           height: 4,
           margin: const EdgeInsets.symmetric(horizontal: 8),

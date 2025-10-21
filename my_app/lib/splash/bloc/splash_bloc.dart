@@ -1,20 +1,14 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:equatable/equatable.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:my_app/onboarding/onboarding_service.dart';
 
 // Events
-abstract class SplashEvent extends Equatable {
-  @override
-  List<Object> get props => [];
-}
+abstract class SplashEvent {}
 
 class StartSplash extends SplashEvent {}
 
 // States
-abstract class SplashState extends Equatable {
-  @override
-  List<Object> get props => [];
-}
+abstract class SplashState {}
 
 class SplashInitial extends SplashState {}
 
@@ -24,31 +18,46 @@ class SplashNavigateToOnboarding extends SplashState {}
 
 class SplashNavigateToLogin extends SplashState {}
 
-// BLoC
+class SplashNavigateToHome extends SplashState {}
+
+// Bloc
 class SplashBloc extends Bloc<SplashEvent, SplashState> {
   SplashBloc() : super(SplashInitial()) {
     on<StartSplash>(_onStartSplash);
   }
 
-  void _onStartSplash(StartSplash event, Emitter<SplashState> emit) async {
+  Future<void> _onStartSplash(
+    StartSplash event,
+    Emitter<SplashState> emit,
+  ) async {
     emit(SplashLoading());
-    
+
+    // Esperar un momento para mostrar el splash
+    await Future.delayed(const Duration(seconds: 2));
+
     try {
-      // Simular carga de la app (inicialización, etc.)
-      await Future.delayed(Duration(seconds: 2));
-      
-      // Verificar si es primera vez
-      final hasSeenOnboarding = await OnboardingService.hasSeenOnboarding();
-      
-      if (hasSeenOnboarding) {
-        emit(SplashNavigateToLogin());
-      } else {
-        emit(SplashNavigateToOnboarding());
+      // 1. Verificar si hay un usuario autenticado en Firebase
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        // Si hay sesión activa, ir directamente a Home
+        emit(SplashNavigateToHome());
+        return;
       }
-      
+
+      // 2. Si no hay sesión, verificar si es primera vez (onboarding)
+      final hasSeenOnboarding = await OnboardingService.hasSeenOnboarding();
+
+      if (!hasSeenOnboarding) {
+        // Primera vez, mostrar onboarding
+        emit(SplashNavigateToOnboarding());
+      } else {
+        // Ya vio onboarding, ir a login
+        emit(SplashNavigateToLogin());
+      }
     } catch (e) {
-      // En caso de error, ir al onboarding para estar seguros
-      emit(SplashNavigateToOnboarding());
+      // En caso de error, ir a login por defecto
+      emit(SplashNavigateToLogin());
     }
   }
 }

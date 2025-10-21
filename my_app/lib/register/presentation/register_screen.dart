@@ -143,7 +143,7 @@ class _RegisterScreenBodyState extends State<_RegisterScreenBody> {
     
     illustrationSize = illustrationSize.clamp(100.0, 280.0);
     
-    return Container(
+    return SizedBox(
       height: illustrationSize,
       width: illustrationSize,
       child: Image.asset(

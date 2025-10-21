@@ -170,7 +170,6 @@ Future<void> updateModuloProgress(
         'insignias_usuario': FieldValue.arrayUnion([insigniaId]),
       });
       
-      print('✅ Insignia agregada: $insigniaId'); // Debug log
     } catch (e) {
       throw Exception('Error al agregar insignia al usuario: $e');
     }

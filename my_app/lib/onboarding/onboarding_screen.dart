@@ -8,9 +8,12 @@ class OnboardingScreen extends StatefulWidget {
   _OnboardingScreenState createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends State<OnboardingScreen> 
+    with SingleTickerProviderStateMixin {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
 
   final List<OnboardingData> _pages = [
     OnboardingData(
@@ -58,16 +61,31 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeInOut,
+    );
+    _fadeController.forward();
+  }
+
+  @override
   void dispose() {
     _pageController.dispose();
+    _fadeController.dispose();
     super.dispose();
   }
 
   void _nextPage() {
     if (_currentPage < _pages.length - 1) {
       _pageController.nextPage(
-        duration: Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        duration: Duration(milliseconds: 400),
+        curve: Curves.easeInOutCubic,
       );
     } else {
       _goToLogin();
@@ -75,11 +93,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _goToLogin() async {
-    // Marcar que el usuario ya vio el onboarding
     await OnboardingService.setOnboardingSeen();
     
-    // Navegar al login
-    // ignore: use_build_context_synchronously
+    if (!mounted) return;
+    
     Navigator.of(context).pushReplacementNamed('/login');
   }
 
@@ -95,6 +112,39 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           builder: (context, constraints) {
             return Column(
               children: [
+                // Botón Saltar
+                if (_currentPage < _pages.length - 1)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      top: 8.0,
+                      right: size.width * 0.06,
+                    ),
+                    child: Align(
+                      alignment: Alignment.topRight,
+                      child: TextButton(
+                        onPressed: _goToLogin,
+                        style: TextButton.styleFrom(
+                          backgroundColor: const Color.fromARGB(255, 79, 95, 74),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Saltar',
+                          style: TextStyle(
+                            fontSize: isSmallScreen ? 14 : 15,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
                 // PageView content
                 Expanded(
                   child: PageView.builder(
@@ -103,6 +153,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       setState(() {
                         _currentPage = page;
                       });
+                      _fadeController.reset();
+                      _fadeController.forward();
                     },
                     itemCount: _pages.length,
                     itemBuilder: (context, index) {
@@ -115,7 +167,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                 ),
 
-                // Dots indicator and Navigation button
+                // Indicadores y botones
                 Padding(
                   padding: EdgeInsets.symmetric(
                     horizontal: size.width * 0.06,
@@ -134,7 +186,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                       SizedBox(height: isSmallScreen ? 16 : 20),
                       
-                      // Next/Get Started button
+                      // Botón siguiente/comenzar
                       SizedBox(
                         width: double.infinity,
                         height: isSmallScreen ? 48 : 50,
@@ -178,7 +230,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final size = MediaQuery.of(context).size;
     final horizontalPadding = size.width * 0.06;
     
-    // Calcular el tamaño de la imagen basado en el espacio disponible
     final availableHeight = constraints.maxHeight * 0.6;
     final availableWidth = size.width - (horizontalPadding * 2);
     final imageSize = availableHeight < availableWidth 
@@ -196,64 +247,106 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           children: [
             SizedBox(height: isSmallScreen ? 8 : 16),
             
-            // Image
-            Container(
-              height: imageSize,
-              width: imageSize,
-              constraints: BoxConstraints(
-                maxHeight: 550,
-                maxWidth: 550,
-              ),
-              decoration: BoxDecoration(
-                color: data.cardColor,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Image.asset(
-                  data.imagePath,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Center(
-                      child: Icon(
-                        Icons.image,
-                        size: imageSize * 0.2,
-                        color: Colors.grey[400],
-                      ),
-                    );
-                  },
+            // Imagen con animación de fade y scale
+            FadeTransition(
+              opacity: _fadeAnimation,
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+                  CurvedAnimation(
+                    parent: _fadeController,
+                    curve: Curves.easeOutBack,
+                  ),
+                ),
+                child: Container(
+                  height: imageSize,
+                  width: imageSize,
+                  constraints: BoxConstraints(
+                    maxHeight: 550,
+                    maxWidth: 550,
+                  ),
+                  decoration: BoxDecoration(
+                    color: data.cardColor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.asset(
+                      data.imagePath,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(
+                          child: Icon(
+                            Icons.image,
+                            size: imageSize * 0.2,
+                            color: Colors.grey[400],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ),
             ),
             SizedBox(height: isSmallScreen ? 16 : 24),
 
-            // Title
-            Text(
-              data.title,
-              style: TextStyle(
-                fontSize: isSmallScreen ? 24 : 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
+            // Título con SlideTransition
+            FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.3),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: _fadeController,
+                    curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
+                  ),
+                ),
+                child: Text(
+                  data.title,
+                  style: TextStyle(
+                    fontSize: isSmallScreen ? 24 : 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
-              textAlign: TextAlign.center,
             ),
             SizedBox(height: isSmallScreen ? 12 : 16),
 
-            // Description
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: size.width * 0.02,
+            // Descripción con FadeTransition retrasada
+            FadeTransition(
+              opacity: CurvedAnimation(
+                parent: _fadeController,
+                curve: const Interval(0.4, 1.0, curve: Curves.easeIn),
               ),
-              child: Text(
-                data.description,
-                style: TextStyle(
-                  fontSize: isSmallScreen ? 14 : 16,
-                  color: Colors.grey[600],
-                  height: 1.5,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.2),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: _fadeController,
+                    curve: const Interval(0.4, 1.0, curve: Curves.easeOut),
+                  ),
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: size.width * 0.02,
+                  ),
+                  child: Text(
+                    data.description,
+                    style: TextStyle(
+                      fontSize: isSmallScreen ? 14 : 16,
+                      color: Colors.grey[600],
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ),
             ),
             SizedBox(height: isSmallScreen ? 8 : 16),
@@ -264,7 +357,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildDot(int index, bool isSmallScreen) {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
       margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 3 : 4),
       height: isSmallScreen ? 7 : 8,
       width: _currentPage == index 
@@ -280,7 +375,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
-// Modelo de datos para cada página del onboarding
 class OnboardingData {
   final String imagePath;
   final String title;

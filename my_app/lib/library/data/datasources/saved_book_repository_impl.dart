@@ -1,4 +1,4 @@
-import 'package:my_app/library/domain/repositories/saved_book_entity.dart';
+import 'package:my_app/library/domain/repositories/saved_book_repository.dart';
 
 import '../../domain/entities/saved_book_entity.dart';
 import '../datasources/saved_book_remote_datasource.dart';

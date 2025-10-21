@@ -27,14 +27,14 @@ class OptimizedCachedAvatar extends StatefulWidget {
   final bool showDebug;
 
   const OptimizedCachedAvatar({
-    Key? key,
+    super.key,
     required this.photoUrl,
     required this.fallbackText,
     this.radius = 24,
     this.backgroundColor,
     this.textColor,
     this.showDebug = false,
-  }) : super(key: key);
+  });
 
   @override
   State<OptimizedCachedAvatar> createState() => _OptimizedCachedAvatarState();
@@ -43,17 +43,9 @@ class OptimizedCachedAvatar extends StatefulWidget {
 class _OptimizedCachedAvatarState extends State<OptimizedCachedAvatar> {
   @override
   Widget build(BuildContext context) {
-    if (widget.showDebug) {
-      print('🖼️ Avatar URL: ${widget.photoUrl}');
-      print('📝 Fallback: ${widget.fallbackText}');
-    }
-
     if (widget.photoUrl == null || 
         widget.photoUrl!.isEmpty || 
         !_isValidUrl(widget.photoUrl!)) {
-      if (widget.showDebug) {
-        print('❌ URL inválida o vacía');
-      }
       return _buildFallbackAvatar();
     }
 
@@ -61,9 +53,7 @@ class _OptimizedCachedAvatarState extends State<OptimizedCachedAvatar> {
       imageUrl: widget.photoUrl!,
       cacheManager: AvatarCacheManager.instance,
       imageBuilder: (context, imageProvider) {
-        if (widget.showDebug) {
-          print('✅ Imagen cargada: ${widget.photoUrl}');
-        }
+
         return CircleAvatar(
           radius: widget.radius,
           backgroundImage: imageProvider,
@@ -72,13 +62,11 @@ class _OptimizedCachedAvatarState extends State<OptimizedCachedAvatar> {
       },
       placeholder: (context, url) {
         if (widget.showDebug) {
-          print('⏳ Cargando imagen...');
         }
         return _buildLoadingAvatar();
       },
       errorWidget: (context, url, error) {
         if (widget.showDebug) {
-          print('❌ Error: $error');
         }
         return _buildErrorAvatar();
       },
@@ -179,9 +167,8 @@ class AvatarPreloader {
     try {
       await AvatarCacheManager.instance.downloadFile(url);
       _preloadedUrls.add(url);
-      print('✅ Precargado: $url');
+    // ignore: empty_catches
     } catch (e) {
-      print('⚠️ No se pudo precargar: $url');
     }
   }
 

@@ -12,7 +12,7 @@ class CategoryChipWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const iconColor = const Color.fromARGB(255, 160, 93, 85);
+    const iconColor =  Color.fromARGB(255, 160, 93, 85);
     
     final categories = [
       {'name': 'Todos', 'icon': Icons.library_books_rounded},

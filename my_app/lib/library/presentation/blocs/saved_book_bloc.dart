@@ -1,10 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:my_app/library/domain/repositories/saved_book_entity.dart';
+import 'package:my_app/library/domain/repositories/saved_book_repository.dart';
 import 'package:my_app/library/domain/usescases/check_book_saved_usecase.dart';
 import 'package:my_app/library/domain/usescases/delete_saved_book_usecase.dart';
 import 'package:my_app/library/domain/usescases/get_user_saved_books_usecase.dart';
 import 'package:my_app/library/domain/usescases/save_book_usecase.dart';
-import '../../domain/entities/saved_book_entity.dart';
 import 'saved_book_event.dart';
 import 'saved_book_state.dart';
 

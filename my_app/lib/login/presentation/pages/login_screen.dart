@@ -31,8 +31,6 @@ class _LoginScreenContentState extends State<LoginScreenContent> {
   // Paleta de colores coherente
   static const Color primaryColor = Color(0xFF82A69F); // Verde-gris principal
   static const Color primaryDark = Color(0xFF5A7A73); // Verde-gris oscuro
-  static const Color primaryLight = Color(0xFFA8C9C0); // Verde-gris claro
-  static const Color accentColor = Color(0xFFD4C5B9); // Beige cálido
   static const Color backgroundColor = Color.fromARGB(255, 236, 232, 227); // Beige muy claro
 
   @override
@@ -137,7 +135,7 @@ class _LoginScreenContentState extends State<LoginScreenContent> {
 
     illustrationSize = illustrationSize.clamp(100.0, 280.0);
 
-    return Container(
+    return SizedBox(
       height: illustrationSize,
       width: illustrationSize,
       child: Image.asset(

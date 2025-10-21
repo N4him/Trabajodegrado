@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:my_app/core/di/injector.dart';
 import 'package:my_app/library/domain/entities/book_entity.dart';
-
 import 'package:my_app/library/domain/entities/saved_book_entity.dart';
+import 'package:my_app/library/domain/usescases/get_reading_progress_usecase.dart';
 import 'package:my_app/library/presentation/blocs/saved_book_bloc.dart';
 import 'package:my_app/library/presentation/blocs/saved_book_event.dart';
 import 'package:my_app/library/presentation/blocs/saved_book_state.dart';
@@ -25,11 +26,17 @@ class BookCardWidget extends StatefulWidget {
 class _BookCardWidgetState extends State<BookCardWidget> {
   bool _isSaved = false;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  
+  // Variables de progreso
+  double _progressPercentage = 0.0;
+  bool _isCompleted = false;
+  bool _hasProgress = false;
 
   @override
   void initState() {
     super.initState();
     _checkIfBookIsSaved();
+    _loadReadingProgress();
   }
 
   Future<void> _checkIfBookIsSaved() async {
@@ -51,6 +58,31 @@ class _BookCardWidgetState extends State<BookCardWidget> {
     }
   }
 
+  Future<void> _loadReadingProgress() async {
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) return;
+
+    try {
+      final getProgressUseCase = getIt<GetReadingProgressUseCase>();
+      final result = await getProgressUseCase(widget.book.id, userId);
+      
+      result.fold(
+        (failure) => null,
+        (progress) {
+          if (progress != null && mounted) {
+            setState(() {
+              _progressPercentage = progress.progressPercentage;
+              _isCompleted = progress.isCompleted;
+              _hasProgress = true;
+            });
+          }
+        },
+      );
+    } catch (e) {
+      // Error al cargar progreso
+    }
+  }
+
   void _toggleSaveBook() {
     final userId = _auth.currentUser?.uid;
     if (userId == null) {
@@ -64,7 +96,6 @@ class _BookCardWidgetState extends State<BookCardWidget> {
     }
 
     if (_isSaved) {
-      // Eliminar el libro guardado
       context.read<SavedBookBloc>().add(
         DeleteSavedBookEvent(widget.book.id, userId),
       );
@@ -76,7 +107,6 @@ class _BookCardWidgetState extends State<BookCardWidget> {
         ),
       );
     } else {
-      // Guardar el libro
       final savedBook = SavedBookEntity(
         id: widget.book.id,
         title: widget.book.title,
@@ -109,7 +139,6 @@ class _BookCardWidgetState extends State<BookCardWidget> {
 
     return BlocListener<SavedBookBloc, SavedBookState>(
       listener: (context, state) {
-        // Cuando el estado cambia, verifica nuevamente si el libro está guardado
         if (state is SavedBooksLoaded || state is SavedBookUpdating) {
           _checkIfBookIsSaved();
         }
@@ -130,127 +159,199 @@ class _BookCardWidgetState extends State<BookCardWidget> {
               ),
             ],
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Column(
             children: [
-              // Imagen del libro con botón de guardar
-              Stack(
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Contenedor de la imagen
-                  Container(
-                    width: 80,
-                    height: 110,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: _buildBookCover(),
-                    ),
-                  ),
-                  // Botón de guardar (bookmark)
-                  Positioned(
-                    top: 4,
-                    right: 4,
-                    child: GestureDetector(
-                      onTap: _toggleSaveBook,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
+                  // Imagen del libro con badges
+                  Stack(
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 110,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.95),
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 6,
-                              offset: const Offset(0, 1),
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
                           ],
                         ),
-                        child: Icon(
-                          _isSaved 
-                              ? Icons.bookmark_rounded 
-                              : Icons.bookmark_outline_rounded,
-                          color: _isSaved 
-                              ? const Color.fromARGB(255, 160, 93, 85) 
-                              : Colors.grey[400],
-                          size: 18,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: _buildBookCover(),
                         ),
                       ),
+                      // Badge de estado (En progreso / Completado)
+                      if (_hasProgress)
+                        Positioned(
+                          bottom: 4,
+                          left: 4,
+                          right: 4,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _isCompleted
+                                  ? const Color.fromARGB(255, 160, 93, 85)
+                                  : const Color.fromARGB(255, 160, 93, 85),
+                              borderRadius: BorderRadius.circular(6),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  _isCompleted
+                                      ? Icons.check_circle
+                                      : Icons.auto_stories,
+                                  color: Colors.white,
+                                  size: 10,
+                                ),
+                                const SizedBox(width: 3),
+                                Flexible(
+                                  child: Text(
+                                    _isCompleted
+                                        ? 'Leído'
+                                        : '${_progressPercentage.toInt()}%',
+                                    style: const TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      // Botón de guardar
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: GestureDetector(
+                          onTap: _toggleSaveBook,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.95),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              _isSaved 
+                                  ? Icons.bookmark_rounded 
+                                  : Icons.bookmark_outline_rounded,
+                              color: _isSaved 
+                                  ? const Color.fromARGB(255, 160, 93, 85) 
+                                  : Colors.grey[400],
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 12),
+                  // Información del libro
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Título
+                        Text(
+                          widget.book.title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                            height: 1.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        // Autor
+                        Text(
+                          widget.book.author.isNotEmpty 
+                              ? widget.book.author 
+                              : 'Extracurricular reading / Growing motivational story book',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: colorScheme.onSurface.withOpacity(0.5),
+                            height: 1.3,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 12),
+                        // Footer con categoría
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // Categoría
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color.fromARGB(255, 160, 93, 85),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                widget.book.category,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Color.fromARGB(255, 255, 255, 255),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(width: 12),
-              // Información del libro
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Título
-                    Text(
-                      widget.book.title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                        height: 1.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+              // Barra de progreso (solo si hay progreso y no está completado)
+              if (_hasProgress && !_isCompleted) ...[
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: _progressPercentage / 100,
+                    backgroundColor: colorScheme.onSurface.withOpacity(0.1),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color.fromARGB(255, 160, 93, 85),
                     ),
-                    const SizedBox(height: 6),
-                    // Autor
-                    Text(
-                      widget.book.author.isNotEmpty 
-                          ? widget.book.author 
-                          : 'Extracurricular reading / Growing motivational story book',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: colorScheme.onSurface.withOpacity(0.5),
-                        height: 1.3,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 12),
-                    // Footer con categoría
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // Categoría
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color:  const Color.fromARGB(255, 160, 93, 85),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            widget.book.category,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Color.fromARGB(255, 255, 255, 255),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                    minHeight: 4,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
@@ -259,7 +360,6 @@ class _BookCardWidgetState extends State<BookCardWidget> {
   }
 
   Widget _buildBookCover() {
-    // Si hay coverUrl, usar imagen normal
     if (widget.book.coverUrl.isNotEmpty) {
       return Image.network(
         widget.book.coverUrl,
@@ -276,7 +376,6 @@ class _BookCardWidgetState extends State<BookCardWidget> {
       );
     }
     
-    // Fallback con gradiente
     return _buildFallbackCover();
   }
 

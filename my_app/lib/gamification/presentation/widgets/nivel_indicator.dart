@@ -9,11 +9,11 @@ class NivelIndicator extends StatelessWidget {
   final double size;
 
   const NivelIndicator({
-    Key? key,
+    super.key,
     required this.puntosTotales,
     this.showProgressBar = true,
     this.size = 100.0,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +76,7 @@ class NivelIndicator extends StatelessWidget {
   }
 
   Widget _buildProgressBar(_NivelData data) {
-    return Container(
+    return SizedBox(
       width: 200,
       child: Column(
         children: [
@@ -187,9 +187,9 @@ class NivelCompact extends StatelessWidget {
   final int puntosTotales;
 
   const NivelCompact({
-    Key? key,
+    super.key,
     required this.puntosTotales,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -274,9 +274,9 @@ class NivelDetailCard extends StatelessWidget {
   final int puntosTotales;
 
   const NivelDetailCard({
-    Key? key,
+    super.key,
     required this.puntosTotales,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -358,7 +358,7 @@ class NivelDetailCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${puntosTotales} / ${nivelData.puntosNivelSiguiente}',
+                  '$puntosTotales / ${nivelData.puntosNivelSiguiente}',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[700],

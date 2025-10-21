@@ -51,7 +51,7 @@ class InsigniasRemoteDataSourceImpl implements InsigniasRemoteDataSource {
         if (insigniaDoc.exists) {
           insignias.add(InsigniaModel.fromFirestore(insigniaDoc).copyWith(
             desbloqueada: true,
-          ) as InsigniaModel);
+          ));
         }
       }
 
@@ -82,7 +82,7 @@ class InsigniasRemoteDataSourceImpl implements InsigniasRemoteDataSource {
       // 3. Marcar como desbloqueadas las que el usuario tiene
       return todasInsignias.map((insignia) {
         final estaDesbloqueada = insigniasIdsUsuario.contains(insignia.id);
-        return insignia.copyWith(desbloqueada: estaDesbloqueada) as InsigniaModel;
+        return insignia.copyWith(desbloqueada: estaDesbloqueada);
       }).toList();
       
     } catch (e) {

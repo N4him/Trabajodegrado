@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_app/forum/presentation/bloc/forum_bloc.dart';
 import 'package:my_app/gamification/presentation/bloc/gamificacion_bloc.dart';
-import 'package:my_app/library/domain/repositories/saved_book_entity.dart';
+import 'package:my_app/library/domain/repositories/saved_book_repository.dart';
 import 'package:my_app/library/domain/usescases/check_book_saved_usecase.dart';
 import 'package:my_app/library/domain/usescases/delete_saved_book_usecase.dart';
 import 'package:my_app/library/domain/usescases/get_books.dart';
@@ -11,17 +11,14 @@ import 'package:my_app/library/domain/usescases/get_user_saved_books_usecase.dar
 import 'package:my_app/library/domain/usescases/save_book_usecase.dart';
 import 'package:my_app/library/domain/usescases/search_books.dart';
 import 'package:my_app/library/presentation/blocs/library_bloc.dart';
-
 import 'package:my_app/library/presentation/blocs/saved_book_bloc.dart';
 
 import 'core/di/injector.dart';
 import 'config/app_router.dart';
-
 import 'splash/bloc/splash_bloc.dart';
 import 'login/presentation/blocs/login_bloc.dart';
 import 'register/presentation/blocs/register_bloc.dart';
 import 'profile/presentation/bloc/profile_bloc.dart';
-
 import 'login/domain/usecases/login_user.dart';
 import 'register/domain/usecases/register_user.dart';
 import 'profile/domain/repositories/profile_repository.dart';
@@ -115,6 +112,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-// IMPORTANTE: No olvides agregar el import faltante
-// import 'package:my_app/books/domain/repositories/saved_book_repository.dart';

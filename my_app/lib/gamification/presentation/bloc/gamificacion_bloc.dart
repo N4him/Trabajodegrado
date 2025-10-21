@@ -1,5 +1,4 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:my_app/gamification/domain/entities/gamificacion.dart';
 import 'package:my_app/gamification/domain/usecases/get_gamificacion_data.dart';
 import 'package:my_app/gamification/domain/usecases/update_modulo_progress.dart';
 import 'package:my_app/gamification/domain/usecases/add_event_to_historial.dart';
@@ -173,7 +172,6 @@ class GamificacionBloc extends Bloc<GamificacionEvent, GamificacionState> {
     } catch (e) {
       // No emitir error aquí, solo mantener el estado actual
       // para que la verificación de insignias no interrumpa el flujo
-      print('Error al verificar insignias: $e');
     }
   }
 

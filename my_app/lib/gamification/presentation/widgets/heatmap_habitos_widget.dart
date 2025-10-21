@@ -10,9 +10,9 @@ class HeatmapHabitosPage extends StatelessWidget {
   final String userId;
 
   const HeatmapHabitosPage({
-    Key? key,
+    super.key,
     required this.userId,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +66,7 @@ class HeatmapHabitosPage extends StatelessWidget {
 
             if (state is GamificacionLoaded) {
               final historialEventos =
-                  state.gamificacion.historialEventos ?? [];
+                  state.gamificacion.historialEventos;
 
               return SingleChildScrollView(
                 child: Padding(
@@ -112,9 +112,9 @@ class HeatmapHabitosWidget extends StatelessWidget {
   final List<int> historialEventos;
 
   const HeatmapHabitosWidget({
-    Key? key,
+    super.key,
     required this.historialEventos,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -219,9 +219,9 @@ class HeatmapStatsCompact extends StatelessWidget {
   final List<int> historialEventos;
 
   const HeatmapStatsCompact({
-    Key? key,
+    super.key,
     required this.historialEventos,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

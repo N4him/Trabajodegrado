@@ -11,12 +11,12 @@ class PlantaAnimationWidget extends StatefulWidget {
   final double size;
 
   const PlantaAnimationWidget({
-    Key? key,
+    super.key,
     required this.plantaValor,
     required this.salud,
     required this.etapa,
     this.size = 200.0,
-  }) : super(key: key);
+  });
 
   @override
   State<PlantaAnimationWidget> createState() => _PlantaAnimationWidgetState();
@@ -55,23 +55,13 @@ class _PlantaAnimationWidgetState extends State<PlantaAnimationWidget> {
       if (_stateMachineController != null) {
         artboard.addController(_stateMachineController!);
 
-        // Debug: imprime todos los inputs disponibles
-        print('=== State Machine encontrado ===');
-        print('Inputs disponibles en el State Machine:');
-        for (var input in _stateMachineController!.inputs) {
-          print('  - ${input.name} (${input.runtimeType})');
-        }
 
         // Obtener el input como double (SMINumber en Rive es double)
         _growthInput = _stateMachineController!.findInput<double>('input');
         
         if (_growthInput != null) {
-          print('✓ Input "input" encontrado (SMINumber)');
           _growthInput!.value = _currentValue;
-          print('✓ Valor inicial establecido: $_currentValue');
-        } else {
-          print('✗ Input "input" NO encontrado');
-        }
+        } 
 
         // Establecer valores iniciales
         if (_growthInput != null) {
@@ -85,8 +75,8 @@ class _PlantaAnimationWidgetState extends State<PlantaAnimationWidget> {
       setState(() {
         _riveArtboard = artboard;
       });
+    // ignore: empty_catches
     } catch (e) {
-      print('Error cargando archivo Rive: $e');
     }
   }
 
@@ -112,7 +102,6 @@ class _PlantaAnimationWidgetState extends State<PlantaAnimationWidget> {
     // Actualizar el valor de crecimiento SIEMPRE
     if (_growthInput != null) {
       _growthInput!.value = widget.plantaValor;
-      print('Actualizando growth input a: ${widget.plantaValor}');
     }
 
     // Si cambió la etapa, reinicializar
@@ -130,43 +119,57 @@ class _PlantaAnimationWidgetState extends State<PlantaAnimationWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          SizedBox(
-            width: widget.size,
-            height: widget.size,
-            child: _riveArtboard != null
-                ? Rive(artboard: _riveArtboard!)
-                : const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-          ),
-          const SizedBox(height: 16),
-          // Slider para cambiar el valor manualmente
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                Text('Growth Value: ${_currentValue.toStringAsFixed(1)}'),
-                const SizedBox(height: 8),
-                Slider(
-                  min: 0,
-                  max: 100,
-                  value: _currentValue,
-                  onChanged: (value) {
-                    setState(() {
-                      _currentValue = value;
-                      _growthInput?.value = value;
-                      print('Slider value: $value');
-                    });
-                  },
-                ),
-              ],
+    return Column(
+      children: [
+        // Árbol más grande
+        Expanded(
+          flex: 2,
+          child: Center(
+            child: SizedBox(
+              width: widget.size * 1.5,
+              height: widget.size * 1.5,
+              child: _riveArtboard != null
+                  ? Rive(artboard: _riveArtboard!)
+                  : const Center(
+                      child: CircularProgressIndicator(),
+                    ),
             ),
           ),
-        ],
-      ),
+        ),
+        // Slider compacto
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Growth: ${_currentValue.toStringAsFixed(0)}%',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Slider(
+                min: 0,
+                max: 100,
+                value: _currentValue,
+                onChanged: (value) {
+                  setState(() {
+                    _currentValue = value;
+                    _growthInput?.value = value;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -178,52 +181,55 @@ class PlantaInfoCard extends StatelessWidget {
   final double plantaValor;
 
   const PlantaInfoCard({
-    Key? key,
+    super.key,
     required this.etapa,
     required this.salud,
     required this.plantaValor,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               children: [
                 Icon(
                   _getEtapaIcon(),
                   color: _getColorBySalud(),
-                  size: 24,
+                  size: 20,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   _getEtapaName(),
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             _buildProgressBar(
               'Crecimiento',
               plantaValor,
               100.0,
               Colors.blue,
+              compact: true,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             _buildProgressBar(
               'Salud',
               salud.toDouble(),
               100.0,
               _getColorBySalud(),
+              compact: true,
             ),
           ],
         ),
@@ -235,8 +241,9 @@ class PlantaInfoCard extends StatelessWidget {
     String label,
     double value,
     double max,
-    Color color,
-  ) {
+    Color color, {
+    bool compact = false,
+  }) {
     final percentage = (value / max * 100).clamp(0, 100);
 
     return Column(
@@ -247,29 +254,29 @@ class PlantaInfoCard extends StatelessWidget {
           children: [
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 14,
+              style: TextStyle(
+                fontSize: compact ? 12 : 14,
                 fontWeight: FontWeight.w500,
               ),
             ),
             Text(
               '${percentage.toStringAsFixed(0)}%',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: compact ? 11 : 14,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 3),
         ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(6),
           child: LinearProgressIndicator(
             value: value / max,
             backgroundColor: Colors.grey[200],
             valueColor: AlwaysStoppedAnimation<Color>(color),
-            minHeight: 8,
+            minHeight: compact ? 6 : 8,
           ),
         ),
       ],

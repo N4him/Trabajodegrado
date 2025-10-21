@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:my_app/core/di/injector.dart';
 import 'package:my_app/library/domain/entities/book_entity.dart';
 import 'package:my_app/library/domain/usescases/get_book_by_id.dart';
+import 'package:my_app/library/domain/usescases/save_reading_progress_usecase.dart';
+import 'package:my_app/library/domain/usescases/get_reading_progress_usecase.dart';
+import 'package:my_app/library/data/models/reading_progress_model.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class BookDetailPage extends StatefulWidget {
   final String bookId;
 
-  const BookDetailPage({Key? key, required this.bookId}) : super(key: key);
+  const BookDetailPage({super.key, required this.bookId});
 
   @override
   State<BookDetailPage> createState() => _BookDetailPageState();
@@ -20,11 +24,24 @@ class _BookDetailPageState extends State<BookDetailPage> {
   bool _isPdfLoading = true;
   String? _pdfError;
   bool _showBookInfo = true;
+  
+  // Variables para el progreso de lectura
+  int _currentPage = 0;
+  int _totalPages = 0;
+  double _readingProgress = 0.0;
+  String? _userId;
+
+  // Use cases
+  late SaveReadingProgressUseCase _saveProgressUseCase;
+  late GetReadingProgressUseCase _getProgressUseCase;
 
   @override
   void initState() {
     super.initState();
     _pdfViewerController = PdfViewerController();
+    _saveProgressUseCase = getIt<SaveReadingProgressUseCase>();
+    _getProgressUseCase = getIt<GetReadingProgressUseCase>();
+    _getUserId();
     _loadBook();
   }
 
@@ -32,6 +49,11 @@ class _BookDetailPageState extends State<BookDetailPage> {
   void dispose() {
     _pdfViewerController?.dispose();
     super.dispose();
+  }
+
+  void _getUserId() {
+    final user = FirebaseAuth.instance.currentUser;
+    _userId = user?.uid;
   }
 
   void _loadBook() {
@@ -43,16 +65,63 @@ class _BookDetailPageState extends State<BookDetailPage> {
       final getBookById = getIt<GetBookById>();
       final result = await getBookById(widget.bookId);
       return result.fold(
-        (failure) {
-          return null;
-        },
-        (book) {
-          return book;
-        },
+        (failure) => null,
+        (book) => book,
       );
     } catch (e) {
       return null;
     }
+  }
+
+  Future<void> _loadSavedProgress() async {
+    if (_userId == null) return;
+
+    final result = await _getProgressUseCase(widget.bookId, _userId!);
+    result.fold(
+      (failure) => null,
+      (progress) {
+        if (progress != null && mounted) {
+          setState(() {
+            _currentPage = progress.currentPage;
+            _totalPages = progress.totalPages;
+            _readingProgress = progress.progressPercentage;
+          });
+          // Saltar a la página guardada
+          if (_currentPage > 1) {
+            Future.delayed(const Duration(milliseconds: 500), () {
+              _pdfViewerController?.jumpToPage(_currentPage);
+            });
+          }
+        }
+      },
+    );
+  }
+
+  void _updateReadingProgress(int currentPage, int totalPages) {
+    setState(() {
+      _currentPage = currentPage;
+      _totalPages = totalPages;
+      _readingProgress = totalPages > 0 ? (currentPage / totalPages) * 100 : 0;
+    });
+    _saveProgress();
+  }
+
+  Future<void> _saveProgress() async {
+    if (_userId == null || _totalPages == 0) return;
+
+    final isCompleted = _currentPage >= _totalPages;
+    final progress = ReadingProgressModel(
+      bookId: widget.bookId,
+      userId: _userId!,
+      currentPage: _currentPage,
+      totalPages: _totalPages,
+      progressPercentage: _readingProgress,
+      lastReadAt: DateTime.now(),
+      isCompleted: isCompleted,
+      completedAt: isCompleted ? DateTime.now() : null,
+    );
+
+    await _saveProgressUseCase(progress);
   }
 
   @override
@@ -70,7 +139,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const CircularProgressIndicator(color: const Color.fromARGB(255, 160, 93, 85)),
+                  const CircularProgressIndicator(color: Color.fromARGB(255, 160, 93, 85)),
                   const SizedBox(height: 16),
                   Text(
                     'Cargando libro...',
@@ -151,13 +220,11 @@ class _BookDetailPageState extends State<BookDetailPage> {
             children: [
               Column(
                 children: [
-                  // Header del libro - Se muestra/oculta con animación
                   if (_showBookInfo)
                     Expanded(
                       child: _buildBookHeader(book, context),
                     ),
                   
-                  // PDF Viewer - Ocupa el espacio restante automáticamente
                   if (!_showBookInfo)
                     Expanded(
                       child: _buildPdfViewer(book),
@@ -165,7 +232,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
                 ],
               ),
               
-              // Botón flotante para mostrar/ocultar info
+              // Botón flotante
               Positioned(
                 bottom: 24,
                 right: 24,
@@ -216,7 +283,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
       backgroundColor: colorScheme.surface,
       elevation: 0,
       leading: Container(
-        margin: const EdgeInsets.only(left:5,),
+        margin: const EdgeInsets.only(left: 5),
         child: IconButton(
           icon: Container(
             padding: const EdgeInsets.all(8),
@@ -235,6 +302,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
+      title: !_showBookInfo && _totalPages > 0
+          ? _buildAppBarProgress()
+          : null,
+      centerTitle: true,
       actions: [
         Container(
           margin: const EdgeInsets.only(right: 5),
@@ -257,6 +328,62 @@ class _BookDetailPageState extends State<BookDetailPage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildAppBarProgress() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: isDark
+            ? colorScheme.surface.withOpacity(0.5)
+            : const Color(0xFFF7FAFC),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$_currentPage/$_totalPages',
+            style: TextStyle(
+              fontSize: 12,
+              color: colorScheme.onSurface.withOpacity(0.7),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            width: 80,
+            height: 4,
+            decoration: BoxDecoration(
+              color: colorScheme.onSurface.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(2),
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: _readingProgress / 100,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 160, 93, 85),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '${_readingProgress.toStringAsFixed(0)}%',
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color.fromARGB(255, 160, 93, 85),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -353,7 +480,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: const Color.fromARGB(255, 160, 93, 85), width: 2),
+              borderSide: const BorderSide(color: Color.fromARGB(255, 160, 93, 85), width: 2),
             ),
           ),
         ),
@@ -399,7 +526,6 @@ class _BookDetailPageState extends State<BookDetailPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 20),
-            // Portada del libro
             Container(
               width: 220,
               height: 320,
@@ -455,7 +581,6 @@ class _BookDetailPageState extends State<BookDetailPage> {
             ),
             const SizedBox(height: 24),
             
-            // Título
             Text(
               book.title,
               style: TextStyle(
@@ -470,7 +595,6 @@ class _BookDetailPageState extends State<BookDetailPage> {
             ),
             const SizedBox(height: 12),
             
-            // Autor
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -510,7 +634,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
             Text(
               book.description.isNotEmpty 
                   ? book.description 
-                  : 'Explora este fascinante libro y sumérgete en su contenido. Una obra imprescindible que te transportará a través de sus páginas con historias cautivadoras y conocimientos valiosos.',
+                  : 'Explora este fascinante libro y sumérgete en su contenido.',
               style: TextStyle(
                 fontSize: 14,
                 color: colorScheme.onSurface.withOpacity(0.7),
@@ -559,17 +683,22 @@ class _BookDetailPageState extends State<BookDetailPage> {
             canShowPasswordDialog: true,
             enableDocumentLinkAnnotation: true,
             canShowHyperlinkDialog: true,
-            onDocumentLoaded: (details) {
+            onDocumentLoaded: (PdfDocumentLoadedDetails details) {
               setState(() {
                 _isPdfLoading = false;
                 _pdfError = null;
+                _totalPages = details.document.pages.count;
               });
+              _loadSavedProgress();
             },
-            onDocumentLoadFailed: (details) {
+            onDocumentLoadFailed: (PdfDocumentLoadFailedDetails details) {
               setState(() {
                 _isPdfLoading = false;
                 _pdfError = details.error;
               });
+            },
+            onPageChanged: (PdfPageChangedDetails details) {
+              _updateReadingProgress(details.newPageNumber, _totalPages);
             },
           ),
           if (_isPdfLoading)
@@ -579,7 +708,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const CircularProgressIndicator(color: const Color.fromARGB(255, 160, 93, 85)),
+                    const CircularProgressIndicator(color: Color.fromARGB(255, 160, 93, 85)),
                     const SizedBox(height: 16),
                     Text(
                       'Cargando PDF...',
@@ -621,23 +750,23 @@ class _BookDetailPageState extends State<BookDetailPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-ElevatedButton(
-  onPressed: () {
-    setState(() {
-      _isPdfLoading = true;
-      _pdfError = null;
-    });
-  },
-  style: ElevatedButton.styleFrom(
-    backgroundColor: const Color.fromARGB(255, 160, 93, 85),
-    foregroundColor: Colors.white, // Color del texto
-    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(8),
-    ),
-  ),
-  child: const Text('Reintentar'),
-),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _isPdfLoading = true;
+                          _pdfError = null;
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 160, 93, 85),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Reintentar'),
+                    ),
                   ],
                 ),
               ),

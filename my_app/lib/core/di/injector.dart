@@ -17,16 +17,20 @@ import 'package:my_app/gamification/data/repositories/insignia_repository_impl.d
 // ==============================================
 import 'package:my_app/library/data/datasources/library_remote_datasource.dart';
 import 'package:my_app/library/data/datasources/library_remote_datasource_impl.dart';
+import 'package:my_app/library/data/datasources/reading_progress_remote_datasource_impl.dart';
 import 'package:my_app/library/data/datasources/saved_book_remote_datasource.dart';
 import 'package:my_app/library/data/datasources/saved_book_repository_impl.dart';
 import 'package:my_app/library/data/repositories/library_repository_impl.dart';
 import 'package:my_app/library/domain/repositories/library_repository.dart';
-import 'package:my_app/library/domain/repositories/saved_book_entity.dart';
+import 'package:my_app/library/domain/repositories/saved_book_repository.dart';
 import 'package:my_app/library/domain/usescases/check_book_saved_usecase.dart';
+import 'package:my_app/library/domain/usescases/delete_progress_usecase.dart';
 import 'package:my_app/library/domain/usescases/delete_saved_book_usecase.dart';
 import 'package:my_app/library/domain/usescases/get_book_by_id.dart';
+import 'package:my_app/library/domain/usescases/get_book_inprogress.dart';
 import 'package:my_app/library/domain/usescases/get_books.dart';
 import 'package:my_app/library/domain/usescases/get_books_by_category.dart';
+import 'package:my_app/library/domain/usescases/get_progress_books_completed_usecase.dart';
 import 'package:my_app/library/domain/usescases/get_user_saved_books_usecase.dart';
 import 'package:my_app/library/domain/usescases/save_book_usecase.dart';
 import 'package:my_app/library/domain/usescases/search_books.dart';
@@ -36,6 +40,16 @@ import 'package:my_app/library/presentation/blocs/library_bloc.dart';
 // SAVED BOOKS (Libros Guardados)
 // ==============================================
 import 'package:my_app/library/presentation/blocs/saved_book_bloc.dart';
+
+// ==============================================
+// READING PROGRESS (Progreso de Lectura) ⭐ NUEVO
+// ==============================================
+import 'package:my_app/library/data/datasources/reading_progress_remote_datasource.dart';
+import 'package:my_app/library/domain/repositories/reading_progress_repository.dart';
+import 'package:my_app/library/domain/usescases/save_reading_progress_usecase.dart';
+import 'package:my_app/library/domain/usescases/get_reading_progress_usecase.dart';
+
+import 'package:my_app/library/domain/usescases/watch_reading_progress_usecase.dart';
 
 // ==============================================
 // LOGIN
@@ -87,9 +101,6 @@ import 'package:my_app/gamification/presentation/bloc/gamificacion_bloc.dart';
 
 final getIt = GetIt.instance;
 
-// Fix 1: Specify generic types explicitly in all getIt() calls
-// Fix 2: Ensure proper registration order
-
 Future<void> setupDI() async {
   // ==============================================
   // FIREBASE INSTANCES
@@ -122,6 +133,11 @@ Future<void> setupDI() async {
   // Saved Books DataSource
   getIt.registerLazySingleton<SavedBookRemoteDataSource>(
     () => SavedBookRemoteDataSourceImpl(getIt<FirebaseFirestore>()),
+  );
+
+  // Reading Progress DataSource ⭐ NUEVO
+  getIt.registerLazySingleton<ReadingProgressRemoteDataSource>(
+    () => ReadingProgressRemoteDataSourceImpl(getIt<FirebaseFirestore>()),
   );
 
   // Gamificación DataSources
@@ -164,7 +180,12 @@ Future<void> setupDI() async {
     () => SavedBookRepositoryImpl(getIt<SavedBookRemoteDataSource>()),
   );
 
-  // Gamificación Repositories - FIX: Add explicit type to getIt()
+  // Reading Progress Repository ⭐ NUEVO
+  getIt.registerLazySingleton<ReadingProgressRepository>(
+    () => ReadingProgressRepositoryImpl(remoteDataSource: getIt<ReadingProgressRemoteDataSource>()),
+  );
+
+  // Gamificación Repositories
   getIt.registerLazySingleton<GamificacionRepository>(
     () => GamificacionRepositoryImpl(
       remoteDataSource: getIt<GamificacionRemoteDataSource>(),
@@ -218,6 +239,31 @@ Future<void> setupDI() async {
 
   getIt.registerLazySingleton<CheckBookSavedUseCase>(
     () => CheckBookSavedUseCase(getIt<SavedBookRepository>()),
+  );
+
+  // Reading Progress Use Cases ⭐ NUEVO
+  getIt.registerLazySingleton<SaveReadingProgressUseCase>(
+    () => SaveReadingProgressUseCase(getIt<ReadingProgressRepository>()),
+  );
+
+  getIt.registerLazySingleton<GetReadingProgressUseCase>(
+    () => GetReadingProgressUseCase(getIt<ReadingProgressRepository>()),
+  );
+
+  getIt.registerLazySingleton<GetBooksInProgressUseCase>(
+    () => GetBooksInProgressUseCase(getIt<ReadingProgressRepository>()),
+  );
+
+  getIt.registerLazySingleton<GetCompletedBooksUseCase>(
+    () => GetCompletedBooksUseCase(getIt<ReadingProgressRepository>()),
+  );
+
+  getIt.registerLazySingleton<DeleteReadingProgressUseCase>(
+    () => DeleteReadingProgressUseCase(getIt<ReadingProgressRepository>()),
+  );
+
+  getIt.registerLazySingleton<WatchReadingProgressUseCase>(
+    () => WatchReadingProgressUseCase(getIt<ReadingProgressRepository>()),
   );
   
   // Forum Use Cases

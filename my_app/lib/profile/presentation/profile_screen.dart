@@ -13,7 +13,7 @@ import 'package:my_app/gamification/presentation/bloc/gamificacion_state.dart';
 import 'package:my_app/gamification/presentation/bloc/gamificacion_event.dart';
 import 'package:my_app/widgets/edit_profile_dialog.dart';
 import 'dart:async';
-import 'package:cupertino_icons/cupertino_icons.dart';
+import 'package:my_app/widgets/profile_avatar_widget.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -23,8 +23,11 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   late TabController _tabController;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -53,6 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 235, 233, 243),
       body: BlocConsumer<ProfileBloc, ProfileState>(
@@ -216,8 +220,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                                        const SizedBox(height: 12),
-
+                    const SizedBox(height: 12),
                     Text(
                       userName.isNotEmpty ? userName : 'Usuario',
                       style: const TextStyle(
@@ -229,7 +232,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-
                     _buildLevelProgressBar(),
                   ],
                 ),
@@ -245,10 +247,13 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Widget _buildLevelProgressBar() {
     return BlocBuilder<GamificacionBloc, GamificacionState>(
+      buildWhen: (previous, current) =>
+          previous is! GamificacionLoaded || current is! GamificacionLoaded ||
+          _calculatePoints(previous) != _calculatePoints(current),
       builder: (context, state) {
         if (state is GamificacionLoaded) {
           final puntosTotales = state.gamificacion.modulos.values
-              .fold<int>(0, (sum, modulo) => sum + (modulo.puntosObtenidos ?? 0));
+              .fold<int>(0, (sum, modulo) => sum + (modulo.puntosObtenidos));
           
           final nivelActual = (puntosTotales ~/ 1000) + 1;
           final puntosEnNivel = puntosTotales % 1000;
@@ -268,7 +273,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                       color: Colors.black87,
                     ),
                   ),
-
                 ],
               ),
               const SizedBox(height: 8),
@@ -291,80 +295,82 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-Widget _buildGamificationStatsCompact() {
-  return BlocBuilder<GamificacionBloc, GamificacionState>(
-    builder: (context, state) {
-      if (state is GamificacionLoaded) {
-        // Obtener el conteo de insignias desbloqueadas
-        final insigniasCount = state.gamificacion.insigniasUsuario.length;
-        
-        // Calcular racha actual (días consecutivos con actividad)
+  int _calculatePoints(GamificacionState state) {
+    if (state is GamificacionLoaded) {
+      return state.gamificacion.modulos.values
+          .fold<int>(0, (sum, modulo) => sum + (modulo.puntosObtenidos));
+    }
+    return 0;
+  }
 
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Racha de fuego
-            Icon(
-              Icons.local_fire_department,
-              size: 16,
-              color: const Color(0xFF7C4DFF),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              'rachaActual',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(width: 12),
-            
-            // Insignias desbloqueadas
-            Icon(
-              Icons.emoji_events,
-              size: 16,
-              color: const Color(0xFFFFB800),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              '$insigniasCount',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        );
-      }
-      
-      return const SizedBox.shrink();
-    },
-  );
-}
+  Widget _buildGamificationStatsCompact() {
+    return BlocBuilder<GamificacionBloc, GamificacionState>(
+      buildWhen: (previous, current) =>
+          previous is! GamificacionLoaded || current is! GamificacionLoaded ||
+          previous.gamificacion.insigniasUsuario.length !=
+              current.gamificacion.insigniasUsuario.length,
+      builder: (context, state) {
+        if (state is GamificacionLoaded) {
+          final insigniasCount = state.gamificacion.insigniasUsuario.length;
 
-  Widget _buildProfileAvatar(String photoUrl, String userName, bool isUpdating, String gender) {
-    return SizedBox(
-      width: 100,
-      height: 100,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          CircleAvatar(
-            radius: 50,
-            backgroundColor: Colors.grey[100],
-            backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
-            child: photoUrl.isEmpty
-                ? Icon(Icons.person, size: 50, color: Colors.grey[400])
-                : null,
-          ),
-          if (isUpdating) _buildAvatarLoadingOverlay(),
-          _buildEditButton(userName, photoUrl, isUpdating, gender),
-        ],
-      ),
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.local_fire_department,
+                size: 16,
+                color: const Color(0xFF7C4DFF),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'rachaActual',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Icon(
+                Icons.emoji_events,
+                size: 16,
+                color: const Color(0xFFFFB800),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '$insigniasCount',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          );
+        }
+        return const SizedBox.shrink();
+      },
     );
   }
+
+Widget _buildProfileAvatar(String photoUrl, String userName, bool isUpdating, String gender) {
+  return SizedBox(
+    width: 100,
+    height: 100,
+    child: Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Reemplaza el CircleAvatar con ProfileAvatarWidget
+        ProfileAvatarWidget(
+          photoUrl: photoUrl.isNotEmpty ? photoUrl : null,
+          radius: 50,
+        ),
+        if (isUpdating) _buildAvatarLoadingOverlay(),
+        _buildEditButton(userName, photoUrl, isUpdating, gender),
+      ],
+    ),
+  );
+}
 
   Widget _buildAvatarLoadingOverlay() {
     return Positioned.fill(
@@ -426,59 +432,71 @@ Widget _buildGamificationStatsCompact() {
     );
   }
 
-Widget _buildTabSection() {
-  return Column(
-    children: [
-      Container(
-        color: const Color.fromARGB(255, 235, 233, 243),
-        child: TabBar(
-          controller: _tabController,
-          labelColor: const Color(0xFF4CAF50),
-          unselectedLabelColor: Colors.grey[400],
-          indicatorColor: const Color(0xFF7C4DFF),
-          indicatorWeight: 4,
-          indicatorSize: TabBarIndicatorSize.tab,
-          labelPadding: EdgeInsets.zero,
-          isScrollable: false,
-          tabs: [
-            Tab(
-              icon: Icon(
-                CupertinoIcons.tree,
-                color: const Color(0xFF4CAF50), // Verde
+  Widget _buildTabSection() {
+    return Column(
+      children: [
+        Container(
+          color: const Color.fromARGB(255, 235, 233, 243),
+          child: TabBar(
+            controller: _tabController,
+            labelColor: const Color(0xFF4CAF50),
+            unselectedLabelColor: Colors.grey[400],
+            indicatorColor: const Color(0xFF7C4DFF),
+            indicatorWeight: 4,
+            indicatorSize: TabBarIndicatorSize.tab,
+            labelPadding: EdgeInsets.zero,
+            isScrollable: false,
+            tabs: [
+
+              Tab(
+                icon: Icon(
+                  Icons.local_activity_sharp,
+                  color: const Color(0xFF2196F3),
+                ),
               ),
-            ),
-            Tab(
-              icon: Icon(
-                Icons.local_activity_sharp,
-                color: const Color(0xFF2196F3), // Azul
+                            Tab(
+                icon: Icon(
+                  CupertinoIcons.tree,
+                  color: const Color(0xFF4CAF50),
+                ),
               ),
-            ),
-            Tab(
-              icon: Icon(
-                Icons.emoji_events,
-                color: const Color(0xFFFF9800), // Naranja
+              Tab(
+                icon: Icon(
+                  Icons.emoji_events,
+                  color: const Color(0xFFFF9800),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-      SizedBox(
-        height: MediaQuery.of(context).size.height * 0.65,
-        child: TabBarView(
-          controller: _tabController,
-          children: [
-            _buildPlantaTab(),
-            _buildActividadTab(),
-            _buildInsigniasTab(),
-          ],
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.65,
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _KeepAliveWrapper(child: _buildActividadTab()),
+                            _KeepAliveWrapper(child: _buildPlantaTab()),
+
+              _KeepAliveWrapper(child: _buildInsigniasTab()),
+            ],
+          ),
         ),
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
 
   Widget _buildPlantaTab() {
     return BlocBuilder<GamificacionBloc, GamificacionState>(
+      buildWhen: (previous, current) {
+        if (current is! GamificacionLoaded || previous is! GamificacionLoaded) {
+          return true;
+        }
+        final prevEstado = previous.gamificacion.estadoGeneral;
+        final currEstado = current.gamificacion.estadoGeneral;
+        return prevEstado.plantaValor != currEstado.plantaValor ||
+               prevEstado.salud != currEstado.salud ||
+               prevEstado.etapa != currEstado.etapa;
+      },
       builder: (context, state) {
         if (state is GamificacionLoading) {
           return const Center(
@@ -489,56 +507,25 @@ Widget _buildTabSection() {
         if (state is GamificacionLoaded) {
           final estadoGeneral = state.gamificacion.estadoGeneral;
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                PlantaAnimationWidget(
+          return Column(
+            children: [
+              Expanded(
+                child: PlantaAnimationWidget(
                   plantaValor: estadoGeneral.plantaValor,
                   salud: estadoGeneral.salud,
                   etapa: estadoGeneral.etapa,
                   size: 200,
                 ),
-                const SizedBox(height: 24),
-                PlantaInfoCard(
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: PlantaInfoCard(
                   etapa: estadoGeneral.etapa,
                   salud: estadoGeneral.salud,
                   plantaValor: estadoGeneral.plantaValor,
                 ),
-              ],
-            ),
-          );
-        }
-
-        return Center(
-          child: Text(
-            'No se pudieron cargar los datos',
-            style: TextStyle(color: Colors.grey[600]),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildProgresoTab() {
-    return BlocBuilder<GamificacionBloc, GamificacionState>(
-      builder: (context, state) {
-        if (state is GamificacionLoading) {
-          return const Center(
-            child: CircularProgressIndicator(color: Color(0xFF7C4DFF)),
-          );
-        }
-
-        if (state is GamificacionLoaded) {
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                HeatmapStatsCompact(
-                  historialEventos: state.gamificacion.historialEventos,
-                ),
-              ],
-            ),
+              ),
+            ],
           );
         }
 
@@ -554,6 +541,13 @@ Widget _buildTabSection() {
 
   Widget _buildActividadTab() {
     return BlocBuilder<GamificacionBloc, GamificacionState>(
+      buildWhen: (previous, current) {
+        if (current is! GamificacionLoaded || previous is! GamificacionLoaded) {
+          return true;
+        }
+        return previous.gamificacion.historialEventos !=
+            current.gamificacion.historialEventos;
+      },
       builder: (context, state) {
         if (state is GamificacionLoading) {
           return const Center(
@@ -595,6 +589,14 @@ Widget _buildTabSection() {
 
   Widget _buildInsigniasTab() {
     return BlocBuilder<GamificacionBloc, GamificacionState>(
+      buildWhen: (previous, current) {
+        if (current is! GamificacionLoaded || previous is! GamificacionLoaded) {
+          return true;
+        }
+        return previous.insignias != current.insignias ||
+            previous.insigniasRecienDesbloqueadas !=
+                current.insigniasRecienDesbloqueadas;
+      },
       builder: (context, state) {
         if (state is GamificacionLoading) {
           return const Center(
@@ -660,5 +662,27 @@ Widget _buildTabSection() {
         );
       },
     );
+  }
+}
+
+// Widget para mantener el estado de los tabs
+class _KeepAliveWrapper extends StatefulWidget {
+  final Widget child;
+
+  const _KeepAliveWrapper({required this.child});
+
+  @override
+  State<_KeepAliveWrapper> createState() => _KeepAliveWrapperState();
+}
+
+class _KeepAliveWrapperState extends State<_KeepAliveWrapper>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }

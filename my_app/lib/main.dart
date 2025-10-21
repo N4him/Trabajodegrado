@@ -18,13 +18,11 @@ void callbackDispatcher() {
       final user = FirebaseAuth.instance.currentUser;
       
       if (user != null) {
-        // Aquí puedes hacer tareas periódicas
-        print('Tarea en segundo plano ejecutada para: ${user.email}');
+        // Refrescar el token de ID
+        await user.getIdToken(true);
       }
-      
       return Future.value(true);
     } catch (e) {
-      print('Error en tarea de fondo: $e');
       return Future.value(false);
     }
   });
@@ -46,10 +44,8 @@ void main() async {
   // Mantener sesión activa
   FirebaseAuth.instance.authStateChanges().listen((user) {
     if (user != null) {
-      print('Usuario autenticado: ${user.email}');
       // La sesión se mantiene automáticamente
     } else {
-      print('Usuario no autenticado');
     }
   });
 

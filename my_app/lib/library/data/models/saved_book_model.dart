@@ -3,26 +3,16 @@ import '../../domain/entities/saved_book_entity.dart';
 
 class SavedBookModel extends SavedBookEntity {
   const SavedBookModel({
-    required String id,
-    required String title,
-    required String author,
-    required String description,
-    required String category,
-    required String coverUrl,
-    required int pages,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) : super(
-    id: id,
-    title: title,
-    author: author,
-    description: description,
-    category: category,
-    coverUrl: coverUrl,
-    pages: pages,
-    createdAt: createdAt,
-    updatedAt: updatedAt,
-  );
+    required super.id,
+    required super.title,
+    required super.author,
+    required super.description,
+    required super.category,
+    required super.coverUrl,
+    required super.pages,
+    super.createdAt,
+    super.updatedAt,
+  });
 
   factory SavedBookModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
