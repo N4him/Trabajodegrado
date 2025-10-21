@@ -1,9 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:rive/rive.dart';
+import 'package:rive/rive.dart' hide LinearGradient, Image;
 
 /// Widget animado que representa la planta del usuario con Rive
-/// Se actualiza según plantaValor y salud del EstadoGeneral
+/// Incluye imagen de fondo y card de información
 class PlantaAnimationWidget extends StatefulWidget {
   final double plantaValor; // 0.0 a 100.0
   final int salud; // 0 a 100
@@ -26,8 +27,8 @@ class _PlantaAnimationWidgetState extends State<PlantaAnimationWidget> {
   Artboard? _riveArtboard;
   StateMachineController? _stateMachineController;
   SMIInput? _growthInput;
-  SMIInput? _healthInput;
   late double _currentValue;
+  Timer? _growthTimer;
 
   @override
   void initState() {
@@ -55,20 +56,12 @@ class _PlantaAnimationWidgetState extends State<PlantaAnimationWidget> {
       if (_stateMachineController != null) {
         artboard.addController(_stateMachineController!);
 
-
         // Obtener el input como double (SMINumber en Rive es double)
         _growthInput = _stateMachineController!.findInput<double>('input');
         
-        if (_growthInput != null) {
-          _growthInput!.value = _currentValue;
-        } 
-
-        // Establecer valores iniciales
+        // Establecer valor inicial usando plantaValor
         if (_growthInput != null) {
           _growthInput!.value = widget.plantaValor;
-        }
-        if (_healthInput != null) {
-          _healthInput!.value = widget.salud.toDouble();
         }
       }
 
@@ -99,35 +92,85 @@ class _PlantaAnimationWidgetState extends State<PlantaAnimationWidget> {
   void didUpdateWidget(PlantaAnimationWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Actualizar el valor de crecimiento SIEMPRE
-    if (_growthInput != null) {
-      _growthInput!.value = widget.plantaValor;
+    // Si cambió plantaValor, animar el crecimiento/decrecimiento
+    if (oldWidget.plantaValor != widget.plantaValor) {
+      _animateGrowth(oldWidget.plantaValor, widget.plantaValor);
     }
 
     // Si cambió la etapa, reinicializar
     if (oldWidget.etapa != widget.etapa) {
+      _growthTimer?.cancel();
       _stateMachineController?.dispose();
       _initializeRive();
     }
   }
 
+  void _animateGrowth(double oldValue, double newValue) {
+    // Cancelar cualquier animación anterior
+    _growthTimer?.cancel();
+    
+    // Determinar si es crecimiento o decrecimiento
+    final isGrowing = newValue > oldValue;
+    final step = isGrowing ? 1.0 : -1.0;
+    
+    // Crear timer que incrementa/decrementa de 1 en 1
+    _growthTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+      setState(() {
+        if (isGrowing) {
+          // Crecimiento: sumar 1 hasta llegar al nuevo valor
+          if (_currentValue < newValue) {
+            _currentValue += step;
+            if (_currentValue > newValue) {
+              _currentValue = newValue;
+            }
+          } else {
+            timer.cancel();
+          }
+        } else {
+          // Decrecimiento: restar 1 hasta llegar al nuevo valor
+          if (_currentValue > newValue) {
+            _currentValue += step;
+            if (_currentValue < newValue) {
+              _currentValue = newValue;
+            }
+          } else {
+            timer.cancel();
+          }
+        }
+        
+        // Actualizar el input de Rive
+        _growthInput?.value = _currentValue;
+      });
+    });
+  }
+
   @override
   void dispose() {
+    _growthTimer?.cancel();
     _stateMachineController?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Stack(
       children: [
-        // Árbol más grande
-        Expanded(
-          flex: 2,
+        // Fondo de imagen ocupando todo el espacio
+        Positioned.fill(
+          child: Image.asset(
+            'assets/images/arboles (1).png',
+            fit: BoxFit.cover,
+          ),
+        ),
+        // Árbol posicionado más arriba
+        Positioned(
+          top: -95, // Ajusta este valor para mover más arriba o abajo
+          left: 0,
+          right: 0,
           child: Center(
             child: SizedBox(
-              width: widget.size * 1.5,
-              height: widget.size * 1.5,
+              width: widget.size * 3.8,
+              height: widget.size * 3.5,
               child: _riveArtboard != null
                   ? Rive(artboard: _riveArtboard!)
                   : const Center(
@@ -136,100 +179,92 @@ class _PlantaAnimationWidgetState extends State<PlantaAnimationWidget> {
             ),
           ),
         ),
-        // Slider compacto
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Growth: ${_currentValue.toStringAsFixed(0)}%',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Slider(
-                min: 0,
-                max: 100,
-                value: _currentValue,
-                onChanged: (value) {
-                  setState(() {
-                    _currentValue = value;
-                    _growthInput?.value = value;
-                  });
-                },
-              ),
-            ],
+        // Card de información compacta en la parte inferior
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: _buildInfoCard(),
           ),
         ),
       ],
     );
   }
-}
 
-/// Widget con información adicional de la planta
-class PlantaInfoCard extends StatelessWidget {
-  final String etapa;
-  final int salud;
-  final double plantaValor;
-
-  const PlantaInfoCard({
-    super.key,
-    required this.etapa,
-    required this.salud,
-    required this.plantaValor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  Widget _buildInfoCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF6B8E6B),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF4A7C59).withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+        padding: const EdgeInsets.all(10.0),
+        child: Row(
           children: [
-            Row(
-              children: [
-                Icon(
-                  _getEtapaIcon(),
-                  color: _getColorBySalud(),
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  _getEtapaName(),
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
+            // Icono de etapa
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF4A7C59),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                _getEtapaIcon(),
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 10),
+            // Nombre de etapa
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _getEtapaName(),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2D5A3D),
+                    ),
                   ),
-                ),
-              ],
+                  Text(
+                    _getEtapaDescription(),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Color(0xFF6B8E6B),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 10),
-            _buildProgressBar(
-              'Crecimiento',
-              plantaValor,
-              100.0,
-              Colors.blue,
-              compact: true,
+            // Estadísticas compactas
+            _buildMiniStat(
+              'Crec.',
+              widget.plantaValor,
+              Icons.trending_up,
+              const Color(0xFF4A7C59),
             ),
-            const SizedBox(height: 6),
-            _buildProgressBar(
+            const SizedBox(width: 8),
+            _buildMiniStat(
               'Salud',
-              salud.toDouble(),
-              100.0,
-              _getColorBySalud(),
-              compact: true,
+              widget.salud.toDouble(),
+              Icons.favorite,
+              const Color(0xFF6B8E6B),
             ),
           ],
         ),
@@ -237,54 +272,55 @@ class PlantaInfoCard extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressBar(
-    String label,
-    double value,
-    double max,
-    Color color, {
-    bool compact = false,
-  }) {
-    final percentage = (value / max * 100).clamp(0, 100);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: compact ? 12 : 14,
-                fontWeight: FontWeight.w500,
-              ),
+  Widget _buildMiniStat(String label, double value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 14),
+          const SizedBox(height: 2),
+          Text(
+            '${value.toStringAsFixed(0)}%',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: color,
             ),
-            Text(
-              '${percentage.toStringAsFixed(0)}%',
-              style: TextStyle(
-                fontSize: compact ? 11 : 14,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 3),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: LinearProgressIndicator(
-            value: value / max,
-            backgroundColor: Colors.grey[200],
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-            minHeight: compact ? 6 : 8,
           ),
-        ),
-      ],
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 8,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
+  String _getEtapaDescription() {
+    switch (widget.etapa) {
+      case 'semilla':
+        return 'Inicio del crecimiento';
+      case 'brote':
+        return 'Primeras hojas';
+      case 'planta':
+        return 'En desarrollo';
+      case 'arbol':
+        return 'Totalmente desarrollado';
+      default:
+        return 'Estado desconocido';
+    }
+  }
+
   IconData _getEtapaIcon() {
-    switch (etapa) {
+    switch (widget.etapa) {
       case 'semilla':
         return Icons.circle;
       case 'brote':
@@ -299,7 +335,7 @@ class PlantaInfoCard extends StatelessWidget {
   }
 
   String _getEtapaName() {
-    switch (etapa) {
+    switch (widget.etapa) {
       case 'semilla':
         return 'Semilla';
       case 'brote':
@@ -310,16 +346,6 @@ class PlantaInfoCard extends StatelessWidget {
         return 'Árbol';
       default:
         return 'Desconocido';
-    }
-  }
-
-  Color _getColorBySalud() {
-    if (salud >= 70) {
-      return const Color(0xFF4CAF50);
-    } else if (salud >= 40) {
-      return const Color(0xFF8BC34A);
-    } else {
-      return const Color(0xFFCDDC39);
     }
   }
 }

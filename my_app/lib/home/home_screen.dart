@@ -40,16 +40,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 235, 233, 243),
-      bottomNavigationBar: CustomNavigationBar(
-        initialIndex: _currentIndex,
-        onTap: _updateScreen,
-      ),
-      body: _currentScreen,
-    );
-  }
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: const Color.fromARGB(255, 235, 233, 243),
+    extendBody: true, // Agrega esta línea
+    bottomNavigationBar: CustomNavigationBar(
+      initialIndex: _currentIndex,
+      onTap: _updateScreen,
+    ),
+    body: _currentScreen,
+  );
+}
 }
 
 class HomeContent extends StatefulWidget {

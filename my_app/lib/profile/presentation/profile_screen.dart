@@ -1,7 +1,8 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:my_app/gamification/domain/entities/modulo_progreso.dart';
 import 'package:my_app/gamification/presentation/widgets/heatmap_habitos_widget.dart';
 import 'package:my_app/gamification/presentation/widgets/insignias_grid.dart';
 import 'package:my_app/gamification/presentation/widgets/planta_animation_widget.dart';
@@ -32,7 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId != null) {
@@ -207,7 +208,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     final gender = profile.gender ?? 'boy';
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 60, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 35, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -353,24 +354,23 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-Widget _buildProfileAvatar(String photoUrl, String userName, bool isUpdating, String gender) {
-  return SizedBox(
-    width: 100,
-    height: 100,
-    child: Stack(
-      clipBehavior: Clip.none,
-      children: [
-        // Reemplaza el CircleAvatar con ProfileAvatarWidget
-        ProfileAvatarWidget(
-          photoUrl: photoUrl.isNotEmpty ? photoUrl : null,
-          radius: 50,
-        ),
-        if (isUpdating) _buildAvatarLoadingOverlay(),
-        _buildEditButton(userName, photoUrl, isUpdating, gender),
-      ],
-    ),
-  );
-}
+  Widget _buildProfileAvatar(String photoUrl, String userName, bool isUpdating, String gender) {
+    return SizedBox(
+      width: 100,
+      height: 100,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          ProfileAvatarWidget(
+            photoUrl: photoUrl.isNotEmpty ? photoUrl : null,
+            radius: 50,
+          ),
+          if (isUpdating) _buildAvatarLoadingOverlay(),
+          _buildEditButton(userName, photoUrl, isUpdating, gender),
+        ],
+      ),
+    );
+  }
 
   Widget _buildAvatarLoadingOverlay() {
     return Positioned.fill(
@@ -441,23 +441,28 @@ Widget _buildProfileAvatar(String photoUrl, String userName, bool isUpdating, St
             controller: _tabController,
             labelColor: const Color(0xFF4CAF50),
             unselectedLabelColor: Colors.grey[400],
-            indicatorColor: const Color(0xFF7C4DFF),
+            indicatorColor: const Color.fromARGB(255, 57, 57, 59),
             indicatorWeight: 4,
             indicatorSize: TabBarIndicatorSize.tab,
             labelPadding: EdgeInsets.zero,
             isScrollable: false,
             tabs: [
-
               Tab(
                 icon: Icon(
-                  Icons.local_activity_sharp,
-                  color: const Color(0xFF2196F3),
+                  Icons.calendar_month,
+                  color: const Color(0xFFf26854),
                 ),
               ),
-                            Tab(
+              Tab(
                 icon: Icon(
                   CupertinoIcons.tree,
-                  color: const Color(0xFF4CAF50),
+                  color: const Color.fromARGB(255, 231, 89, 153),
+                ),
+              ),
+              Tab(
+                icon: Icon(
+                  Icons.insert_chart_outlined_sharp,
+                  color: const Color(0xFF7C4DFF),
                 ),
               ),
               Tab(
@@ -475,13 +480,78 @@ Widget _buildProfileAvatar(String photoUrl, String userName, bool isUpdating, St
             controller: _tabController,
             children: [
               _KeepAliveWrapper(child: _buildActividadTab()),
-                            _KeepAliveWrapper(child: _buildPlantaTab()),
-
+              _KeepAliveWrapper(child: _buildPlantaTab()),
+              _KeepAliveWrapper(child: _buildModulosTab()),
               _KeepAliveWrapper(child: _buildInsigniasTab()),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildModulosTab() {
+    return BlocBuilder<GamificacionBloc, GamificacionState>(
+      buildWhen: (previous, current) {
+        if (current is! GamificacionLoaded || previous is! GamificacionLoaded) {
+          return true;
+        }
+        return previous.gamificacion.modulos != current.gamificacion.modulos;
+      },
+      builder: (context, state) {
+        if (state is GamificacionLoading) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF7C4DFF)),
+          );
+        }
+
+        if (state is GamificacionLoaded) {
+          final modulos = state.gamificacion.modulos;
+
+          if (modulos.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.school_outlined,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No hay módulos disponibles',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return ModulosProgressList(
+            modulos: modulos,
+            onModuloTap: (moduloKey) {
+              // Aquí puedes navegar al detalle del módulo si es necesario
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Módulo: $moduloKey'),
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            },
+          );
+        }
+
+        return Center(
+          child: Text(
+            'No se pudieron cargar los módulos',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+        );
+      },
     );
   }
 
@@ -517,14 +587,6 @@ Widget _buildProfileAvatar(String photoUrl, String userName, bool isUpdating, St
                   size: 200,
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: PlantaInfoCard(
-                  etapa: estadoGeneral.etapa,
-                  salud: estadoGeneral.salud,
-                  plantaValor: estadoGeneral.plantaValor,
-                ),
-              ),
             ],
           );
         }
@@ -557,18 +619,20 @@ Widget _buildProfileAvatar(String photoUrl, String userName, bool isUpdating, St
 
         if (state is GamificacionLoaded) {
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                                const SizedBox(height: 30),
                 Text(
                   'Calendario de Actividad',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF7C4DFF),
+                    color: const Color.fromARGB(255, 87, 85, 92),
                   ),
                 ),
-                const SizedBox(height: 16),
+                                                const SizedBox(height: 20),
+
                 HeatmapHabitosWidget(
                   historialEventos: state.gamificacion.historialEventos,
                 ),
@@ -684,5 +748,274 @@ class _KeepAliveWrapperState extends State<_KeepAliveWrapper>
   Widget build(BuildContext context) {
     super.build(context);
     return widget.child;
+  }
+}
+
+// ==================== WIDGETS DE MÓDULOS ====================
+
+class ModuloProgressCard extends StatelessWidget {
+  final String moduloNombre;
+  final ModuloProgreso progreso;
+  final Color? accentColor;
+  final VoidCallback? onTap;
+
+  const ModuloProgressCard({
+    Key? key,
+    required this.moduloNombre,
+    required this.progreso,
+    this.accentColor,
+    this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final color = accentColor ?? const Color(0xFF7C4DFF);
+    
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      moduloNombre,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${progreso.puntosObtenidos} pts',
+                      style: TextStyle(
+                        color: color,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              
+              _buildProgressBar(
+                context,
+                icon: Icons.calendar_today,
+                label: 'Días cumplidos',
+                current: progreso.diasCumplidos,
+                max: 30,
+                color: color,
+              ),
+              const SizedBox(height: 16),
+              
+              _buildProgressBar(
+                context,
+                icon: Icons.local_fire_department,
+                label: 'Racha actual',
+                current: progreso.rachaActual,
+                max: 15,
+                color: Colors.orange,
+              ),
+              const SizedBox(height: 16),
+              
+              _buildProgressBar(
+                context,
+                icon: Icons.article,
+                label: 'Lecturas completadas',
+                current: progreso.lecturas,
+                max: 20,
+                color: Colors.blue,
+              ),
+              const SizedBox(height: 16),
+              
+              _buildProgressBar(
+                context,
+                icon: Icons.check_circle,
+                label: 'Tests aprobados',
+                current: progreso.testsAprobados,
+                max: 10,
+                color: Colors.green,
+              ),
+              
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildStatChip(
+                    icon: Icons.assignment,
+                    label: 'Sesiones',
+                    value: progreso.sesionesCompletadas.toString(),
+                    color: Colors.purple,
+                  ),
+                  _buildStatChip(
+                    icon: Icons.publish,
+                    label: 'Publicaciones',
+                    value: progreso.publicaciones.toString(),
+                    color: Colors.teal,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProgressBar(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required int current,
+    required int max,
+    required Color color,
+  }) {
+    final progress = (current / max).clamp(0.0, 1.0);
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Text(
+              '$current/$max',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[800],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: LinearProgressIndicator(
+            value: progress,
+            minHeight: 8,
+            backgroundColor: color.withOpacity(0.1),
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatChip({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              Text(
+                label,
+                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ModulosProgressList extends StatelessWidget {
+  final Map<String, ModuloProgreso> modulos;
+  final Function(String)? onModuloTap;
+
+  const ModulosProgressList({
+    Key? key,
+    required this.modulos,
+    this.onModuloTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final modulosColors = {
+      'modulo1': Colors.purple,
+      'modulo2': Colors.blue,
+      'modulo3': Colors.teal,
+      'modulo4': Colors.orange,
+    };
+
+    final modulosNombres = {
+      'modulo1': 'Módulo 1: Fundamentos',
+      'modulo2': 'Módulo 2: Desarrollo',
+      'modulo3': 'Módulo 3: Avanzado',
+      'modulo4': 'Módulo 4: Especialización',
+    };
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: modulos.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 16),
+      itemBuilder: (context, index) {
+        final entry = modulos.entries.elementAt(index);
+        final moduloKey = entry.key;
+        final progreso = entry.value;
+        
+        return ModuloProgressCard(
+          moduloNombre: modulosNombres[moduloKey] ?? moduloKey,
+          progreso: progreso,
+          accentColor: modulosColors[moduloKey] ?? const Color(0xFF7C4DFF),
+          onTap: () => onModuloTap?.call(moduloKey),
+        );
+      },
+    );
   }
 }

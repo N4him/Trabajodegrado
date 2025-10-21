@@ -21,12 +21,11 @@ class CustomNavigationBar extends StatefulWidget {
 class _CustomNavigationBarState extends State<CustomNavigationBar> {
   late int _currentIndex;
 
-final List<Widget> _screens = [
-  const SettingsScreen(),
-  const HomeContent(),
-   ProfileScreen(), // Bloc ya provisto en MultiBlocProvider
-];
-
+  final List<Widget> _screens = [
+    const SettingsScreen(),
+    const HomeContent(),
+    ProfileScreen(),
+  ];
 
   @override
   void initState() {
@@ -43,28 +42,20 @@ final List<Widget> _screens = [
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-
-      ),
-      child: CurvedNavigationBar(
-        index: _currentIndex,
-        height: 70.0,
-        items: const [
-          Icon(Icons.settings, size: 35, color: Color.fromARGB(255, 235, 233, 243)),
-          Icon(Icons.home_rounded, size: 35, color: Color.fromARGB(255, 235, 233, 243)),
-          Icon(Icons.person, size: 35, color: Color.fromARGB(255, 235, 233, 243)),
-        ],
-        color: const Color.fromARGB(255, 19, 18, 18),
-backgroundColor:  const Color.fromARGB(255, 235, 233, 243),
-        buttonBackgroundColor: Color.fromARGB(255, 24, 23, 23),
-        animationCurve: Curves.fastOutSlowIn,
-        animationDuration: const Duration(milliseconds: 350),
-        onTap: _handleTap,
-      ),
+    return CurvedNavigationBar(
+      index: _currentIndex,
+      height: 70.0,
+      items: const [
+        Icon(Icons.settings, size: 35, color: Color.fromARGB(255, 235, 233, 243)),
+        Icon(Icons.home_rounded, size: 35, color: Color.fromARGB(255, 235, 233, 243)),
+        Icon(Icons.person, size: 35, color: Color.fromARGB(255, 235, 233, 243)),
+      ],
+      color: const Color.fromARGB(255, 19, 18, 18),
+      backgroundColor: const Color.fromARGB(255, 235, 233, 243),
+      buttonBackgroundColor: const Color.fromARGB(255, 24, 23, 23),
+      animationCurve: Curves.fastOutSlowIn,
+      animationDuration: const Duration(milliseconds: 350),
+      onTap: _handleTap,
     );
   }
 }
-
-

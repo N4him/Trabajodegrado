@@ -131,44 +131,30 @@ class HeatmapHabitosWidget extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
-                  'Actividad Reciente',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  '${historialEventos.length} días activos',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
+
               ],
             ),
-            const SizedBox(height: 20),
             HeatMapCalendar(
               initDate: DateTime.now(),
               datasets: calendarData,
               colorsets: const {
-                1: Color(0xFFC6E48B),
-                2: Color(0xFF7BC96F),
-                3: Color(0xFF239A3B),
-                4: Color(0xFF196127),
+                1: Color.fromARGB(255, 245, 245, 161),
+                2: Color(0xFFffda95),
+                3: Color(0xFFf89d5e),
+                4: Color(0xFFf26854),
               },
               colorMode: ColorMode.color,
               defaultColor: Colors.grey[200]!,
               textColor: Colors.black,
               size: 16,
-              fontSize: 12,
-              monthFontSize: 12,
-              weekFontSize: 12,
+              fontSize: 15,
+              monthFontSize: 15,
+              weekFontSize: 15,
               weekTextColor: Colors.grey[600]!,
               margin: const EdgeInsets.all(4),
-              borderRadius: 4,
+              borderRadius: 40,
               flexible: true,
               showColorTip: true,
               colorTipHelper: [
@@ -188,6 +174,7 @@ class HeatmapHabitosWidget extends StatelessWidget {
                   SnackBar(content: Text('Actividad: $value')),
                 );
               },
+
             ),
           ],
         ),

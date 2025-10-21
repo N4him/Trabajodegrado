@@ -54,7 +54,7 @@ class NivelIndicator extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Nivel',
+              'Niveel',
               style: TextStyle(
                 fontSize: size * 0.12,
                 color: Colors.grey[600],

@@ -31,45 +31,85 @@ class _ProfileAvatarWidgetState extends State<ProfileAvatarWidget> {
   @override
   void didUpdateWidget(ProfileAvatarWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Solo recargar si la URL cambió realmente
-    if (oldWidget.photoUrl != widget.photoUrl && 
-        widget.photoUrl != _lastLoadedUrl) {
-      _loadImage();
+    // Detectar cambio de URL y actualizar caché
+    if (oldWidget.photoUrl != widget.photoUrl) {
+      _handlePhotoUrlChange();
+    }
+  }
+
+  /// Maneja el cambio de URL de foto y actualiza el caché
+  Future<void> _handlePhotoUrlChange() async {
+    final newUrl = widget.photoUrl;
+    
+    // Si la URL es vacía o null, limpiar
+    if (newUrl?.isEmpty ?? true) {
+      if (mounted) {
+        setState(() {
+          _cachedImage = null;
+          _lastLoadedUrl = null;
+        });
+      }
+      return;
+    }
+    
+    // Verificar si la nueva URL ya está en caché
+    final isCached = await _storageService.isImageCached(newUrl!);
+    
+    if (isCached) {
+      // La imagen ya está en caché, solo cargarla
+      final cachedImage = await _storageService.getSavedImage();
+      if (mounted) {
+        setState(() {
+          _cachedImage = cachedImage;
+          _lastLoadedUrl = newUrl;
+        });
+      }
+    } else {
+      // Nueva imagen, descargar y guardar en caché
+      if (mounted) {
+        setState(() => _isLoading = true);
+      }
+      
+      await _storageService.saveImageFromUrl(newUrl);
+      final newImage = await _storageService.getSavedImage();
+      
+      if (mounted) {
+        setState(() {
+          _cachedImage = newImage;
+          _isLoading = false;
+          _lastLoadedUrl = newUrl;
+        });
+      }
     }
   }
 
   Future<void> _loadImage() async {
     final currentUrl = widget.photoUrl;
     
-    // Evitar cargas duplicadas
-    if (currentUrl == _lastLoadedUrl && _cachedImage != null) {
+    // Si no hay URL, no hacer nada
+    if (currentUrl?.isEmpty ?? true) {
       return;
     }
     
-    // Primero cargar desde caché (sin setState para evitar parpadeo)
-    final cachedImage = await _storageService.getSavedImage();
+    // Verificar si ya está cacheada
+    final isCached = await _storageService.isImageCached(currentUrl!);
     
-    if (cachedImage != null && mounted) {
-      if (mounted) {
+    if (isCached) {
+      // Cargar desde caché sin loading
+      final cachedImage = await _storageService.getSavedImage();
+      if (mounted && cachedImage != null) {
         setState(() {
           _cachedImage = cachedImage;
           _lastLoadedUrl = currentUrl;
         });
       }
-      // Si tenemos caché, descargar en background sin mostrar loading
-      if (currentUrl?.isNotEmpty == true && currentUrl != _lastLoadedUrl) {
-        _downloadImageInBackground(currentUrl!);
-      }
-      return;
-    }
-    
-    // Si no hay caché y hay URL, descargar con loading
-    if (currentUrl?.isNotEmpty == true) {
+    } else {
+      // Descargar y guardar en caché
       if (mounted) {
         setState(() => _isLoading = true);
       }
       
-      await _storageService.saveImageFromUrl(currentUrl!);
+      await _storageService.saveImageFromUrl(currentUrl);
       final newImage = await _storageService.getSavedImage();
       
       if (mounted) {
@@ -79,18 +119,6 @@ class _ProfileAvatarWidgetState extends State<ProfileAvatarWidget> {
           _lastLoadedUrl = currentUrl;
         });
       }
-    }
-  }
-
-  Future<void> _downloadImageInBackground(String url) async {
-    await _storageService.saveImageFromUrl(url);
-    final newImage = await _storageService.getSavedImage();
-    
-    if (mounted && newImage != null) {
-      setState(() {
-        _cachedImage = newImage;
-        _lastLoadedUrl = url;
-      });
     }
   }
 
