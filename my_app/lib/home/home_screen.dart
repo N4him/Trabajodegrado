@@ -333,7 +333,7 @@ Widget _buildHeaderSection(ProfileLoaded state) {
     return Expanded(
       child: Column(
         children: [
-          _buildProgressCard(onTap: () {}),
+          _buildProgressCard(onTap: () => Navigator.of(context).pushNamed('/wellbeing')),
           const SizedBox(height: 20),
           _buildHabitsCard(onTap: () {}),
         ],

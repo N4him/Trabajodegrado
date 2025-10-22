@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="600" viewBox="0 0 300 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Highlight para brazos y manos -->
+  <g fill="#FF6B6B" fill-opacity="0.4">
+    <!-- Brazo izquierdo -->
+    <rect x="35" y="140" width="20" height="120" rx="10"/>
+    <ellipse cx="40" cy="275" rx="18" ry="20"/>
+
+    <!-- Brazo derecho -->
+    <rect x="245" y="140" width="20" height="120" rx="10"/>
+    <ellipse cx="260" cy="275" rx="18" ry="20"/>
+  </g>
+</svg>

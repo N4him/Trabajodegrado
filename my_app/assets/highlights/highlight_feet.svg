@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="600" viewBox="0 0 300 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Highlight para plantas de los pies -->
+  <g fill="#FF6B6B" fill-opacity="0.4">
+    <ellipse cx="105" cy="555" rx="20" ry="18"/>
+    <ellipse cx="195" cy="555" rx="20" ry="18"/>
+  </g>
+</svg>

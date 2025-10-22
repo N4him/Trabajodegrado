@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="600" viewBox="0 0 300 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Silueta básica del cuerpo humano -->
+  <g fill="none" stroke="#333" stroke-width="2">
+    <!-- Cabeza -->
+    <ellipse cx="150" cy="60" rx="35" ry="40"/>
+
+    <!-- Cuello -->
+    <line x1="150" y1="100" x2="150" y2="130"/>
+
+    <!-- Torso -->
+    <rect x="100" y="130" width="100" height="150" rx="10"/>
+
+    <!-- Brazos -->
+    <line x1="100" y1="140" x2="50" y2="200"/>
+    <line x1="50" y1="200" x2="40" y2="260"/>
+    <line x1="200" y1="140" x2="250" y2="200"/>
+    <line x1="250" y1="200" x2="260" y2="260"/>
+
+    <!-- Manos -->
+    <ellipse cx="40" cy="275" rx="12" ry="15"/>
+    <ellipse cx="260" cy="275" rx="12" ry="15"/>
+
+    <!-- Piernas -->
+    <line x1="115" y1="280" x2="110" y2="420"/>
+    <line x1="110" y1="420" x2="105" y2="540"/>
+    <line x1="185" y1="280" x2="190" y2="420"/>
+    <line x1="190" y1="420" x2="195" y2="540"/>
+
+    <!-- Pies -->
+    <ellipse cx="105" cy="555" rx="15" ry="12"/>
+    <ellipse cx="195" cy="555" rx="15" ry="12"/>
+  </g>
+</svg>

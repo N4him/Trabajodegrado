@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="600" viewBox="0 0 300 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Highlight para tobillos y pantorrillas -->
+  <g fill="#FF6B6B" fill-opacity="0.4">
+    <rect x="95" y="490" width="25" height="50" rx="5"/>
+    <rect x="180" y="490" width="25" height="50" rx="5"/>
+  </g>
+</svg>

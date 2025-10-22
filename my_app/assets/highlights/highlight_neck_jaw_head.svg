@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="600" viewBox="0 0 300 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Highlight para cuello, mandíbula y cabeza -->
+  <g fill="#FF6B6B" fill-opacity="0.4">
+    <!-- Cabeza -->
+    <ellipse cx="150" cy="60" rx="42" ry="48"/>
+    <!-- Cuello -->
+    <rect x="135" y="100" width="30" height="30" rx="5"/>
+  </g>
+</svg>
