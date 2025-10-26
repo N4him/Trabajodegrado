@@ -37,6 +37,8 @@ dependencies:
   page_transition: ^2.2.1
   flutter_cache_manager: ^3.4.1
   http: ^1.5.0
+  syncfusion_flutter_charts: ^31.2.3
+  showcaseview: ^5.0.1
 
 
 dev_dependencies:
@@ -47,4 +49,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/insignias/
     - assets/tree_demo (3).riv

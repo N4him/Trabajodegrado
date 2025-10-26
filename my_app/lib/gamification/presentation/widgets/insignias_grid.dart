@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -5,8 +6,7 @@ import 'package:my_app/gamification/domain/entities/insignia.dart';
 import 'package:my_app/gamification/presentation/bloc/gamificacion_bloc.dart';
 import 'package:my_app/gamification/presentation/bloc/gamificacion_event.dart';
 
-/// Widget que muestra un grid de insignias
-/// Obtiene los datos de la lista de insignias del estado
+/// Widget que muestra un grid de insignias con diseño hexagonal
 class InsigniasGrid extends StatefulWidget {
   final List<Insignia> insignias;
   final int crossAxisCount;
@@ -24,12 +24,11 @@ class InsigniasGrid extends StatefulWidget {
 }
 
 class _InsigniasGridState extends State<InsigniasGrid> {
-  bool _hasCheckedInsignias = false; // ← Flag para verificar solo una vez
+  bool _hasCheckedInsignias = false;
 
   @override
   void initState() {
     super.initState();
-    // Verificar insignias solo la primera vez que se monta el widget
     if (!_hasCheckedInsignias) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final userId = FirebaseAuth.instance.currentUser?.uid;
@@ -108,145 +107,16 @@ class _InsigniasGridState extends State<InsigniasGrid> {
           padding: const EdgeInsets.all(16),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: widget.crossAxisCount,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 0.75,
+            crossAxisSpacing: 20,
+            mainAxisSpacing: 20,
+            childAspectRatio: 0.85,
           ),
           itemCount: insigniasFiltradas.length,
           itemBuilder: (context, index) {
             final insignia = insigniasFiltradas[index];
             return GestureDetector(
               onTap: () => _showInsigniaDetails(context, insignia),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: insignia.desbloqueada
-                      ? Colors.white
-                      : Colors.grey[200],
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: insignia.desbloqueada
-                      ? [
-                          BoxShadow(
-                            color: _getInsigniaColor(insignia.requisito.tipo)
-                                .withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ]
-                      : null,
-                  border: Border.all(
-                    color: insignia.desbloqueada
-                        ? _getInsigniaColor(insignia.requisito.tipo).withOpacity(0.5)
-                        : Colors.grey[300]!,
-                    width: 2,
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Icono de la insignia
-                      Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          if (insignia.desbloqueada)
-                            Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: RadialGradient(
-                                  colors: [
-                                    _getInsigniaColor(insignia.requisito.tipo)
-                                        .withOpacity(0.3),
-                                    Colors.transparent,
-                                  ],
-                                ),
-                              ),
-                            ),
-                          Text(
-                            insignia.icono,
-                            style: TextStyle(
-                              fontSize: 32,
-                              color: insignia.desbloqueada ? null : Colors.grey[400],
-                            ),
-                          ),
-                          if (!insignia.desbloqueada)
-                            Positioned.fill(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(40),
-                                ),
-                                child: Icon(
-                                  Icons.lock,
-                                  color: Colors.grey[600],
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      // Nombre de la insignia
-                      Flexible(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                          child: Text(
-                            insignia.nombre,
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: insignia.desbloqueada
-                                  ? Colors.black87
-                                  : Colors.grey[500],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      // Puntos
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: insignia.desbloqueada
-                              ? _getInsigniaColor(insignia.requisito.tipo)
-                                  .withOpacity(0.15)
-                              : Colors.grey[300],
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.star,
-                              size: 11,
-                              color: insignia.desbloqueada
-                                  ? _getInsigniaColor(insignia.requisito.tipo)
-                                  : Colors.grey[500],
-                            ),
-                            const SizedBox(width: 2),
-                            Text(
-                              '${insignia.puntosOtorgados}',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: insignia.desbloqueada
-                                    ? _getInsigniaColor(insignia.requisito.tipo)
-                                    : Colors.grey[500],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              child: _HexagonalBadge(insignia: insignia),
             );
           },
         ),
@@ -269,50 +139,30 @@ class _InsigniasGridState extends State<InsigniasGrid> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Icono grande
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: insignia.desbloqueada
-                        ? RadialGradient(
-                            colors: [
-                              color.withOpacity(0.2),
-                              color.withOpacity(0.05),
-                            ],
-                          )
-                        : null,
-                    color: insignia.desbloqueada ? null : Colors.grey[200],
-                    border: Border.all(
-                      color: insignia.desbloqueada ? color : Colors.grey[400]!,
-                      width: 3,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      insignia.icono,
-                      style: TextStyle(
-                        fontSize: 48,
-                        color: insignia.desbloqueada ? null : Colors.grey[400],
-                      ),
-                    ),
+                // Imagen grande de insignia
+                SizedBox(
+                  width: 140,
+                  height: 140,
+                  child: _HexagonalBadge(
+                    insignia: insignia,
+                    size: 140,
+                    showLabel: false,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 // Nombre
                 Text(
                   insignia.nombre,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 22,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 8),
                 // Estado
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: insignia.desbloqueada
                         ? color.withOpacity(0.15)
@@ -324,7 +174,7 @@ class _InsigniasGridState extends State<InsigniasGrid> {
                     children: [
                       Icon(
                         insignia.desbloqueada ? Icons.check_circle : Icons.lock,
-                        size: 16,
+                        size: 18,
                         color: insignia.desbloqueada ? color : Colors.grey[600],
                       ),
                       const SizedBox(width: 6),
@@ -345,33 +195,35 @@ class _InsigniasGridState extends State<InsigniasGrid> {
                   insignia.descripcion,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 15,
                     color: Colors.grey[700],
+                    height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 // Requisito
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey[200]!, width: 1),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
                         _getRequisitoIcon(insignia.requisito.tipo),
-                        size: 20,
+                        size: 24,
                         color: color,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 10),
                       Flexible(
                         child: Text(
                           _getRequisitoText(insignia.requisito),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            fontSize: 14,
+                            fontSize: 15,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -379,24 +231,32 @@ class _InsigniasGridState extends State<InsigniasGrid> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 // Puntos otorgados
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.stars, color: color, size: 20),
-                    const SizedBox(width: 6),
-                    Text(
-                      '+${insignia.puntosOtorgados} puntos',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: color,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.stars, color: color, size: 22),
+                      const SizedBox(width: 8),
+                      Text(
+                        '+${insignia.puntosOtorgados} puntos',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: color,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 // Botón cerrar
                 SizedBox(
                   width: double.infinity,
@@ -404,10 +264,11 @@ class _InsigniasGridState extends State<InsigniasGrid> {
                     onPressed: () => Navigator.of(context).pop(),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: color,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
                       ),
+                      elevation: 0,
                     ),
                     child: const Text(
                       'Cerrar',
@@ -479,6 +340,94 @@ class _InsigniasGridState extends State<InsigniasGrid> {
   }
 }
 
+/// Widget de insignia - Solo muestra la imagen
+class _HexagonalBadge extends StatelessWidget {
+  final Insignia insignia;
+  final double size;
+  final bool showLabel;
+
+  const _HexagonalBadge({
+    required this.insignia,
+    this.size = 100,
+    this.showLabel = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Solo la imagen, sin hexágono ni círculo
+        SizedBox(
+          width: size,
+          height: size,
+          child: insignia.desbloqueada
+              ? _buildInsigniaIcon(insignia.icono, size)
+              : Opacity(
+                  opacity: 0.3,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      _buildInsigniaIcon(insignia.icono, size),
+                      Icon(
+                        Icons.lock,
+                        size: size * 0.4,
+                        color: Colors.grey[700],
+                      ),
+                    ],
+                  ),
+                ),
+        ),
+        if (showLabel) ...[
+          const SizedBox(height: 8),
+          // Nombre de la insignia
+          Text(
+            insignia.nombre,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: insignia.desbloqueada
+                  ? Colors.black87
+                  : Colors.grey[500],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// Construye el widget de imagen de la insignia
+  /// Usa el campo 'icono' de la insignia como ruta completa de la imagen
+  Widget _buildInsigniaIcon(String iconPath, double size) {
+    return Image(
+      image: AssetImage(iconPath),
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) {
+        // Si falla la carga, muestra un placeholder
+        debugPrint('Error cargando imagen: $iconPath - $error');
+        return Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: Colors.grey[300],
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.image_not_supported,
+            size: size * 0.5,
+            color: Colors.grey[500],
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// Widget compacto para mostrar insignias recientes
 class InsigniasRecentesWidget extends StatelessWidget {
   final List<Insignia> insignias;
@@ -516,7 +465,7 @@ class InsigniasRecentesWidget extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 80,
+          height: 110,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -524,46 +473,11 @@ class InsigniasRecentesWidget extends StatelessWidget {
             itemBuilder: (context, index) {
               final insignia = insigniasDesbloqueadas[index];
               return Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: _getInsigniaColor(insignia.requisito.tipo)
-                                .withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          insignia.icono,
-                          style: const TextStyle(fontSize: 24),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    SizedBox(
-                      width: 50,
-                      child: Text(
-                        insignia.nombre,
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
+                padding: const EdgeInsets.only(right: 16),
+                child: _HexagonalBadge(
+                  insignia: insignia,
+                  size: 70,
+                  showLabel: true,
                 ),
               );
             },
@@ -571,22 +485,5 @@ class InsigniasRecentesWidget extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  Color _getInsigniaColor(String tipo) {
-    switch (tipo) {
-      case 'habitos':
-        return const Color(0xFF4CAF50);
-      case 'foro':
-        return const Color(0xFF2196F3);
-      case 'biblioteca':
-        return const Color(0xFFFF9800);
-      case 'equilibrio':
-        return const Color(0xFF9C27B0);
-      case 'racha':
-        return const Color(0xFFFF5722);
-      default:
-        return const Color(0xFF607D8B);
-    }
   }
 }

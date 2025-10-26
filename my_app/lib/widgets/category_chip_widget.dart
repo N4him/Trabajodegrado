@@ -16,10 +16,10 @@ class CategoryChipWidget extends StatelessWidget {
     
     final categories = [
       {'name': 'Todos', 'icon': Icons.library_books_rounded},
-      {'name': 'HOLA', 'icon': Icons.menu_book},
-      {'name': 'reading', 'icon': Icons.favorite},
-      {'name': 'space', 'icon': Icons.language},
-      {'name': 'more', 'icon': Icons.apps},
+      {'name': 'Informativo', 'icon': Icons.menu_book},
+      {'name': 'Guia', 'icon': Icons.favorite},
+      {'name': 'Practicas', 'icon': Icons.language},
+      {'name': 'Otros', 'icon': Icons.apps},
     ];
 
     return Column(

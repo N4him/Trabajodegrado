@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:my_app/forum/presentation/screen_forum.dart';
+import 'package:my_app/showcase/showcase_manager.dart';
+import 'package:my_app/showcase/showcase_preferences.dart';
+import 'package:page_transition/page_transition.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:showcaseview/showcaseview.dart';
 import 'package:my_app/core/di/injector.dart';
 import 'package:my_app/library/presentation/blocs/library_bloc.dart';
 import 'package:my_app/library/presentation/blocs/library_event.dart';
@@ -11,6 +16,7 @@ import 'package:my_app/library/presentation/blocs/saved_book_bloc.dart';
 import 'package:my_app/library/presentation/blocs/saved_book_event.dart';
 import 'package:my_app/config/app_router.dart';
 import 'package:my_app/library/presentation/saved_book.dart';
+import 'package:my_app/showcase/show_keys.dart';
 
 import '../../widgets/book_card_widget.dart';
 import '../../widgets/category_chip_widget.dart';
@@ -36,7 +42,7 @@ class _LibraryPageState extends State<LibraryPage>
   String currentSearchQuery = '';
   int _currentIndex = 0;
   final GlobalKey<CurvedNavigationBarState> _bottomNavigationKey = GlobalKey();
-  
+
   late String _userId;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -45,15 +51,15 @@ class _LibraryPageState extends State<LibraryPage>
   final int _booksPerPage = 3;
   bool _isLoadingMore = false;
   List<dynamic> _allBooks = [];
-  final Set<String> _loadedBookIds = {}; // Track loaded books
+  final Set<String> _loadedBookIds = {};
 
   @override
   void initState() {
     super.initState();
-    
+
     _userId = _auth.currentUser?.uid ?? '';
     _libraryBloc = getIt<LibraryBloc>();
-    
+
     _headerAnimationController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
@@ -82,13 +88,181 @@ class _LibraryPageState extends State<LibraryPage>
     });
 
     _libraryBloc.add(GetBooksEvent());
-    
+
     if (_userId.isNotEmpty) {
       context.read<SavedBookBloc>().add(GetUserSavedBooksEvent(_userId));
     }
 
     _scrollController.addListener(_onScroll);
+
+    // Iniciar showcase si no se ha visto
+    _checkAndStartShowCase();
   }
+
+  void _checkAndStartShowCase() async {
+    await Future.delayed(const Duration(milliseconds: 1500));
+
+    if (!mounted) return;
+
+    final showcaseManager = ShowcaseManager();
+
+    // Verificar si el usuario declinó continuar tutoriales
+    if (showcaseManager.hasDeclinedContinuation) {
+      print(
+          '⏸️ Usuario declinó continuar los tutoriales. No se iniciará showcase.');
+      return;
+    }
+
+    final hasSeenLibrary = await ShowCasePreferences.hasSeenLibraryShowCase();
+
+    print('🔍 DEBUG - Has visto Library showcase: $hasSeenLibrary');
+
+    if (!hasSeenLibrary && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          print('🚀 Iniciando showcase de Library...');
+          ShowCaseWidget.of(context).startShowCase([
+            ShowCaseKeys.libraryBannerKey,
+            ShowCaseKeys.librarySearchKey,
+            ShowCaseKeys.libraryCategoriesKey,
+            ShowCaseKeys.libraryBookCardKey,
+            ShowCaseKeys.librarySavedBooksKey,
+          ]);
+        }
+      });
+    }
+  }
+
+  Future<void> _onShowCaseFinish() async {
+    print('✅ Procesando fin del Showcase de Library');
+    await ShowCasePreferences.setLibraryShowCaseSeen();
+
+    if (!mounted) return;
+
+    final nextShowCase = await ShowCasePreferences.getNextPendingShowCase();
+    print('📋 Siguiente showcase pendiente: $nextShowCase');
+
+    if (nextShowCase != null && nextShowCase != 'library') {
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (mounted) {
+        _showContinueDialog(nextShowCase);
+      }
+    }
+  }
+
+  void _navigateToNextShowCase(String showcaseId) {
+    switch (showcaseId) {
+      case 'library':
+        Navigator.push(
+          context,
+          PageTransition(
+            type: PageTransitionType.fade,
+            duration: const Duration(milliseconds: 500),
+            reverseDuration: const Duration(milliseconds: 400),
+            child: const LibraryPage(),
+          ),
+        );
+        break;
+      case 'saved_books':
+        Navigator.of(context).pushNamed('/saved-books');
+        break;
+      case 'forum':
+        Navigator.push(
+          context,
+          PageTransition(
+            type: PageTransitionType.fade,
+            duration: const Duration(milliseconds: 500),
+            reverseDuration: const Duration(milliseconds: 400),
+            child: const ForumScreen(),
+          ),
+        );
+        break;
+      case 'habits':
+        Navigator.of(context).pushNamed('/habits');
+        break;
+      case 'mental_balance':
+        Navigator.of(context).pushNamed('/mental-balance');
+        break;
+      case 'profile':
+        Navigator.of(context).pushNamed('/profile');
+        break;
+    }
+  }
+
+  void _showContinueDialog(String nextShowCase) {
+    final showcaseInfo = _getShowCaseInfo(nextShowCase);
+    final showcaseManager = ShowcaseManager();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: Row(
+          children: [
+            Text('${showcaseInfo['emoji']} '),
+            const Expanded(
+              child: Text(
+                '¡Tutorial completado!',
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Has completado el tutorial de la Biblioteca Digital.',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '¿Te gustaría continuar con el tutorial de ${showcaseInfo['name']}?',
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              showcaseManager.markAsDeclined('library');
+              Navigator.of(dialogContext).pop();
+            },
+            child: const Text('Más tarde'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              _navigateToNextShowCase(nextShowCase);
+            },
+            icon: const Icon(Icons.arrow_forward),
+            label: const Text('Continuar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Map<String, String> _getShowCaseInfo(String showcaseId) {
+    switch (showcaseId) {
+      case 'home':
+        return {'name': 'Pantalla Principal', 'emoji': '🏠'};
+      case 'saved_books':
+        return {'name': 'Libros Guardados', 'emoji': '📖'};
+      case 'forum':
+        return {'name': 'Foro de Comunidad', 'emoji': '💬'};
+      case 'habits':
+        return {'name': 'Hábitos Saludables', 'emoji': '✅'};
+      case 'mental_balance':
+        return {'name': 'Equilibrio Mental', 'emoji': '🧘'};
+      case 'profile':
+        return {'name': 'Perfil de Usuario', 'emoji': '👤'};
+      default:
+        return {'name': 'siguiente sección', 'emoji': '✨'};
+    }
+  }
+
+  // ... resto del código de LibraryPage
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
@@ -191,32 +365,47 @@ class _LibraryPageState extends State<LibraryPage>
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return BlocProvider<LibraryBloc>.value(
-      value: _libraryBloc,
-      child: Scaffold(
-        backgroundColor: isDark ? colorScheme.background : const Color(0xFFFAF9F6),
-        body: IndexedStack(
-          index: _currentIndex,
-          children: [
-            _buildLibraryView(colorScheme, isDark),
-            const SavedBooksPage(),
-          ],
-        ),
-        bottomNavigationBar: CurvedNavigationBar(
-          key: _bottomNavigationKey,
-          index: _currentIndex,
-          height: 60.0,
-          items: const <Widget>[
-            Icon(Icons.book_rounded, size: 30, color: Colors.white),
-            Icon(Icons.bookmark_rounded, size: 30, color: Colors.white),
-          ],
-          color: const Color.fromARGB(255, 160, 93, 85),
-          buttonBackgroundColor: const Color.fromARGB(255, 192, 113, 104),
-          backgroundColor: Colors.transparent,
-          animationCurve: Curves.linearToEaseOut,
-          animationDuration: const Duration(milliseconds: 300),
-          onTap: _onNavBarTap,
+
+    return ShowCaseWidget(
+      onFinish: () {
+        print('🎯 ShowCaseWidget Library onFinish llamado');
+        _onShowCaseFinish();
+      },
+      builder: (context) => BlocProvider<LibraryBloc>.value(
+        value: _libraryBloc,
+        child: Scaffold(
+          backgroundColor:
+              isDark ? colorScheme.background : const Color(0xFFFAF9F6),
+// En LibraryPage, en el método build():
+          body: IndexedStack(
+            index: _currentIndex,
+            children: [
+              _buildLibraryView(colorScheme, isDark),
+              const SavedBooksPage(disableShowcase: true), // ← AGREGAR AQUÍ
+            ],
+          ),
+          bottomNavigationBar: Showcase(
+            key: ShowCaseKeys.librarySavedBooksKey,
+            title: '🔖 Libros Guardados',
+            description:
+                'Accede a tu colección personal de libros guardados. Todos los libros que marques como favoritos aparecerán aquí para que puedas encontrarlos fácilmente.',
+            targetPadding: const EdgeInsets.all(8),
+            child: CurvedNavigationBar(
+              key: _bottomNavigationKey,
+              index: _currentIndex,
+              height: 60.0,
+              items: const <Widget>[
+                Icon(Icons.book_rounded, size: 30, color: Colors.white),
+                Icon(Icons.bookmark_rounded, size: 30, color: Colors.white),
+              ],
+              color: const Color.fromARGB(255, 160, 93, 85),
+              buttonBackgroundColor: const Color.fromARGB(255, 192, 113, 104),
+              backgroundColor: Colors.transparent,
+              animationCurve: Curves.linearToEaseOut,
+              animationDuration: const Duration(milliseconds: 300),
+              onTap: _onNavBarTap,
+            ),
+          ),
         ),
       ),
     );
@@ -235,18 +424,22 @@ class _LibraryPageState extends State<LibraryPage>
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
             _buildFeaturedBannerWithSearch(),
-            
             if (currentSearchQuery.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: CategoryChipWidget(
-                  selectedCategory: selectedCategory,
-                  onCategoryChanged: _handleCategoryChange,
+                child: Showcase(
+                  key: ShowCaseKeys.libraryCategoriesKey,
+                  title: '🏷️ Categorías',
+                  description:
+                      'Filtra los libros por categoría. Explora diferentes temas como Bienestar Animal, Psicología, Salud Mental y más. Toca una categoría para ver solo esos libros.',
+                  targetPadding: const EdgeInsets.all(8),
+                  child: CategoryChipWidget(
+                    selectedCategory: selectedCategory,
+                    onCategoryChanged: _handleCategoryChange,
+                  ),
                 ),
               ),
-            
             if (currentSearchQuery.isEmpty) const SizedBox(height: 24),
-            
             BlocConsumer<LibraryBloc, LibraryState>(
               listener: (context, state) {
                 if (state is LibraryLoaded) {
@@ -287,7 +480,8 @@ class _LibraryPageState extends State<LibraryPage>
                     );
                   }
 
-                  final displayedBooks = state.books.take(_displayedBooksCount).toList();
+                  final displayedBooks =
+                      state.books.take(_displayedBooksCount).toList();
 
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -297,9 +491,33 @@ class _LibraryPageState extends State<LibraryPage>
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: displayedBooks.length,
-                          separatorBuilder: (context, index) => const SizedBox(height: 12),
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final book = displayedBooks[index];
+                            // Solo mostrar showcase en el primer libro
+                            if (index == 0) {
+                              return Showcase(
+                                key: ShowCaseKeys.libraryBookCardKey,
+                                title: '📖 Tarjeta de Libro',
+                                description:
+                                    'Cada tarjeta muestra información del libro: portada, título, autor y categoría. Toca una tarjeta para ver los detalles completos y opciones de lectura. Usa el ícono de bookmark para guardar tus favoritos.',
+                                targetPadding: const EdgeInsets.all(8),
+                                child: LazyBookCard(
+                                  key: ValueKey(book.id),
+                                  book: book,
+                                  bookId: book.id,
+                                  isLoaded: _loadedBookIds.contains(book.id),
+                                  onVisibilityChanged: (isVisible) {
+                                    if (isVisible) {
+                                      setState(() {
+                                        _loadedBookIds.add(book.id);
+                                      });
+                                    }
+                                  },
+                                ),
+                              );
+                            }
                             return LazyBookCard(
                               key: ValueKey(book.id),
                               book: book,
@@ -315,7 +533,6 @@ class _LibraryPageState extends State<LibraryPage>
                             );
                           },
                         ),
-
                       ],
                     ),
                   );
@@ -325,11 +542,10 @@ class _LibraryPageState extends State<LibraryPage>
                     child: _buildErrorState(state.message),
                   );
                 }
-                
+
                 return const SizedBox();
               },
             ),
-
             const SizedBox(height: 120),
           ],
         ),
@@ -338,99 +554,112 @@ class _LibraryPageState extends State<LibraryPage>
   }
 
   Widget _buildFeaturedBannerWithSearch() {
-    
-    return Container(
-      height: 250,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 30,
-            offset: const Offset(15, 15),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/images/banner_lib (1).jpg'),
-                  fit: BoxFit.cover,
+    return Showcase(
+      key: ShowCaseKeys.libraryBannerKey,
+      title: '📚 Bienvenido a la Biblioteca',
+      description:
+          'Aquí encontrarás nuestra colección completa de libros digitales sobre bienestar animal, psicología y salud mental. Explora, lee y aprende.',
+      targetPadding: const EdgeInsets.all(0),
+      child: Container(
+        height: 250,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 30,
+              offset: const Offset(15, 15),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Container(
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage('assets/images/banner_lib (1).jpg'),
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ),
-          ),
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    const Color(0xFF9d3f35).withOpacity(0.1),
-                    const Color(0xFF9d3f35).withOpacity(0.1),
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      const Color(0xFF9d3f35).withOpacity(0.1),
+                      const Color(0xFF9d3f35).withOpacity(0.1),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 30,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Biblioteca P.A.P',
+                      style: TextStyle(
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        height: 1.2,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black45,
+                            offset: Offset(1, 1),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Lee, Aplica, Apoya',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black45,
+                            offset: Offset(1, 1),
+                            blurRadius: 3,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Showcase(
+                      key: ShowCaseKeys.librarySearchKey,
+                      title: '🔍 Búsqueda Rápida',
+                      description:
+                          'Busca libros por título, autor o palabra clave. La búsqueda es instantánea y te mostrará resultados mientras escribes.',
+                      targetPadding: const EdgeInsets.all(8),
+                      child: SearchBarWidget(
+                        onSearch: _handleSearch,
+                        onClear: _clearSearch,
+                        initialValue: currentSearchQuery,
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 30,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Biblioteca P.A.P',
-                    style: TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      height: 1.2,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black45,
-                          offset: Offset(1, 1),
-                          blurRadius: 4,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Lee, Aplica, Apoya',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.white,
-                      letterSpacing: 0.5,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black45,
-                          offset: Offset(1, 1),
-                          blurRadius: 3,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SearchBarWidget(
-                    onSearch: _handleSearch,
-                    onClear: _clearSearch,
-                    initialValue: currentSearchQuery,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -438,7 +667,7 @@ class _LibraryPageState extends State<LibraryPage>
   Widget _buildErrorState(String message) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40.0),
@@ -465,9 +694,9 @@ class _LibraryPageState extends State<LibraryPage>
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  currentSearchQuery.isNotEmpty 
-                    ? Icons.search_off_rounded
-                    : Icons.error_outline_rounded,
+                  currentSearchQuery.isNotEmpty
+                      ? Icons.search_off_rounded
+                      : Icons.error_outline_rounded,
                   size: 64,
                   color: Colors.red.withOpacity(0.7),
                 ),
@@ -475,8 +704,8 @@ class _LibraryPageState extends State<LibraryPage>
               const SizedBox(height: 24),
               Text(
                 currentSearchQuery.isNotEmpty
-                  ? 'No se encontraron resultados'
-                  : 'Algo salió mal',
+                    ? 'No se encontraron resultados'
+                    : 'Algo salió mal',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -487,8 +716,8 @@ class _LibraryPageState extends State<LibraryPage>
               const SizedBox(height: 8),
               Text(
                 currentSearchQuery.isNotEmpty
-                  ? 'No se encontraron libros para "$currentSearchQuery"'
-                  : message,
+                    ? 'No se encontraron libros para "$currentSearchQuery"'
+                    : message,
                 style: TextStyle(
                   fontSize: 14,
                   color: colorScheme.onSurface.withOpacity(0.6),
@@ -507,7 +736,8 @@ class _LibraryPageState extends State<LibraryPage>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF9D6055),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -517,14 +747,16 @@ class _LibraryPageState extends State<LibraryPage>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      currentSearchQuery.isNotEmpty 
-                        ? Icons.clear_all_rounded 
-                        : Icons.refresh_rounded,
+                      currentSearchQuery.isNotEmpty
+                          ? Icons.clear_all_rounded
+                          : Icons.refresh_rounded,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      currentSearchQuery.isNotEmpty ? 'Limpiar búsqueda' : 'Reintentar',
+                      currentSearchQuery.isNotEmpty
+                          ? 'Limpiar búsqueda'
+                          : 'Reintentar',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
@@ -543,7 +775,7 @@ class _LibraryPageState extends State<LibraryPage>
   Widget _buildEmptyState() {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40.0),
@@ -569,9 +801,9 @@ class _LibraryPageState extends State<LibraryPage>
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  currentSearchQuery.isNotEmpty 
-                    ? Icons.search_off_rounded
-                    : Icons.auto_stories_rounded,
+                  currentSearchQuery.isNotEmpty
+                      ? Icons.search_off_rounded
+                      : Icons.auto_stories_rounded,
                   size: 30,
                   color: const Color(0xFF9D6055).withOpacity(0.7),
                 ),
@@ -579,10 +811,10 @@ class _LibraryPageState extends State<LibraryPage>
               const SizedBox(height: 24),
               Text(
                 currentSearchQuery.isNotEmpty
-                  ? 'No se encontraron libros'
-                  : selectedCategory != 'Todos'
-                    ? 'No hay libros en esta categoría'
-                    : 'No hay libros disponibles',
+                    ? 'No se encontraron libros'
+                    : selectedCategory != 'Todos'
+                        ? 'No hay libros en esta categoría'
+                        : 'No hay libros disponibles',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -593,24 +825,26 @@ class _LibraryPageState extends State<LibraryPage>
               const SizedBox(height: 8),
               Text(
                 currentSearchQuery.isNotEmpty
-                  ? 'Intenta con otros términos: "$currentSearchQuery"'
-                  : selectedCategory != 'Todos'
-                    ? 'No se encontraron libros en "$selectedCategory"'
-                    : 'Los libros aparecerán aquí cuando estén disponibles',
+                    ? 'Intenta con otros términos: "$currentSearchQuery"'
+                    : selectedCategory != 'Todos'
+                        ? 'No se encontraron libros en "$selectedCategory"'
+                        : 'Los libros aparecerán aquí cuando estén disponibles',
                 style: TextStyle(
                   fontSize: 14,
                   color: colorScheme.onSurface.withOpacity(0.5),
                 ),
                 textAlign: TextAlign.center,
               ),
-              if (currentSearchQuery.isNotEmpty || selectedCategory != 'Todos') ...[
+              if (currentSearchQuery.isNotEmpty ||
+                  selectedCategory != 'Todos') ...[
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _clearSearch,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF9D6055),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -640,7 +874,6 @@ class _LibraryPageState extends State<LibraryPage>
   }
 }
 
-// Nuevo widget con Lazy Loading - SIN ANIMACIÓN
 class LazyBookCard extends StatefulWidget {
   final dynamic book;
   final String bookId;

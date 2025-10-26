@@ -158,13 +158,13 @@ class _PlantaAnimationWidgetState extends State<PlantaAnimationWidget> {
         // Fondo de imagen ocupando todo el espacio
         Positioned.fill(
           child: Image.asset(
-            'assets/images/arboles (1).png',
+            'assets/images/arboless.png',
             fit: BoxFit.cover,
           ),
         ),
         // Árbol posicionado más arriba
         Positioned(
-          top: -95, // Ajusta este valor para mover más arriba o abajo
+          top: -110, // Ajusta este valor para mover más arriba o abajo
           left: 0,
           right: 0,
           child: Center(
@@ -196,7 +196,7 @@ class _PlantaAnimationWidgetState extends State<PlantaAnimationWidget> {
   Widget _buildInfoCard() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
+        color: const Color.fromARGB(255, 223, 238, 214).withOpacity(0.95),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: const Color(0xFF6B8E6B),
@@ -211,23 +211,26 @@ class _PlantaAnimationWidgetState extends State<PlantaAnimationWidget> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(10.0),
+        padding: const EdgeInsets.all(1.0), // Aumentado de 10.0 a 16.0
         child: Row(
           children: [
-            // Icono de etapa
+            // Imagen de etapa
             Container(
-              padding: const EdgeInsets.all(8),
+              width: 100,
+              height: 100,
               decoration: BoxDecoration(
-                color: const Color(0xFF4A7C59),
                 borderRadius: BorderRadius.circular(10),
+
               ),
-              child: Icon(
-                _getEtapaIcon(),
-                color: Colors.white,
-                size: 18,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image(
+                  image: AssetImage('assets/images/ajolote_jardin.png'), // Reemplaza con tu ruta de imagen
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12), // Aumentado de 10 a 12
             // Nombre de etapa
             Expanded(
               child: Column(
@@ -235,20 +238,15 @@ class _PlantaAnimationWidgetState extends State<PlantaAnimationWidget> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    _getEtapaName(),
+                   'Arbol de Nest',
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 16, // Aumentado de 14 a 16
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF2D5A3D),
+                      
                     ),
                   ),
-                  Text(
-                    _getEtapaDescription(),
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: Color(0xFF6B8E6B),
-                    ),
-                  ),
+
                 ],
               ),
             ),
@@ -259,13 +257,15 @@ class _PlantaAnimationWidgetState extends State<PlantaAnimationWidget> {
               Icons.trending_up,
               const Color(0xFF4A7C59),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10), // Aumentado de 8 a 10
             _buildMiniStat(
               'Salud',
               widget.salud.toDouble(),
               Icons.favorite,
               const Color(0xFF6B8E6B),
             ),
+                        const SizedBox(width: 10), // Aumentado de 8 a 10
+
           ],
         ),
       ),
@@ -274,7 +274,7 @@ class _PlantaAnimationWidgetState extends State<PlantaAnimationWidget> {
 
   Widget _buildMiniStat(String label, double value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10), // Aumentado de 8,6 a 10,10
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
@@ -282,12 +282,12 @@ class _PlantaAnimationWidgetState extends State<PlantaAnimationWidget> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 14),
-          const SizedBox(height: 2),
+          Icon(icon, color: color, size: 16), // Aumentado de 14 a 16
+          const SizedBox(height: 4), // Aumentado de 2 a 4
           Text(
             '${value.toStringAsFixed(0)}%',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 14, // Aumentado de 12 a 14
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -295,7 +295,7 @@ class _PlantaAnimationWidgetState extends State<PlantaAnimationWidget> {
           Text(
             label,
             style: TextStyle(
-              fontSize: 8,
+              fontSize: 9, // Aumentado de 8 a 9
               color: Colors.grey[600],
             ),
           ),
@@ -304,20 +304,7 @@ class _PlantaAnimationWidgetState extends State<PlantaAnimationWidget> {
     );
   }
 
-  String _getEtapaDescription() {
-    switch (widget.etapa) {
-      case 'semilla':
-        return 'Inicio del crecimiento';
-      case 'brote':
-        return 'Primeras hojas';
-      case 'planta':
-        return 'En desarrollo';
-      case 'arbol':
-        return 'Totalmente desarrollado';
-      default:
-        return 'Estado desconocido';
-    }
-  }
+
 
   IconData _getEtapaIcon() {
     switch (widget.etapa) {
@@ -334,18 +321,5 @@ class _PlantaAnimationWidgetState extends State<PlantaAnimationWidget> {
     }
   }
 
-  String _getEtapaName() {
-    switch (widget.etapa) {
-      case 'semilla':
-        return 'Semilla';
-      case 'brote':
-        return 'Brote';
-      case 'planta':
-        return 'Planta';
-      case 'arbol':
-        return 'Árbol';
-      default:
-        return 'Desconocido';
-    }
-  }
+
 }
