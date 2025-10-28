@@ -14,7 +14,7 @@ import '../habits/presentation/screens/habit_creation_screen.dart';
 import '../wellbeing/presentation/screens/wellbeing_home_screen.dart';
 import '../wellbeing/body_scan/presentation/screens/body_scan_screen.dart';
 import '../wellbeing/breathing_game/presentation/screens/breathing_game_screen.dart';
-import '../wellbeing/stop_game/presentation/screens/stop_game_screen.dart';
+import '../wellbeing/quest_map/presentation/screens/quest_map_screen.dart';
 import '../wellbeing/presentation/blocs/wellbeing_points_bloc.dart';
 import '../core/di/injector.dart';
 
@@ -32,7 +32,7 @@ class AppRouter {
   static const String wellbeingHome = '/wellbeing';
   static const String bodyScan = '/wellbeing/body-scan';
   static const String breathingGame = '/wellbeing/breathing-game';
-  static const String stopGame = '/wellbeing/stop-game';
+  static const String questMap = '/wellbeing/quest-map';
 
 
   static Map<String, WidgetBuilder> routes = {
@@ -51,7 +51,7 @@ class AppRouter {
     ),
     bodyScan: (_) => const BodyScanScreen(),
     breathingGame: (_) => const BreathingGameScreen(),
-    stopGame: (_) => const StopGameScreen(),
+    questMap: (_) => const QuestMapScreen(),
     bookDetail: (context) {
       final bookId = ModalRoute.of(context)!.settings.arguments as String;
       return BookDetailPage(bookId: bookId);

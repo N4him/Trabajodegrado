@@ -52,14 +52,13 @@ import 'package:my_app/wellbeing/breathing_game/domain/usecases/get_weekly_breat
 import 'package:my_app/wellbeing/breathing_game/presentation/blocs/breathing_game_bloc.dart';
 
 // ==============================================
-// STOP GAME (WELLBEING)
+// QUEST MAP (WELLBEING)
 // ==============================================
-import 'package:my_app/wellbeing/stop_game/data/datasources/stop_game_remote_datasource.dart';
-import 'package:my_app/wellbeing/stop_game/data/repositories/stop_game_repository_impl.dart';
-import 'package:my_app/wellbeing/stop_game/domain/repositories/stop_game_repository.dart';
-import 'package:my_app/wellbeing/stop_game/domain/usecases/save_stop_session_usecase.dart';
-import 'package:my_app/wellbeing/stop_game/domain/usecases/get_weekly_stop_sessions_usecase.dart';
-import 'package:my_app/wellbeing/stop_game/presentation/blocs/stop_game_bloc.dart';
+import 'package:my_app/wellbeing/quest_map/data/datasources/quest_map_remote_datasource.dart';
+import 'package:my_app/wellbeing/quest_map/data/repositories/quest_map_repository_impl.dart';
+import 'package:my_app/wellbeing/quest_map/domain/repositories/quest_map_repository.dart';
+import 'package:my_app/wellbeing/quest_map/domain/usecases/save_quest_map_session_usecase.dart';
+import 'package:my_app/wellbeing/quest_map/presentation/blocs/quest_map_bloc.dart';
 
 // ==============================================
 // LIBRARY
@@ -156,8 +155,8 @@ Future<void> setupDI() async {
     () => BreathingGameFirestoreDataSource(firestore: getIt()),
   );
 
-  getIt.registerLazySingleton<StopGameDataSource>(
-    () => StopGameFirestoreDataSource(firestore: getIt()),
+  getIt.registerLazySingleton<QuestMapDataSource>(
+    () => QuestMapFirestoreDataSource(firestore: getIt()),
   );
 
   // ==============================================
@@ -202,8 +201,8 @@ Future<void> setupDI() async {
     () => BreathingGameRepositoryImpl(dataSource: getIt()),
   );
 
-  getIt.registerLazySingleton<StopGameRepository>(
-    () => StopGameRepositoryImpl(dataSource: getIt()),
+  getIt.registerLazySingleton<QuestMapRepository>(
+    () => QuestMapRepositoryImpl(dataSource: getIt()),
   );
 
   // ==============================================
@@ -300,13 +299,9 @@ getIt.registerLazySingleton<GetWeeklyBreathingSessionsUseCase>(
   () => GetWeeklyBreathingSessionsUseCase(repository: getIt()),
 );
 
-// STOP Game Use Cases
-getIt.registerLazySingleton<SaveStopSessionUseCase>(
-  () => SaveStopSessionUseCase(repository: getIt()),
-);
-
-getIt.registerLazySingleton<GetWeeklyStopSessionsUseCase>(
-  () => GetWeeklyStopSessionsUseCase(repository: getIt()),
+// Quest Map Use Cases
+getIt.registerLazySingleton<SaveQuestMapSessionUseCase>(
+  () => SaveQuestMapSessionUseCase(repository: getIt()),
 );
 
   // ==============================================
@@ -371,8 +366,8 @@ getIt.registerLazySingleton<GetWeeklyStopSessionsUseCase>(
     ),
   );
 
-  getIt.registerFactory<StopGameBloc>(
-    () => StopGameBloc(
+  getIt.registerFactory<QuestMapBloc>(
+    () => QuestMapBloc(
       saveSessionUseCase: getIt(),
       incrementPointsUseCase: getIt(),
     ),

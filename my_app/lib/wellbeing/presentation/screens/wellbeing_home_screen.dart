@@ -117,12 +117,12 @@ class _WellbeingHomeScreenState extends State<WellbeingHomeScreen> {
                     const SizedBox(height: 16),
                     _buildActivityCard(
                       context,
-                      title: 'Técnica STOP',
-                      description: 'Detente, respira, observa y procede',
-                      icon: Icons.psychology,
-                      color: Colors.purple,
+                      title: 'Técnica 5-4-3-2-1',
+                      description: 'Grounding sensorial para calmar la ansiedad',
+                      icon: Icons.spa,
+                      color: Colors.indigo,
                       onTap: () async {
-                        await Navigator.pushNamed(context, AppRouter.stopGame);
+                        await Navigator.pushNamed(context, AppRouter.questMap);
                         // Recargar puntos al volver
                         _refreshPoints();
                       },
