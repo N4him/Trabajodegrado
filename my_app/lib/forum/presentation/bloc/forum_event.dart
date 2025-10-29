@@ -106,3 +106,19 @@ class DeleteForumPostEvent extends ForumEvent {
   @override
   List<Object> get props => [forumId];
 }
+
+class LoadForumPostsByCategoryEvent extends ForumEvent {
+  final String category;
+
+  const LoadForumPostsByCategoryEvent(this.category);
+
+  @override
+  List<Object> get props => [category];
+}
+
+class LoadPopularForumPostsEvent extends ForumEvent {
+  const LoadPopularForumPostsEvent();
+
+  @override
+  List<Object> get props => [];
+}

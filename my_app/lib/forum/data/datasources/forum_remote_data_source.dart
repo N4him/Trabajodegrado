@@ -37,6 +37,10 @@ abstract class ForumRemoteDataSource {
 
   Future<List<ReplyModel>> getForumReplies(String forumId);
   Future<void> deleteForumPost(String forumId);
+  Future<List<ForumModel>> getForumPostsByCategory(String category);
+  Future<List<ForumModel>> getPopularForumPosts();
+
+  
 }
 
 class ForumRemoteDataSourceImpl implements ForumRemoteDataSource {
@@ -183,5 +187,29 @@ class ForumRemoteDataSourceImpl implements ForumRemoteDataSource {
   @override
   Future<void> deleteForumPost(String forumId) async {
     await firestore.collection('forums').doc(forumId).delete();  // 👈 CAMBIADO
+  }
+
+   @override
+  Future<List<ForumModel>> getForumPostsByCategory(String category) async {
+    final querySnapshot = await firestore
+        .collection('forums')
+        .where('category', isEqualTo: category)
+        .orderBy('createdAt', descending: true)
+        .get();
+
+    return querySnapshot.docs
+        .map((doc) => ForumModel.fromFirestore(doc))
+        .toList();
+  }
+    @override
+  Future<List<ForumModel>> getPopularForumPosts() async {
+    final querySnapshot = await firestore
+        .collection('forums')
+        .orderBy('likes', descending: true)
+        .get();
+
+    return querySnapshot.docs
+        .map((doc) => ForumModel.fromFirestore(doc))
+        .toList();
   }
 }

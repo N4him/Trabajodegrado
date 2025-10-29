@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:adaptive_theme/adaptive_theme.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -10,274 +9,319 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  String _selectedLanguage = 'English';
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          'Settings',
-          style: TextStyle(
-            color: colorScheme.onBackground,
-            fontSize: 30,
-            fontWeight: FontWeight.bold,
+      backgroundColor: Color.fromARGB(255, 235, 233, 243),
+      body: ListView(
+        padding: const EdgeInsets.only(top: 16),
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 50, 16, 16),
+            child: Text(
+              'Configuración',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
+            ),
           ),
-        ),
-        centerTitle: false,
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSettingItem(
-              context,
-              icon: Icons.language,
-              iconColor: Color(0xFFFFBE0B),
-              iconBackgroundColor: Color(0xFFFFBE0B).withOpacity(0.1),
-              title: 'Language',
-              subtitle: _selectedLanguage,
-              onTap: () => _showLanguageDialog(),
-              showArrow: true,
-            ),
-            
-            SizedBox(height: 16),
-            
-
-            
-            SizedBox(height: 16),
-            
-            _buildSettingItem(
-              context,
-              icon: Icons.help_center,
-              iconColor: Color(0xFFFF6B6B),
-              iconBackgroundColor: Color(0xFFFF6B6B).withOpacity(0.1),
-              title: 'Help',
+          _buildSectionHeader('SOPORTE'),
+          const SizedBox(height: 8),
+          _buildGroupContainer([
+            _buildSettingTile(
+              icon: Icons.help_center_outlined,
+              title: 'Centro de Ayuda',
+              iconColor: const Color(0xFF6C63FF),
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Opening Help section')),
-                );
+                _showCustomSnackBar(context, 'Abriendo Centro de Ayuda', Icons.help_center);
               },
-              showArrow: true,
+              isFirst: true,
             ),
-            
-            SizedBox(height: 16),
-            
-            _buildSettingItem(
-              context,
-              icon: Icons.info,
-              iconColor: Color(0xFF4CAF50),
-              iconBackgroundColor: Color(0xFF4CAF50).withOpacity(0.1),
-              title: 'About',
-              subtitle: 'Version 1.0.0',
+            _buildDivider(),
+            _buildSettingTile(
+              icon: Icons.info_outline,
+              title: 'Acerca de',
+              iconColor: const Color.fromARGB(255, 70, 70, 78),
+              onTap: () => _showAboutDialog(),
+              isLast: true,
+            ),
+          ]),
+          _buildSectionHeader('FEEDBACK'),
+          const SizedBox(height: 8),
+          _buildGroupContainer([
+            _buildSettingTile(
+              icon: Icons.bug_report_outlined,
+              title: 'Reportar un error',
+              iconColor: const Color.fromARGB(255, 98, 187, 110),
               onTap: () {
-                _showAboutDialog();
+                _showCustomSnackBar(context, 'Abriendo reporte de errores', Icons.bug_report);
               },
-              showArrow: true,
+              isFirst: true,
             ),
-            
-            SizedBox(height: 16),
-            
-            _buildSettingItem(
-              context,
+            _buildDivider(),
+            _buildSettingTile(
+              icon: Icons.send_outlined,
+              title: 'Enviar comentario',
+              iconColor: const Color(0xFF26C6DA),
+              onTap: () {
+                _showCustomSnackBar(context, 'Abriendo formulario de comentarios', Icons.send);
+              },
+              isLast: true,
+            ),
+          ]),
+          _buildSectionHeader('CUENTA'),
+          const SizedBox(height: 8),
+          _buildGroupContainer([
+            _buildSettingTile(
               icon: Icons.logout,
-              iconColor: Color(0xFFFF5722),
-              iconBackgroundColor: Color(0xFFFF5722).withOpacity(0.1),
-              title: 'Logout',
-              onTap: () {
-                _showLogoutDialog();
-              },
-              showArrow: false,
+              title: 'Cerrar Sesión',
+              iconColor: const Color(0xFFFF5252),
+              onTap: () => _showLogoutDialog(),
+              isFirst: true,
+              isLast: true,
             ),
-          ],
+          ]),
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGroupContainer(List<Widget> children) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1A1F3A) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: children,
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: isDark ? Colors.grey[400] : Colors.grey[600],
+          letterSpacing: 0.5,
         ),
       ),
     );
   }
 
-  Widget _buildSettingItem(
-    BuildContext context, {
+  Widget _buildSettingTile({
     required IconData icon,
-    required Color iconColor,
-    required Color iconBackgroundColor,
     required String title,
-    String? subtitle,
-    Widget? trailing,
-    required VoidCallback? onTap,
-    required bool showArrow,
+    required VoidCallback onTap,
+    Color? iconColor,
+    bool isFirst = false,
+    bool isLast = false,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: isDark 
-                  ? Colors.black.withOpacity(0.3)
-                  : Colors.grey.withOpacity(0.08),
-              blurRadius: 10,
-              offset: Offset(0, 2),
-            ),
-          ],
+    
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.only(
+          topLeft: isFirst ? const Radius.circular(12) : Radius.zero,
+          topRight: isFirst ? const Radius.circular(12) : Radius.zero,
+          bottomLeft: isLast ? const Radius.circular(12) : Radius.zero,
+          bottomRight: isLast ? const Radius.circular(12) : Radius.zero,
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: iconBackgroundColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Row(
+            children: [
+              Icon(
                 icon,
-                color: iconColor,
                 size: 24,
+                color: iconColor ?? (isDark ? Colors.grey[300] : Colors.grey[800]),
               ),
-            ),
-            SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface,
-                    ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    color: isDark ? Colors.white : Colors.black87,
                   ),
-                  if (subtitle != null) ...[
-                    SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: colorScheme.onSurface.withOpacity(0.6),
-                      ),
-                    ),
-                  ],
-                ],
+                ),
               ),
-            ),
-            if (trailing != null) ...[
-              trailing,
-            ] else if (showArrow) ...[
               Icon(
                 Icons.chevron_right,
-                color: colorScheme.onSurface.withOpacity(0.4),
                 size: 24,
+                color: isDark ? Colors.grey[400] : Colors.grey[400],
               ),
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 
-  void _showLanguageDialog() {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _buildDivider() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: colorScheme.surface,
-          title: Text(
-            'Select Language',
-            style: TextStyle(color: colorScheme.onSurface),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildLanguageOption('English'),
-              _buildLanguageOption('Spanish'),
-              _buildLanguageOption('French'),
-              _buildLanguageOption('German'),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildLanguageOption(String language) {
-    return ListTile(
-      title: Text(language),
-      trailing: _selectedLanguage == language 
-          ? Icon(Icons.check, color: Color(0xFFFFBE0B))
-          : null,
-      onTap: () {
-        setState(() {
-          _selectedLanguage = language;
-        });
-        Navigator.pop(context);
-      },
+    return Divider(
+      height: 1,
+      thickness: 1,
+      indent: 56,
+      color: isDark ? Colors.grey[800] : Colors.grey[200],
     );
   }
 
   void _showAboutDialog() {
-    showAboutDialog(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    showDialog(
       context: context,
-      applicationName: 'Learning App',
-      applicationVersion: '1.0.0',
-      applicationIcon: Container(
-        width: 60,
-        height: 60,
-        decoration: BoxDecoration(
-          color: Color(0xFF6C63FF),
-          borderRadius: BorderRadius.circular(12),
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1A1F3A) : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
         ),
-        child: Icon(
-          Icons.school,
-          color: Colors.white,
-          size: 30,
+        title: Row(
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6C63FF), Color(0xFF5A52D5)],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.psychology_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Mental Health App',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Versión 1.0.0',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Una aplicación moderna diseñada para ayudarte a cuidar tu salud mental y bienestar emocional.',
+              style: TextStyle(
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6C63FF),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 0,
+            ),
+            child: const Text(
+              'Entendido',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
-      children: [
-        Text('A modern learning application designed to help you achieve your educational goals.'),
-      ],
     );
   }
 
   void _showLogoutDialog() {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: colorScheme.surface,
+          backgroundColor: isDark ? const Color(0xFF1A1F3A) : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Text(
-            'Logout',
-            style: TextStyle(color: colorScheme.onSurface),
+            '¿Cerrar Sesión?',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurface,
+            ),
           ),
           content: Text(
-            'Are you sure you want to logout?',
-            style: TextStyle(color: colorScheme.onSurface),
+            '¿Estás seguro de que deseas cerrar tu sesión?',
+            style: TextStyle(
+              fontSize: 15,
+              color: colorScheme.onSurface.withOpacity(0.7),
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Cancel'),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(
+                  color: colorScheme.onSurface.withOpacity(0.7),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
-            TextButton(
+            ElevatedButton(
               onPressed: () => _performLogout(),
-              child: Text('Logout', style: TextStyle(color: Colors.red)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF5252),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                'Salir',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         );
@@ -286,45 +330,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _performLogout() async {
-    // Cerrar el diálogo
     Navigator.pop(context);
 
-    // Mostrar indicador de carga
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Center(
-        child: Container(
-          padding: EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(color: Color(0xFF6C63FF)),
-              SizedBox(height: 16),
-              Text(
-                'Cerrando sesión...',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Center(
+          child: Container(
+            padding: const EdgeInsets.all(32),
+            margin: const EdgeInsets.symmetric(horizontal: 40),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1A1F3A) : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(
+                  color: Color(0xFF6C63FF),
+                  strokeWidth: 3,
                 ),
-              ),
-            ],
+                const SizedBox(height: 20),
+                Text(
+                  'Cerrando sesión...',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
 
     try {
-      // Cerrar sesión en Firebase
       await FirebaseAuth.instance.signOut();
 
-      // Cerrar el diálogo de carga
       if (mounted) Navigator.pop(context);
 
-      // Navegar a la pantalla de login y limpiar el stack
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(
           context,
@@ -333,28 +381,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       }
 
-      // Mostrar mensaje de éxito
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Logged out successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        _showCustomSnackBar(context, 'Sesión cerrada exitosamente', Icons.check_circle);
       }
     } catch (e) {
-      // Cerrar el diálogo de carga
       if (mounted) Navigator.pop(context);
 
-      // Mostrar error
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al cerrar sesión: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showCustomSnackBar(context, 'Error al cerrar sesión', Icons.error, isError: true);
       }
     }
+  }
+
+  void _showCustomSnackBar(BuildContext context, String message, IconData icon, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              icon,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: isError 
+            ? const Color(0xFFFF5252) 
+            : const Color(0xFF4CAF50),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_app/forum/domain/usescases/create_forum_post.dart';
 import 'package:my_app/forum/domain/usescases/delete_forum_post.dart';
+import 'package:my_app/forum/domain/usescases/get_forum_by_category.dart';
+import 'package:my_app/forum/domain/usescases/get_forum_popular.dart';
 import 'package:my_app/forum/domain/usescases/get_forum_posts.dart';
 import 'package:my_app/forum/domain/usescases/get_user_forum_posts.dart';
 import 'package:my_app/forum/domain/usescases/like_forum_post.dart';
@@ -18,6 +20,15 @@ class ForumBloc extends Bloc<ForumEvent, ForumState> {
   final LikeForumPost likeForumPostUseCase;
   final ReplyForumPost replyForumPostUseCase;
   final DeleteForumPost deleteForumPostUseCase;
+    final GetPopularForumPosts getPopularForumPostsUseCase; // ➕ Agregar
+
+  final GetForumPostsByCategory getForumPostsByCategoryUseCase;
+
+  // Mantener el estado del último filtro aplicado
+  String? _currentCategory;
+  String? _currentUserId;
+  String? _currentSearchQuery;
+  bool _isPopularView = false;
 
   ForumBloc({
     required this.getForumPostsUseCase,
@@ -27,6 +38,8 @@ class ForumBloc extends Bloc<ForumEvent, ForumState> {
     required this.likeForumPostUseCase,
     required this.replyForumPostUseCase,
     required this.deleteForumPostUseCase,
+    required this.getForumPostsByCategoryUseCase,
+    required this.getPopularForumPostsUseCase, // ➕ Agregar
   }) : super(ForumInitial()) {
     on<LoadForumPostsEvent>(_onLoadForumPosts);
     on<SearchForumPostsEvent>(_onSearchForumPosts);
@@ -35,14 +48,54 @@ class ForumBloc extends Bloc<ForumEvent, ForumState> {
     on<LikeForumPostEvent>(_onLikeForumPost);
     on<ReplyToForumPostEvent>(_onReplyToForumPost);
     on<DeleteForumPostEvent>(_onDeleteForumPost);
+    on<LoadForumPostsByCategoryEvent>(_onLoadForumPostsByCategory);
+    on<LoadPopularForumPostsEvent>(_onLoadPopularForumPosts);
+  }
+
+  // Método helper para recargar con el filtro actual
+  void _reloadWithCurrentFilter() {
+    if (_currentSearchQuery != null && _currentSearchQuery!.isNotEmpty) {
+      add(SearchForumPostsEvent(_currentSearchQuery!));
+    } else if (_currentCategory != null) {
+      add(LoadForumPostsByCategoryEvent(_currentCategory!));
+    } else if (_currentUserId != null) {
+      add(LoadUserForumPostsEvent(_currentUserId!));
+    } else if (_isPopularView) {
+      add(LoadPopularForumPostsEvent());
+    } else {
+      add(LoadForumPostsEvent());
+    }
   }
 
   Future<void> _onLoadForumPosts(
     LoadForumPostsEvent event,
     Emitter<ForumState> emit,
   ) async {
+    // Resetear filtros
+    _currentCategory = null;
+    _currentUserId = null;
+    _currentSearchQuery = null;
+    _isPopularView = false;
+
     emit(ForumLoading());
     final result = await getForumPostsUseCase();
+    result.fold(
+      (failure) => emit(ForumError(failure.toString())),
+      (posts) => emit(ForumLoaded(posts)),
+    );
+  }
+
+   Future<void> _onLoadPopularForumPosts( // ➕ Agregar nuevo método
+    LoadPopularForumPostsEvent event,
+    Emitter<ForumState> emit,
+  ) async {
+    _currentCategory = null;
+    _currentUserId = null;
+    _currentSearchQuery = null;
+    _isPopularView = true;
+
+    emit(ForumLoading());
+    final result = await getPopularForumPostsUseCase();
     result.fold(
       (failure) => emit(ForumError(failure.toString())),
       (posts) => emit(ForumLoaded(posts)),
@@ -54,10 +107,15 @@ class ForumBloc extends Bloc<ForumEvent, ForumState> {
     Emitter<ForumState> emit,
   ) async {
     if (event.query.isEmpty) {
+      _currentSearchQuery = null;
       add(LoadForumPostsEvent());
       return;
     }
 
+    _currentSearchQuery = event.query;
+    _currentCategory = null;
+    _currentUserId = null;
+    _isPopularView = false;
     emit(ForumLoading());
     final result = await searchForumPostsUseCase(event.query);
     result.fold(
@@ -70,8 +128,28 @@ class ForumBloc extends Bloc<ForumEvent, ForumState> {
     LoadUserForumPostsEvent event,
     Emitter<ForumState> emit,
   ) async {
+    _currentUserId = event.userId;
+    _currentCategory = null;
+    _currentSearchQuery = null;
+    _isPopularView = false;
     emit(ForumLoading());
     final result = await getUserForumPostsUseCase(event.userId);
+    result.fold(
+      (failure) => emit(ForumError(failure.toString())),
+      (posts) => emit(ForumLoaded(posts)),
+    );
+  }
+
+  Future<void> _onLoadForumPostsByCategory(
+    LoadForumPostsByCategoryEvent event,
+    Emitter<ForumState> emit,
+  ) async {
+    _currentCategory = event.category;
+    _currentUserId = null;
+    _currentSearchQuery = null;
+
+    emit(ForumLoading());
+    final result = await getForumPostsByCategoryUseCase(event.category);
     result.fold(
       (failure) => emit(ForumError(failure.toString())),
       (posts) => emit(ForumLoaded(posts)),
@@ -96,7 +174,8 @@ class ForumBloc extends Bloc<ForumEvent, ForumState> {
       (failure) => emit(ForumError(failure.toString())),
       (forumId) {
         emit(ForumPostCreated(forumId));
-        add(LoadForumPostsEvent());
+        // Recargar con el filtro actual en lugar de LoadForumPostsEvent()
+        _reloadWithCurrentFilter();
       },
     );
   }
@@ -114,7 +193,8 @@ class ForumBloc extends Bloc<ForumEvent, ForumState> {
       (failure) => emit(ForumError(failure.toString())),
       (_) {
         emit(ForumPostLiked());
-        add(LoadForumPostsEvent());
+        // Recargar con el filtro actual
+        _reloadWithCurrentFilter();
       },
     );
   }
@@ -134,7 +214,8 @@ class ForumBloc extends Bloc<ForumEvent, ForumState> {
       (failure) => emit(ForumError(failure.toString())),
       (replyId) {
         emit(ForumPostReplied(replyId));
-        add(LoadForumPostsEvent());
+        // Recargar con el filtro actual
+        _reloadWithCurrentFilter();
       },
     );
   }
@@ -148,7 +229,8 @@ class ForumBloc extends Bloc<ForumEvent, ForumState> {
       (failure) => emit(ForumError(failure.toString())),
       (_) {
         emit(ForumPostDeleted());
-        add(LoadForumPostsEvent());
+        // Recargar con el filtro actual
+        _reloadWithCurrentFilter();
       },
     );
   }
