@@ -16,14 +16,12 @@ class BreathingGameBloc extends Bloc<BreathingEvent, BreathingGameState> {
   Timer? _timer;
   int _phaseIndex = 0;
   int _cycleCount = 0;
-  int _successes = 0;
-  int _comboCount = 0;
+  int _particlesCollected = 0;
+  int _totalParticles = 0;
   double _elapsed = 0.0;
   DateTime? _startTime;
 
   static const int _ticks = 20;
-  static const double _threshold = 0.90;
-  static const double _perfectThr = 0.95;
 
   late BreathingSettings _settings;
   late BreathingMode _currentMode;
@@ -36,7 +34,7 @@ class BreathingGameBloc extends Bloc<BreathingEvent, BreathingGameState> {
   }) : super(BreathingInitial()) {
     on<StartBreathingGame>(_onStartBreathingGame);
     on<PhaseTick>(_onPhaseTick);
-    on<TapPhase>(_onTapPhase);
+    on<CollectParticle>(_onCollectParticle);
     on<PhaseComplete>(_onPhaseComplete);
     on<ResetBreathingGame>(_onResetBreathingGame);
   }
@@ -51,8 +49,8 @@ class BreathingGameBloc extends Bloc<BreathingEvent, BreathingGameState> {
   void _initializeSession() {
     _phaseIndex = 0;
     _cycleCount = 0;
-    _successes = 0;
-    _comboCount = 0;
+    _particlesCollected = 0;
+    _totalParticles = 0;
     _elapsed = 0.0;
     _startTime = DateTime.now();
     _phases = _generatePhases();
@@ -61,6 +59,7 @@ class BreathingGameBloc extends Bloc<BreathingEvent, BreathingGameState> {
 
   List<BreathingPhase> _generatePhases() => [
         BreathingPhase.inhale,
+        if (_settings.hasDoubleInhale) BreathingPhase.secondInhale,
         if (_settings.hold > 0) BreathingPhase.hold,
         BreathingPhase.exhale,
         if (_settings.holdEmpty > 0) BreathingPhase.holdEmpty,
@@ -68,6 +67,7 @@ class BreathingGameBloc extends Bloc<BreathingEvent, BreathingGameState> {
 
   List<Duration> _generateDurations() {
     final durations = <Duration>[Duration(seconds: _settings.inhale)];
+    if (_settings.hasDoubleInhale) durations.add(Duration(seconds: _settings.secondInhale!));
     if (_settings.hold > 0) durations.add(Duration(seconds: _settings.hold));
     durations.add(Duration(seconds: _settings.exhale));
     if (_settings.holdEmpty > 0) durations.add(Duration(seconds: _settings.holdEmpty));
@@ -92,8 +92,8 @@ class BreathingGameBloc extends Bloc<BreathingEvent, BreathingGameState> {
       phase: _phases[_phaseIndex],
       elapsed: _elapsed,
       cycleCount: _cycleCount,
-      successes: _successes,
-      comboCount: _comboCount,
+      particlesCollected: _particlesCollected,
+      totalParticles: _totalParticles,
       startTime: _startTime!,
     ));
   }
@@ -105,25 +105,16 @@ class BreathingGameBloc extends Bloc<BreathingEvent, BreathingGameState> {
         phase: current.phase,
         elapsed: event.elapsed,
         cycleCount: current.cycleCount,
-        successes: current.successes,
-        comboCount: current.comboCount,
+        particlesCollected: current.particlesCollected,
+        totalParticles: current.totalParticles,
         startTime: current.startTime,
       ));
     }
   }
 
-  void _onTapPhase(TapPhase event, Emitter<BreathingGameState> emit) {
-    final isSuccess = _elapsed >= _threshold;
-    final isPerfect = isSuccess && _elapsed >= _perfectThr;
-
-    if (isSuccess) _successes++;
-    if (isPerfect) {
-      _comboCount++;
-      HapticFeedback.mediumImpact();
-    } else {
-      _comboCount = 0;
-      if (isSuccess) HapticFeedback.lightImpact();
-    }
+  void _onCollectParticle(CollectParticle event, Emitter<BreathingGameState> emit) {
+    _particlesCollected++;
+    HapticFeedback.lightImpact();
 
     if (state is PhaseInProgress) {
       final current = state as PhaseInProgress;
@@ -131,11 +122,15 @@ class BreathingGameBloc extends Bloc<BreathingEvent, BreathingGameState> {
         phase: current.phase,
         elapsed: current.elapsed,
         cycleCount: current.cycleCount,
-        successes: _successes,
-        comboCount: _comboCount,
+        particlesCollected: _particlesCollected,
+        totalParticles: current.totalParticles,
         startTime: current.startTime,
       ));
     }
+  }
+
+  void incrementTotalParticles() {
+    _totalParticles++;
   }
 
   void _onPhaseComplete(PhaseComplete event, Emitter<BreathingGameState> emit) async {
@@ -149,8 +144,8 @@ class BreathingGameBloc extends Bloc<BreathingEvent, BreathingGameState> {
 
       emit(SessionCompleted(
         mode: _currentMode,
-        successes: _successes,
-        comboCount: _comboCount,
+        particlesCollected: _particlesCollected,
+        totalParticles: _totalParticles,
         cyclesCompleted: _settings.cycles,
         durationSeconds: durationSeconds,
       ));
@@ -181,8 +176,8 @@ class BreathingGameBloc extends Bloc<BreathingEvent, BreathingGameState> {
       userId: userId,
       completedAt: endTime,
       mode: breathingModeToString(_currentMode),
-      successes: _successes,
-      comboCount: _comboCount,
+      particlesCollected: _particlesCollected,
+      totalParticles: _totalParticles,
       cyclesCompleted: _settings.cycles,
       durationSeconds: durationSeconds,
     );
@@ -206,8 +201,8 @@ class BreathingGameBloc extends Bloc<BreathingEvent, BreathingGameState> {
     if (!emit.isDone) {
       emit(SessionSaved(
         mode: _currentMode,
-        successes: _successes,
-        comboCount: _comboCount,
+        particlesCollected: _particlesCollected,
+        totalParticles: _totalParticles,
         cyclesCompleted: _settings.cycles,
         durationSeconds: durationSeconds,
       ));

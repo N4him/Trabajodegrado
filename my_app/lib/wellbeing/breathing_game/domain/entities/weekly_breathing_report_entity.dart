@@ -16,18 +16,18 @@ class WeeklyBreathingReportEntity extends Equatable {
   /// Número total de sesiones en la semana
   int get totalSessions => sessions.length;
 
-  /// Promedio de éxitos por sesión
-  double get averageSuccesses {
+  /// Promedio de partículas recolectadas por sesión
+  double get averageParticlesCollected {
     if (sessions.isEmpty) return 0.0;
-    final totalSuccesses = sessions.fold<int>(0, (sum, s) => sum + s.successes);
-    return totalSuccesses / sessions.length;
+    final total = sessions.fold<int>(0, (sum, s) => sum + s.particlesCollected);
+    return total / sessions.length;
   }
 
-  /// Promedio de combo alcanzado
-  double get averageCombo {
+  /// Promedio de tasa de recolección (%)
+  double get averageCollectionRate {
     if (sessions.isEmpty) return 0.0;
-    final totalCombo = sessions.fold<int>(0, (sum, s) => sum + s.comboCount);
-    return totalCombo / sessions.length;
+    final totalRate = sessions.fold<double>(0, (sum, s) => sum + s.collectionRate);
+    return totalRate / sessions.length;
   }
 
   /// Total de minutos de práctica en la semana

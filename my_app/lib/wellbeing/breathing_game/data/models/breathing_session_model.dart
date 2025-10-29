@@ -5,8 +5,8 @@ class BreathingSessionModel {
   final String userId;
   final String completedAt; // ISO8601 string
   final String mode;
-  final int successes;
-  final int comboCount;
+  final int particlesCollected;
+  final int totalParticles;
   final int cyclesCompleted;
   final int durationSeconds;
 
@@ -14,8 +14,8 @@ class BreathingSessionModel {
     required this.userId,
     required this.completedAt,
     required this.mode,
-    required this.successes,
-    required this.comboCount,
+    required this.particlesCollected,
+    required this.totalParticles,
     required this.cyclesCompleted,
     required this.durationSeconds,
   });
@@ -26,8 +26,8 @@ class BreathingSessionModel {
       'userId': userId,
       'completedAt': completedAt,
       'mode': mode,
-      'successes': successes,
-      'comboCount': comboCount,
+      'particlesCollected': particlesCollected,
+      'totalParticles': totalParticles,
       'cyclesCompleted': cyclesCompleted,
       'durationSeconds': durationSeconds,
     };
@@ -39,8 +39,8 @@ class BreathingSessionModel {
       userId: map['userId'] as String,
       completedAt: map['completedAt'] as String,
       mode: map['mode'] as String,
-      successes: map['successes'] as int,
-      comboCount: map['comboCount'] as int,
+      particlesCollected: map['particlesCollected'] as int? ?? 0,
+      totalParticles: map['totalParticles'] as int? ?? 0,
       cyclesCompleted: map['cyclesCompleted'] as int,
       durationSeconds: map['durationSeconds'] as int,
     );
@@ -53,8 +53,8 @@ class BreathingSessionModel {
       userId: userId,
       completedAt: DateTime.parse(completedAt),
       mode: mode,
-      successes: successes,
-      comboCount: comboCount,
+      particlesCollected: particlesCollected,
+      totalParticles: totalParticles,
       cyclesCompleted: cyclesCompleted,
       durationSeconds: durationSeconds,
     );
@@ -66,8 +66,8 @@ class BreathingSessionModel {
       userId: entity.userId,
       completedAt: entity.completedAt.toIso8601String(),
       mode: entity.mode,
-      successes: entity.successes,
-      comboCount: entity.comboCount,
+      particlesCollected: entity.particlesCollected,
+      totalParticles: entity.totalParticles,
       cyclesCompleted: entity.cyclesCompleted,
       durationSeconds: entity.durationSeconds,
     );

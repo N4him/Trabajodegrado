@@ -4,8 +4,8 @@ import '../../domain/models/breathing_mode.dart';
 /// Vista de éxito al completar una sesión de respiración
 class SuccessView extends StatelessWidget {
   final BreathingMode mode;
-  final int successes;
-  final int comboCount;
+  final int particlesCollected;
+  final int totalParticles;
   final int cyclesCompleted;
   final int durationSeconds;
   final VoidCallback onFinish;
@@ -13,8 +13,8 @@ class SuccessView extends StatelessWidget {
   const SuccessView({
     super.key,
     required this.mode,
-    required this.successes,
-    required this.comboCount,
+    required this.particlesCollected,
+    required this.totalParticles,
     required this.cyclesCompleted,
     required this.durationSeconds,
     required this.onFinish,
@@ -24,8 +24,7 @@ class SuccessView extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final settings = breathingModes[mode]!;
-    final maxPossible = cyclesCompleted * 4; // Asumiendo 4 fases por ciclo
-    final successRate = maxPossible > 0 ? (successes / maxPossible * 100).round() : 0;
+    final collectionRate = totalParticles > 0 ? (particlesCollected / totalParticles * 100).round() : 0;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -72,24 +71,24 @@ class SuccessView extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-          // Tarjeta de porcentaje de éxito
+          // Tarjeta de porcentaje de recolección
           Card(
-            color: _getSuccessColor(successRate).withOpacity(0.1),
+            color: _getCollectionColor(collectionRate).withOpacity(0.1),
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
                   Text(
-                    '$successRate%',
+                    '$collectionRate%',
                     style: TextStyle(
                       fontSize: 48,
                       fontWeight: FontWeight.bold,
-                      color: _getSuccessColor(successRate),
+                      color: _getCollectionColor(collectionRate),
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Tasa de éxito',
+                    'Tasa de recolección',
                     style: TextStyle(
                       fontSize: 16,
                       color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -97,7 +96,7 @@ class SuccessView extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    _getPerformanceFeedback(successRate),
+                    _getPerformanceFeedback(collectionRate),
                     style: TextStyle(
                       fontSize: 14,
                       fontStyle: FontStyle.italic,
@@ -143,20 +142,20 @@ class SuccessView extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  icon: Icons.check_circle,
-                  value: '$successes',
-                  label: 'Aciertos',
-                  color: Colors.green,
+                  icon: Icons.stars,
+                  value: '$particlesCollected',
+                  label: 'Recolectadas',
+                  color: Colors.amber,
                   isDark: isDark,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  icon: Icons.local_fire_department,
-                  value: '$comboCount',
-                  label: 'Combo máx',
-                  color: Colors.red,
+                  icon: Icons.remove_red_eye,
+                  value: '$totalParticles',
+                  label: 'Total aparecidas',
+                  color: Colors.blue,
                   isDark: isDark,
                 ),
               ),
@@ -255,15 +254,15 @@ class SuccessView extends StatelessWidget {
     return '${minutes}m ${secs}s';
   }
 
-  Color _getSuccessColor(int successRate) {
-    if (successRate >= 80) return Colors.green;
-    if (successRate >= 50) return Colors.orange;
-    return Colors.red;
+  Color _getCollectionColor(int collectionRate) {
+    if (collectionRate >= 70) return Colors.amber;
+    if (collectionRate >= 40) return Colors.orange;
+    return Colors.blue;
   }
 
-  String _getPerformanceFeedback(int successRate) {
-    if (successRate >= 80) return "¡Excelente control del aliento!";
-    if (successRate >= 50) return "Buen trabajo, sigue practicando.";
-    return "Intenta concentrarte más la próxima vez.";
+  String _getPerformanceFeedback(int collectionRate) {
+    if (collectionRate >= 70) return "¡Excelente concentración y atención!";
+    if (collectionRate >= 40) return "Buen trabajo, mantén el ritmo.";
+    return "Recuerda que recolectar es opcional, lo importante es respirar.";
   }
 }

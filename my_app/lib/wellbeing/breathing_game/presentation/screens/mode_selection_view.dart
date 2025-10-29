@@ -35,7 +35,7 @@ class ModeSelectionView extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Ejercicio de Respiración',
+                  'Ejercicios de Respiración',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -44,7 +44,7 @@ class ModeSelectionView extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Selecciona un modo para comenzar',
+                  'Técnicas basadas en mindfullness',
                   style: TextStyle(
                     fontSize: 16,
                     color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -55,47 +55,7 @@ class ModeSelectionView extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 24),
-
-          // Modos disponibles
-          _buildModeCard(
-            context,
-            mode: BreathingMode.calmaRapida,
-            icon: Icons.spa,
-            color: Colors.blue,
-            title: 'Calma Rápida',
-            description: 'Box Breathing clásico: 4-4-4-4',
-            duration: '6 ciclos • ~2 minutos',
-            isDark: isDark,
-          ),
-
-          const SizedBox(height: 12),
-
-          _buildModeCard(
-            context,
-            mode: BreathingMode.enfoqueMental,
-            icon: Icons.psychology,
-            color: Colors.orange,
-            title: 'Enfoque Mental',
-            description: 'Respiración equilibrada: 5-5-5-5',
-            duration: '8 ciclos • ~3 minutos',
-            isDark: isDark,
-          ),
-
-          const SizedBox(height: 12),
-
-          _buildModeCard(
-            context,
-            mode: BreathingMode.relajacionProfunda,
-            icon: Icons.self_improvement,
-            color: Colors.purple,
-            title: 'Relajación Profunda',
-            description: 'Exhale extendida: 4-7-8',
-            duration: '10 ciclos • ~4 minutos',
-            isDark: isDark,
-          ),
-
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
           // Instrucciones
           Container(
@@ -107,13 +67,13 @@ class ModeSelectionView extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(Icons.info_outline, color: Colors.amber[800]),
+                Icon(Icons.stars, color: Colors.amber[800]),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Toca la pantalla al final de cada fase para obtener puntos',
+                    'Durante el ejercicio aparecerán partículas flotantes. Recolecta las que puedas, pero recuerda: lo importante es respirar conscientemente.',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       color: isDark ? Colors.amber[200] : Colors.amber[900],
                     ),
                   ),
@@ -121,6 +81,44 @@ class ModeSelectionView extends StatelessWidget {
               ],
             ),
           ),
+
+          const SizedBox(height: 20),
+
+          // Cyclic Sighing
+          _buildModeCard(
+            context,
+            mode: BreathingMode.cyclicSighing,
+            icon: Icons.self_improvement,
+            color: Colors.blue,
+            settings: breathingModes[BreathingMode.cyclicSighing]!,
+            isDark: isDark,
+          ),
+
+          const SizedBox(height: 12),
+
+          // Box Breathing
+          _buildModeCard(
+            context,
+            mode: BreathingMode.boxBreathing,
+            icon: Icons.crop_square,
+            color: Colors.teal,
+            settings: breathingModes[BreathingMode.boxBreathing]!,
+            isDark: isDark,
+          ),
+
+          const SizedBox(height: 12),
+
+          // Cyclic Hyperventilation
+          _buildModeCard(
+            context,
+            mode: BreathingMode.cyclicHyperventilation,
+            icon: Icons.bolt,
+            color: Colors.orange,
+            settings: breathingModes[BreathingMode.cyclicHyperventilation]!,
+            isDark: isDark,
+          ),
+
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -131,11 +129,20 @@ class ModeSelectionView extends StatelessWidget {
     required BreathingMode mode,
     required IconData icon,
     required Color color,
-    required String title,
-    required String description,
-    required String duration,
+    required BreathingSettings settings,
     required bool isDark,
   }) {
+    // Calcular duración aproximada
+    int totalSeconds = 0;
+    if (settings.hasDoubleInhale) {
+      totalSeconds = (settings.inhale + settings.secondInhale! + settings.exhale) * settings.cycles;
+    } else {
+      totalSeconds = (settings.inhale + settings.hold + settings.exhale + settings.holdEmpty) * settings.cycles;
+    }
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    final durationText = seconds > 0 ? '$minutes:${seconds.toString().padLeft(2, '0')} min' : '$minutes min';
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -145,6 +152,7 @@ class ModeSelectionView extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 width: 56,
@@ -161,7 +169,7 @@ class ModeSelectionView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      settings.displayName,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -170,20 +178,52 @@ class ModeSelectionView extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      description,
+                      settings.description,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      duration,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: color,
                         fontWeight: FontWeight.w500,
                       ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      settings.benefits,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? Colors.grey[500] : Colors.grey[500],
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${settings.cycles} ciclos',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: color,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                        const SizedBox(width: 4),
+                        Text(
+                          durationText,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

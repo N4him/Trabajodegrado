@@ -27,8 +27,15 @@ class PhaseTick extends BreathingEvent {
   List<Object?> get props => [elapsed];
 }
 
-/// El usuario presiona el botón al cambio de fase
-class TapPhase extends BreathingEvent {}
+/// El usuario recolecta una partícula
+class CollectParticle extends BreathingEvent {
+  final int particleId;
+
+  CollectParticle(this.particleId);
+
+  @override
+  List<Object?> get props => [particleId];
+}
 
 /// Se completa la fase actual (tiempo alcanza 100%)
 class PhaseComplete extends BreathingEvent {}

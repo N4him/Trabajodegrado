@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injector.dart';
-import '../../domain/models/breathing_mode.dart';
 import '../blocs/breathing_game_bloc.dart';
 import '../blocs/breathing_game_event.dart';
 import '../blocs/breathing_game_state.dart';
@@ -60,12 +59,12 @@ class _BreathingGameContent extends StatelessWidget {
             final mode = state is SessionCompleted
                 ? state.mode
                 : (state as SessionSaved).mode;
-            final successes = state is SessionCompleted
-                ? state.successes
-                : (state as SessionSaved).successes;
-            final comboCount = state is SessionCompleted
-                ? state.comboCount
-                : (state as SessionSaved).comboCount;
+            final particlesCollected = state is SessionCompleted
+                ? state.particlesCollected
+                : (state as SessionSaved).particlesCollected;
+            final totalParticles = state is SessionCompleted
+                ? state.totalParticles
+                : (state as SessionSaved).totalParticles;
             final cyclesCompleted = state is SessionCompleted
                 ? state.cyclesCompleted
                 : (state as SessionSaved).cyclesCompleted;
@@ -75,8 +74,8 @@ class _BreathingGameContent extends StatelessWidget {
 
             return SuccessView(
               mode: mode,
-              successes: successes,
-              comboCount: comboCount,
+              particlesCollected: particlesCollected,
+              totalParticles: totalParticles,
               cyclesCompleted: cyclesCompleted,
               durationSeconds: durationSeconds,
               onFinish: () => Navigator.of(context).pop(),
