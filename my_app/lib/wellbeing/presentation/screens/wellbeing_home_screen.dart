@@ -36,6 +36,131 @@ class _WellbeingHomeScreenState extends State<WellbeingHomeScreen> {
     }
   }
 
+  void _showActivitiesInfo() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.info_outline, color: Colors.purple),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Actividades de Mindfulness',
+                  style: TextStyle(fontSize: 18),
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInfoSection(
+                  icon: Icons.accessibility_new,
+                  color: Colors.blue,
+                  title: 'Escaneo Corporal',
+                  description: 'Una práctica de atención plena que te guía a través de diferentes partes de tu cuerpo, ayudándote a desarrollar consciencia corporal y liberar tensiones.',
+                ),
+                const SizedBox(height: 16),
+                _buildInfoSection(
+                  icon: Icons.air,
+                  color: Colors.teal,
+                  title: 'Juego de Respiración',
+                  description: 'Ejercicios de respiración consciente basados en técnicas de mindfulness. Incluye suspiro cíclico, respiración cuadrada y respiración energizante. Las partículas flotantes hacen la práctica más amena.',
+                ),
+                const SizedBox(height: 16),
+                _buildInfoSection(
+                  icon: Icons.spa,
+                  color: Colors.indigo,
+                  title: 'Técnica 5-4-3-2-1',
+                  description: 'Ejercicio de grounding que te ayuda a conectar con el momento presente a través de tus cinco sentidos. Identifica 5 cosas que ves, 4 que tocas, 3 que escuchas, 2 que hueles y 1 que saboreas.',
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.purple.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.purple.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.stars, color: Colors.purple, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Gana 1 punto por completar cada actividad (una vez al día)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Entendido'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildInfoSection({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String description,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: color, size: 24),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[700],
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -43,6 +168,11 @@ class _WellbeingHomeScreenState extends State<WellbeingHomeScreen> {
         title: const Text('Bienestar'),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: _showActivitiesInfo,
+            tooltip: 'Información de actividades',
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _refreshPoints,
