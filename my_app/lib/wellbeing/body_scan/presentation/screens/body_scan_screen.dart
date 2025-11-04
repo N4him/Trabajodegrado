@@ -5,7 +5,6 @@ import '../blocs/body_scan_bloc.dart';
 import '../blocs/body_scan_event.dart';
 import '../blocs/body_scan_state.dart';
 import '../../domain/models/scan_steps_data.dart';
-import '../widgets/body_scan_gradient_background.dart';
 import 'scan_step_view.dart';
 import 'emotion_sheet.dart';
 import 'rating_view.dart';
@@ -14,6 +13,9 @@ import 'success_view.dart';
 /// Pantalla raíz que controla el flujo del Viaje Sensorial.
 class BodyScanScreen extends StatelessWidget {
   const BodyScanScreen({super.key});
+
+  // Color principal
+  static const Color primaryColor = Color(0xFFAFB99B);
 
   @override
   Widget build(BuildContext context) {
@@ -25,20 +27,20 @@ class BodyScanScreen extends StatelessWidget {
             appBar: AppBar(
               title: const Text('Viaje Sensorial'),
               centerTitle: true,
-              backgroundColor: Colors.transparent,
+              backgroundColor: primaryColor,
               elevation: 0,
             ),
-            extendBodyBehindAppBar: false,
+            backgroundColor: Colors.grey[50],
             floatingActionButton: state is ScanInProgress
                 ? FloatingActionButton.extended(
                     onPressed: () =>
                         context.read<BodyScanBloc>().add(NextStep()),
+                    backgroundColor: primaryColor,
                     icon: const Icon(Icons.arrow_forward),
                     label: const Text('Siguiente'),
                   )
                 : null,
-            body: BodyScanGradientBackground(
-              child: BlocConsumer<BodyScanBloc, BodyScanState>(
+            body: BlocConsumer<BodyScanBloc, BodyScanState>(
               listener: (context, state) {
                 if (state is ScanNeedsEmotionReport) {
                   EmotionSheet.show(
@@ -50,7 +52,7 @@ class BodyScanScreen extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(state.message),
-                      backgroundColor: const Color(0xFFFF6B6B),
+                      backgroundColor: primaryColor.withOpacity(0.8),
                     ),
                   );
                 }
@@ -67,13 +69,13 @@ class BodyScanScreen extends StatelessWidget {
                 } else if (state is ScanNeedsRating) {
                   return RatingView(emotions: state.emotions);
                 } else if (state is ScanSaving) {
-                  return const Center(
+                  return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 16),
-                        Text('Guardando sesión...'),
+                        CircularProgressIndicator(color: primaryColor),
+                        const SizedBox(height: 16),
+                        const Text('Guardando sesión...'),
                       ],
                     ),
                   );
@@ -84,22 +86,27 @@ class BodyScanScreen extends StatelessWidget {
                     durationSeconds: state.durationSeconds,
                   );
                 } else if (state is ScanInitial) {
-                  return const Center(child: CircularProgressIndicator());
+                  return Center(
+                    child: CircularProgressIndicator(color: primaryColor),
+                  );
                 } else if (state is ScanError) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline, size: 64, color: Color(0xFFFF6B6B)),
+                        Icon(Icons.error_outline, size: 64, color: primaryColor),
                         const SizedBox(height: 16),
                         Text(
                           state.message,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Color(0xFFFF6B6B)),
+                          style: TextStyle(color: Colors.grey[700]),
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                          ),
                           child: const Text('Volver'),
                         ),
                       ],
@@ -108,7 +115,6 @@ class BodyScanScreen extends StatelessWidget {
                 }
                 return const SizedBox.shrink();
               },
-              ),
             ),
           );
         },

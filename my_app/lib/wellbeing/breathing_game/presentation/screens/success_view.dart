@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../domain/models/breathing_mode.dart';
 
+// Color principal
+const Color primaryColor = Color(0xFFAFB99B);
+
 /// Vista de éxito al completar una sesión de respiración
 class SuccessView extends StatelessWidget {
   final BreathingMode mode;
@@ -36,12 +39,12 @@ class SuccessView extends StatelessWidget {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.green.withOpacity(0.1),
+              color: primaryColor.withOpacity(0.2),
             ),
             child: Icon(
               Icons.check_circle,
               size: 80,
-              color: Colors.green[600],
+              color: primaryColor,
             ),
           ),
 
@@ -64,7 +67,8 @@ class SuccessView extends StatelessWidget {
             settings.displayName,
             style: TextStyle(
               fontSize: 18,
-              color: isDark ? Colors.grey[400] : Colors.grey[600],
+              color: primaryColor.withOpacity(0.8),
+              fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,
           ),
@@ -74,6 +78,13 @@ class SuccessView extends StatelessWidget {
           // Tarjeta de porcentaje de recolección
           Card(
             color: _getCollectionColor(collectionRate).withOpacity(0.1),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: _getCollectionColor(collectionRate).withOpacity(0.3),
+                width: 2,
+              ),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -92,6 +103,7 @@ class SuccessView extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -119,7 +131,7 @@ class SuccessView extends StatelessWidget {
                   icon: Icons.access_time,
                   value: _formatDuration(durationSeconds),
                   label: 'Duración',
-                  color: Colors.blue,
+                  color: primaryColor,
                   isDark: isDark,
                 ),
               ),
@@ -129,7 +141,7 @@ class SuccessView extends StatelessWidget {
                   icon: Icons.repeat,
                   value: '$cyclesCompleted',
                   label: 'Ciclos',
-                  color: Colors.orange,
+                  color: const Color(0xFF9CA986), // Variación más oscura
                   isDark: isDark,
                 ),
               ),
@@ -145,7 +157,7 @@ class SuccessView extends StatelessWidget {
                   icon: Icons.stars,
                   value: '$particlesCollected',
                   label: 'Recolectadas',
-                  color: Colors.amber,
+                  color: const Color(0xFFC5D1B0), // Variación más clara
                   isDark: isDark,
                 ),
               ),
@@ -155,7 +167,7 @@ class SuccessView extends StatelessWidget {
                   icon: Icons.remove_red_eye,
                   value: '$totalParticles',
                   label: 'Total aparecidas',
-                  color: Colors.blue,
+                  color: primaryColor.withOpacity(0.7),
                   isDark: isDark,
                 ),
               ),
@@ -168,13 +180,13 @@ class SuccessView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.purple.withOpacity(0.1),
-              border: Border.all(color: Colors.purple.withOpacity(0.3)),
-              borderRadius: BorderRadius.circular(8),
+              color: primaryColor.withOpacity(0.15),
+              border: Border.all(color: primaryColor.withOpacity(0.4)),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
-                Icon(Icons.stars, color: Colors.purple[700]),
+                Icon(Icons.stars, color: primaryColor, size: 28),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -182,7 +194,7 @@ class SuccessView extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.purple[200] : Colors.purple[900],
+                      color: isDark ? primaryColor.withOpacity(0.9) : const Color(0xFF7A8468),
                     ),
                   ),
                 ),
@@ -197,10 +209,10 @@ class SuccessView extends StatelessWidget {
             onPressed: onFinish,
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: Colors.purple[600],
+              backgroundColor: primaryColor,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
             child: const Text(
@@ -221,6 +233,13 @@ class SuccessView extends StatelessWidget {
     required bool isDark,
   }) {
     return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: color.withOpacity(0.3),
+          width: 2,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -229,9 +248,10 @@ class SuccessView extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
+                color: color,
               ),
             ),
             const SizedBox(height: 4),
@@ -241,6 +261,7 @@ class SuccessView extends StatelessWidget {
                 fontSize: 12,
                 color: isDark ? Colors.grey[400] : Colors.grey[600],
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -255,9 +276,9 @@ class SuccessView extends StatelessWidget {
   }
 
   Color _getCollectionColor(int collectionRate) {
-    if (collectionRate >= 70) return Colors.amber;
-    if (collectionRate >= 40) return Colors.orange;
-    return Colors.blue;
+    if (collectionRate >= 70) return primaryColor;
+    if (collectionRate >= 40) return const Color(0xFF9CA986); // Variación más oscura
+    return const Color(0xFFC5D1B0); // Variación más clara
   }
 
   String _getPerformanceFeedback(int collectionRate) {

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
-/// Widget de fondo con gradiente rosado-coral para el body scan (ajolote theme)
+/// Widget de fondo con color principal #afb99b para el body scan
 class BodyScanGradientBackground extends StatelessWidget {
   final Widget child;
+
+  // Color principal
+  static const Color primaryColor = Color(0xFFAFB99B);
 
   const BodyScanGradientBackground({
     super.key,
@@ -16,25 +19,9 @@ class BodyScanGradientBackground extends StatelessWidget {
 
     return Stack(
       children: [
-        // Gradiente de fondo con tonos del ajolote (rosado, coral, salmón)
+        // Fondo sólido
         Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isDark
-                  ? [
-                      const Color(0xFF2e1a1f), // Rosa oscuro
-                      const Color(0xFF2e241a), // Coral oscuro
-                      const Color(0xFF2e1f1a), // Salmón oscuro
-                    ]
-                  : [
-                      const Color(0xFFFFE8E8), // Rosa muy claro
-                      const Color(0xFFFFE4D6), // Coral muy claro
-                      const Color(0xFFFFF0E0), // Salmón/Melocotón muy claro
-                    ],
-            ),
-          ),
+          color: isDark ? Colors.grey[900] : Colors.grey[50],
         ),
 
         // Decoraciones - Círculos grandes difuminados
@@ -47,15 +34,10 @@ class BodyScanGradientBackground extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: RadialGradient(
-                colors: isDark
-                    ? [
-                        const Color(0xFFFF9999).withOpacity(0.15),
-                        Colors.transparent,
-                      ]
-                    : [
-                        const Color(0xFFFFB6B6).withOpacity(0.25),
-                        Colors.transparent,
-                      ],
+                colors: [
+                  primaryColor.withOpacity(isDark ? 0.1 : 0.2),
+                  Colors.transparent,
+                ],
               ),
             ),
           ),
@@ -70,15 +52,10 @@ class BodyScanGradientBackground extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: RadialGradient(
-                colors: isDark
-                    ? [
-                        const Color(0xFFFFAA88).withOpacity(0.15),
-                        Colors.transparent,
-                      ]
-                    : [
-                        const Color(0xFFFFCC99).withOpacity(0.25),
-                        Colors.transparent,
-                      ],
+                colors: [
+                  primaryColor.withOpacity(isDark ? 0.1 : 0.2),
+                  Colors.transparent,
+                ],
               ),
             ),
           ),
@@ -93,15 +70,10 @@ class BodyScanGradientBackground extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: RadialGradient(
-                colors: isDark
-                    ? [
-                        const Color(0xFFFFBB99).withOpacity(0.1),
-                        Colors.transparent,
-                      ]
-                    : [
-                        const Color(0xFFFFDDCC).withOpacity(0.2),
-                        Colors.transparent,
-                      ],
+                colors: [
+                  primaryColor.withOpacity(isDark ? 0.08 : 0.15),
+                  Colors.transparent,
+                ],
               ),
             ),
           ),
@@ -128,21 +100,18 @@ class BodyScanGradientBackground extends StatelessWidget {
 /// Painter personalizado para ondas decorativas del body scan
 class BodyScanWavesPainter extends CustomPainter {
   final bool isDark;
+  static const Color primaryColor = Color(0xFFAFB99B);
 
   BodyScanWavesPainter({required this.isDark});
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint1 = Paint()
-      ..color = isDark
-          ? const Color(0xFFFF9999).withOpacity(0.08)
-          : const Color(0xFFFFB6B6).withOpacity(0.15)
+      ..color = primaryColor.withOpacity(isDark ? 0.05 : 0.1)
       ..style = PaintingStyle.fill;
 
     final paint2 = Paint()
-      ..color = isDark
-          ? const Color(0xFFFFAA88).withOpacity(0.05)
-          : const Color(0xFFFFCC99).withOpacity(0.12)
+      ..color = primaryColor.withOpacity(isDark ? 0.03 : 0.08)
       ..style = PaintingStyle.fill;
 
     // Primera onda

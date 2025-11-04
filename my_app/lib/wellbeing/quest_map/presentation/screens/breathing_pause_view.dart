@@ -19,6 +19,12 @@ class BreathingPauseView extends StatefulWidget {
 
 class _BreathingPauseViewState extends State<BreathingPauseView>
     with SingleTickerProviderStateMixin {
+  // Colores de la paleta de bienestar
+  final Color primaryColor = const Color(0xFFAFB99B);
+  final Color secondaryColor = const Color(0xFF9CA986);
+  final Color tertiaryColor = const Color(0xFFC5D1B0);
+  final Color accentColor = const Color(0xFF8B9A7E);
+
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -47,16 +53,7 @@ class _BreathingPauseViewState extends State<BreathingPauseView>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.indigo.withOpacity(0.1),
-            Colors.purple.withOpacity(0.05),
-          ],
-        ),
-      ),
+      color: const Color(0xFFF5F7F3), // Mismo color de fondo que WellbeingHomeScreen
       child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -67,21 +64,21 @@ class _BreathingPauseViewState extends State<BreathingPauseView>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.2),
+                  color: primaryColor.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.green.withOpacity(0.3)),
+                  border: Border.all(color: primaryColor.withOpacity(0.4)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.check_circle, color: Colors.green[700]),
+                    Icon(Icons.check_circle, color: accentColor),
                     const SizedBox(width: 8),
                     Text(
                       '${widget.state.justCompletedSense.name} completado',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.green[200] : Colors.green[900],
+                        color: isDark ? tertiaryColor : accentColor,
                       ),
                     ),
                   ],
@@ -105,8 +102,8 @@ class _BreathingPauseViewState extends State<BreathingPauseView>
                           shape: BoxShape.circle,
                           gradient: RadialGradient(
                             colors: [
-                              Colors.blue.withOpacity(0.3),
-                              Colors.purple.withOpacity(0.1),
+                              primaryColor.withOpacity(0.3),
+                              tertiaryColor.withOpacity(0.1),
                             ],
                           ),
                         ),
@@ -118,10 +115,10 @@ class _BreathingPauseViewState extends State<BreathingPauseView>
                               height: 150,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Colors.blue[300],
+                                color: primaryColor,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.blue.withOpacity(0.5),
+                                    color: primaryColor.withOpacity(0.5),
                                     blurRadius: 30 * _scaleAnimation.value,
                                     spreadRadius: 10 * _scaleAnimation.value,
                                   ),
@@ -183,9 +180,13 @@ class _BreathingPauseViewState extends State<BreathingPauseView>
                 decoration: BoxDecoration(
                   color: isDark ? Colors.grey[850] : Colors.white,
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: primaryColor.withOpacity(0.3),
+                    width: 1.5,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: primaryColor.withOpacity(0.1),
                       blurRadius: 10,
                       spreadRadius: 2,
                     ),
@@ -210,12 +211,15 @@ class _BreathingPauseViewState extends State<BreathingPauseView>
                           size: 28,
                         ),
                         const SizedBox(width: 12),
-                        Text(
-                          widget.state.nextSense.question,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.grey[800],
+                        Flexible(
+                          child: Text(
+                            widget.state.nextSense.question,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : Colors.grey[800],
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ],
@@ -234,7 +238,7 @@ class _BreathingPauseViewState extends State<BreathingPauseView>
                 icon: const Icon(Icons.arrow_forward),
                 label: const Text('Continuar'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _getSenseColor(widget.state.nextSense),
+                  backgroundColor: primaryColor,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 32,
@@ -243,6 +247,7 @@ class _BreathingPauseViewState extends State<BreathingPauseView>
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  elevation: 3,
                 ),
               ),
 
@@ -257,15 +262,15 @@ class _BreathingPauseViewState extends State<BreathingPauseView>
   Color _getSenseColor(SenseType sense) {
     switch (sense) {
       case SenseType.sight:
-        return Colors.blue;
+        return primaryColor; // Verde oliva principal
       case SenseType.touch:
-        return Colors.green;
+        return secondaryColor; // Verde oliva más oscuro
       case SenseType.sound:
-        return Colors.orange;
+        return tertiaryColor; // Verde oliva más claro
       case SenseType.smell:
-        return Colors.purple;
+        return accentColor; // Verde oliva oscuro
       case SenseType.taste:
-        return Colors.pink;
+        return const Color(0xFF9CA986); // Variación
     }
   }
 

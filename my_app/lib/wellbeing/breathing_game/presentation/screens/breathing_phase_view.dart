@@ -11,6 +11,9 @@ const double _maxSize = 200;
 const double _barHeight = 200;
 const double _barWidth = 12;
 
+// Color principal
+const Color primaryColor = Color(0xFFAFB99B);
+
 class Particle {
   final int id;
   Offset position;
@@ -103,12 +106,12 @@ class _BreathingPhaseViewState extends State<BreathingPhaseView> with SingleTick
 
   Color _getRandomParticleColor() {
     final colors = [
-      Colors.yellowAccent,
-      Colors.orangeAccent,
-      Colors.pinkAccent,
-      Colors.lightBlueAccent,
-      Colors.greenAccent,
-      Colors.purpleAccent,
+      primaryColor,
+      primaryColor.withOpacity(0.8),
+      const Color(0xFF9CA986), // Variación más oscura
+      const Color(0xFFC5D1B0), // Variación más clara
+      Colors.greenAccent.withOpacity(0.7),
+      Colors.lightGreenAccent.withOpacity(0.7),
     ];
     return colors[_random.nextInt(colors.length)];
   }
@@ -185,9 +188,10 @@ class _BreathingPhaseViewState extends State<BreathingPhaseView> with SingleTick
                         // Texto de instrucción de fase
                         Text(
                           _phaseInstruction(),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
+                            color: primaryColor.withOpacity(0.9),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -200,6 +204,10 @@ class _BreathingPhaseViewState extends State<BreathingPhaseView> with SingleTick
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: color.withOpacity(0.4),
+                            border: Border.all(
+                              color: color.withOpacity(0.6),
+                              width: 3,
+                            ),
                           ),
                         ),
                       ],
@@ -212,9 +220,9 @@ class _BreathingPhaseViewState extends State<BreathingPhaseView> with SingleTick
                       width: _barWidth,
                       height: _barHeight,
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade400),
+                        border: Border.all(color: primaryColor.withOpacity(0.4)),
                         borderRadius: BorderRadius.circular(6),
-                        color: Colors.grey.shade200,
+                        color: primaryColor.withOpacity(0.1),
                       ),
                       child: Stack(
                         alignment: Alignment.bottomCenter,
@@ -316,13 +324,13 @@ class _BreathingPhaseViewState extends State<BreathingPhaseView> with SingleTick
   Color _getPhaseColor() {
     switch (widget.state.phase) {
       case BreathingPhase.inhale:
-        return Colors.lightBlueAccent;
+        return primaryColor;
       case BreathingPhase.secondInhale:
-        return Colors.cyanAccent;
+        return primaryColor.withOpacity(0.8);
       case BreathingPhase.hold:
-        return Colors.greenAccent;
+        return const Color(0xFF9CA986); // Variación más oscura
       case BreathingPhase.exhale:
-        return Colors.purpleAccent;
+        return const Color(0xFFC5D1B0); // Variación más clara
       case BreathingPhase.holdEmpty:
         return Colors.grey;
     }
@@ -332,32 +340,44 @@ class _BreathingPhaseViewState extends State<BreathingPhaseView> with SingleTick
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[900] : Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
+        color: primaryColor.withOpacity(isDark ? 0.2 : 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: primaryColor.withOpacity(0.3),
+          width: 2,
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             'Ciclo ${widget.state.cycleCount + 1}',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: primaryColor,
+            ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.amber.withOpacity(0.2),
+              color: primaryColor.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: primaryColor.withOpacity(0.4),
+                width: 1.5,
+              ),
             ),
             child: Row(
               children: [
-                Icon(Icons.star, size: 16, color: Colors.amber[700]),
+                Icon(Icons.star, size: 16, color: primaryColor),
                 const SizedBox(width: 4),
                 Text(
                   '${widget.state.particlesCollected}',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: Colors.amber[700],
+                    color: primaryColor,
                   ),
                 ),
               ],
@@ -370,6 +390,14 @@ class _BreathingPhaseViewState extends State<BreathingPhaseView> with SingleTick
 
   Widget _buildStatsCard(bool isDark) {
     return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: primaryColor.withOpacity(0.3),
+          width: 2,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -377,11 +405,15 @@ class _BreathingPhaseViewState extends State<BreathingPhaseView> with SingleTick
           children: [
             Column(
               children: [
-                Icon(Icons.stars, color: Colors.amber[600], size: 32),
+                Icon(Icons.stars, color: primaryColor, size: 32),
                 const SizedBox(height: 8),
                 Text(
                   '${widget.state.particlesCollected}',
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
+                  ),
                 ),
                 Text(
                   'Recolectadas',
@@ -392,15 +424,19 @@ class _BreathingPhaseViewState extends State<BreathingPhaseView> with SingleTick
             Container(
               width: 1,
               height: 50,
-              color: Colors.grey[300],
+              color: primaryColor.withOpacity(0.3),
             ),
             Column(
               children: [
-                Icon(Icons.remove_red_eye, color: Colors.blue[600], size: 32),
+                Icon(Icons.remove_red_eye, color: primaryColor.withOpacity(0.7), size: 32),
                 const SizedBox(height: 8),
                 Text(
                   '${widget.state.totalParticles}',
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor.withOpacity(0.7),
+                  ),
                 ),
                 Text(
                   'Total aparecidas',

@@ -16,6 +16,9 @@ class RatingView extends StatefulWidget {
 class _RatingViewState extends State<RatingView> {
   int _selectedRating = 0;
 
+  // Color principal
+  static const Color primaryColor = Color(0xFFAFB99B);
+
   @override
   Widget build(BuildContext context) {
     final relaxedCount = widget.emotions.where((e) => e).length;
@@ -32,7 +35,7 @@ class _RatingViewState extends State<RatingView> {
             const Icon(
               Icons.celebration,
               size: 64,
-              color: Color(0xFFFFAA88),
+              color: primaryColor,
             ),
             const SizedBox(height: 16),
             const Text(
@@ -49,10 +52,10 @@ class _RatingViewState extends State<RatingView> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF9999).withOpacity(0.1),
+                color: primaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: const Color(0xFFFF9999).withOpacity(0.3),
+                  color: primaryColor.withOpacity(0.3),
                   width: 2,
                 ),
               ),
@@ -65,13 +68,13 @@ class _RatingViewState extends State<RatingView> {
                         icon: Icons.check_circle,
                         label: 'Relajadas',
                         value: '$relaxedCount/${widget.emotions.length}',
-                        color: const Color(0xFFFFAA88),
+                        color: primaryColor,
                       ),
                       _QuickStat(
                         icon: Icons.trending_up,
                         label: 'Relajación',
                         value: '$relaxationPercentage%',
-                        color: const Color(0xFFFF9999),
+                        color: primaryColor,
                       ),
                     ],
                   ),
@@ -111,7 +114,7 @@ class _RatingViewState extends State<RatingView> {
                           : Icons.star_border,
                       size: 48,
                       color: rating <= _selectedRating
-                          ? const Color(0xFFFFAA88)
+                          ? primaryColor
                           : Colors.grey[400],
                     ),
                   ),
@@ -145,6 +148,7 @@ class _RatingViewState extends State<RatingView> {
                       }
                     : null,
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
