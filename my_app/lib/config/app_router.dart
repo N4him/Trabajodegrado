@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_app/forum/presentation/screen_forum.dart';
 import 'package:my_app/library/presentation/book_detail_page.dart';
 import 'package:my_app/library/presentation/saved_book.dart';
@@ -16,8 +15,6 @@ import '../wellbeing/presentation/screens/wellbeing_home_screen.dart';
 import '../wellbeing/body_scan/presentation/screens/body_scan_screen.dart';
 import '../wellbeing/breathing_game/presentation/screens/breathing_game_screen.dart';
 import '../wellbeing/quest_map/presentation/screens/quest_map_screen.dart';
-import '../wellbeing/presentation/blocs/wellbeing_points_bloc.dart';
-import '../core/di/injector.dart';
 
 class AppRouter {
   static const String splash = '/';
@@ -48,10 +45,7 @@ class AppRouter {
     foro: (_) => ForumScreen(),
     habitsHome: (_) => const HabitsHomeScreen(),
     habitCreation: (_) => HabitCreationScreen(),
-    wellbeingHome: (_) => BlocProvider(
-      create: (_) => getIt<WellbeingPointsBloc>(),
-      child: const WellbeingHomeScreen(),
-    ),
+    wellbeingHome: (_) => const WellbeingHomeScreen(),
     bodyScan: (_) => const BodyScanScreen(),
     breathingGame: (_) => const BreathingGameScreen(),
     questMap: (_) => const QuestMapScreen(),

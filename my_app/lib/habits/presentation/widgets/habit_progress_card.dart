@@ -16,9 +16,15 @@ class HabitProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
+      elevation: 6,
+      shadowColor: Colors.green.withOpacity(0.3),
+      color: isDark
+          ? Colors.grey[900]?.withOpacity(0.7)
+          : Colors.white.withOpacity(0.85),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),

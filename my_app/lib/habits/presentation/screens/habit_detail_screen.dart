@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/habit_progress.dart';
 import '../widgets/weekly_trend_chart.dart';
+import '../widgets/habits_gradient_background.dart';
 
 class HabitDetailScreen extends StatelessWidget {
   final HabitProgress progress;
@@ -15,6 +16,8 @@ class HabitDetailScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(progress.habit.name),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
@@ -31,7 +34,9 @@ class HabitDetailScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
+      extendBodyBehindAppBar: false,
+      body: HabitsGradientBackground(
+        child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,6 +56,7 @@ class HabitDetailScreen extends StatelessWidget {
             // Estadísticas detalladas
             _buildDetailedStats(context),
           ],
+        ),
         ),
       ),
     );

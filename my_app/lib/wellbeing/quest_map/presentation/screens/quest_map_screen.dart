@@ -4,6 +4,7 @@ import '../../../../core/di/injector.dart';
 import '../blocs/quest_map_bloc.dart';
 import '../blocs/quest_map_event.dart';
 import '../blocs/quest_map_state.dart';
+import '../../../presentation/widgets/gradient_background.dart';
 import 'intro_view.dart';
 import 'sense_input_view.dart';
 import 'breathing_pause_view.dart';
@@ -31,14 +32,18 @@ class _QuestMapContent extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Técnica 5-4-3-2-1'),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
-      body: BlocConsumer<QuestMapBloc, QuestMapState>(
+      extendBodyBehindAppBar: false,
+      body: GradientBackground(
+        child: BlocConsumer<QuestMapBloc, QuestMapState>(
         listener: (context, state) {
           if (state is QuestMapError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
-                backgroundColor: Colors.red,
+                backgroundColor: const Color(0xFFFF6B6B),
               ),
             );
           }
@@ -79,6 +84,7 @@ class _QuestMapContent extends StatelessWidget {
 
           return const Center(child: Text('Estado desconocido'));
         },
+        ),
       ),
     );
   }

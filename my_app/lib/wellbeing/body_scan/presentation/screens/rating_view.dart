@@ -32,7 +32,7 @@ class _RatingViewState extends State<RatingView> {
             const Icon(
               Icons.celebration,
               size: 64,
-              color: Colors.amber,
+              color: Color(0xFFFFAA88),
             ),
             const SizedBox(height: 16),
             const Text(
@@ -49,10 +49,10 @@ class _RatingViewState extends State<RatingView> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
+                color: const Color(0xFFFF9999).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: Colors.blue.withOpacity(0.3),
+                  color: const Color(0xFFFF9999).withOpacity(0.3),
                   width: 2,
                 ),
               ),
@@ -65,13 +65,13 @@ class _RatingViewState extends State<RatingView> {
                         icon: Icons.check_circle,
                         label: 'Relajadas',
                         value: '$relaxedCount/${widget.emotions.length}',
-                        color: Colors.green,
+                        color: const Color(0xFFFFAA88),
                       ),
                       _QuickStat(
                         icon: Icons.trending_up,
                         label: 'Relajación',
                         value: '$relaxationPercentage%',
-                        color: Colors.blue,
+                        color: const Color(0xFFFF9999),
                       ),
                     ],
                   ),
@@ -111,7 +111,7 @@ class _RatingViewState extends State<RatingView> {
                           : Icons.star_border,
                       size: 48,
                       color: rating <= _selectedRating
-                          ? Colors.amber
+                          ? const Color(0xFFFFAA88)
                           : Colors.grey[400],
                     ),
                   ),

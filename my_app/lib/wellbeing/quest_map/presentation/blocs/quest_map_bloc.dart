@@ -4,16 +4,17 @@ import 'quest_map_event.dart';
 import 'quest_map_state.dart';
 import '../../domain/entities/quest_map_session_entity.dart';
 import '../../domain/usecases/save_quest_map_session_usecase.dart';
-import '../../../shared/domain/usecases/increment_wellbeing_points_usecase.dart';
+import '../../../../gamification/domain/usecases/update_modulo_progress.dart';
+import '../../../../gamification/domain/entities/modulo_progreso.dart';
 
 /// BLoC para el Quest Map (técnica 5-4-3-2-1)
 class QuestMapBloc extends Bloc<QuestMapEvent, QuestMapState> {
   final SaveQuestMapSessionUseCase saveSessionUseCase;
-  final IncrementWellbeingPointsUseCase incrementPointsUseCase;
+  final UpdateModuloProgress updateModuloProgress;
 
   QuestMapBloc({
     required this.saveSessionUseCase,
-    required this.incrementPointsUseCase,
+    required this.updateModuloProgress,
   }) : super(QuestMapInitial()) {
     on<StartQuestMap>(_onStartQuestMap);
     on<AddAnswer>(_onAddAnswer);
@@ -215,9 +216,15 @@ class QuestMapBloc extends Bloc<QuestMapEvent, QuestMapState> {
     // Verificar si emit ya fue cerrado
     if (emit.isDone) return;
 
-    // Incrementar puntos después de guardar
-    await incrementPointsUseCase.call(
-      IncrementPointsParams(userId: userId, activityKey: 'quest_map'),
+    // Actualizar gamificación después de guardar
+    await updateModuloProgress.call(
+      userId: userId,
+      moduloKey: 'equilibrio',
+      progreso: const ModuloProgreso(
+        sesionesCompletadas: 1,
+        diasCumplidos: 1,
+        puntosObtenidos: 1,
+      ),
     );
 
     emit(QuestMapSessionSaved(

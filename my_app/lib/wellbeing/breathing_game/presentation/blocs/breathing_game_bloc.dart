@@ -5,13 +5,14 @@ import 'package:flutter/services.dart';
 import '../../domain/entities/breathing_session_entity.dart';
 import '../../domain/models/breathing_mode.dart';
 import '../../domain/usecases/save_breathing_session_usecase.dart';
-import '../../../shared/domain/usecases/increment_wellbeing_points_usecase.dart';
+import '../../../../gamification/domain/usecases/update_modulo_progress.dart';
+import '../../../../gamification/domain/entities/modulo_progreso.dart';
 import 'breathing_game_event.dart';
 import 'breathing_game_state.dart';
 
 class BreathingGameBloc extends Bloc<BreathingEvent, BreathingGameState> {
   final SaveBreathingSessionUseCase saveSessionUseCase;
-  final IncrementWellbeingPointsUseCase incrementPointsUseCase;
+  final UpdateModuloProgress updateModuloProgress;
 
   Timer? _timer;
   int _phaseIndex = 0;
@@ -30,7 +31,7 @@ class BreathingGameBloc extends Bloc<BreathingEvent, BreathingGameState> {
 
   BreathingGameBloc({
     required this.saveSessionUseCase,
-    required this.incrementPointsUseCase,
+    required this.updateModuloProgress,
   }) : super(BreathingInitial()) {
     on<StartBreathingGame>(_onStartBreathingGame);
     on<PhaseTick>(_onPhaseTick);
@@ -190,11 +191,14 @@ class BreathingGameBloc extends Bloc<BreathingEvent, BreathingGameState> {
       return;
     }
 
-    // Sesión guardada exitosamente, incrementar puntos
-    await incrementPointsUseCase.call(
-      IncrementPointsParams(
-        userId: userId,
-        activityKey: 'breathing_game',
+    // Sesión guardada exitosamente, actualizar gamificación
+    await updateModuloProgress.call(
+      userId: userId,
+      moduloKey: 'equilibrio',
+      progreso: const ModuloProgreso(
+        sesionesCompletadas: 1,
+        diasCumplidos: 1,
+        puntosObtenidos: 1,
       ),
     );
 

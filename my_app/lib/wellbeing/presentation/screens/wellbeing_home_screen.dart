@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../../config/app_router.dart';
-import '../blocs/wellbeing_points_bloc.dart';
-import '../blocs/wellbeing_points_event.dart';
-import '../blocs/wellbeing_points_state.dart';
+import '../widgets/gradient_background.dart';
 
 /// Pantalla principal del módulo de Bienestar
-/// Muestra las diferentes actividades de mindfulness disponibles y los puntos acumulados
+/// Muestra las diferentes actividades de mindfulness disponibles
 class WellbeingHomeScreen extends StatefulWidget {
   const WellbeingHomeScreen({super.key});
 
@@ -16,25 +12,6 @@ class WellbeingHomeScreen extends StatefulWidget {
 }
 
 class _WellbeingHomeScreenState extends State<WellbeingHomeScreen> {
-  @override
-  void initState() {
-    super.initState();
-    _loadPoints();
-  }
-
-  void _loadPoints() {
-    final userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId != null) {
-      context.read<WellbeingPointsBloc>().add(LoadWellbeingPoints(userId));
-    }
-  }
-
-  void _refreshPoints() {
-    final userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId != null) {
-      context.read<WellbeingPointsBloc>().add(RefreshWellbeingPoints(userId));
-    }
-  }
 
   void _showActivitiesInfo() {
     showDialog(
@@ -92,7 +69,7 @@ class _WellbeingHomeScreenState extends State<WellbeingHomeScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Gana 1 punto por completar cada actividad (una vez al día)',
+                          'Las actividades completadas contribuyen a tu progreso general de bienestar',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[700],
@@ -167,187 +144,75 @@ class _WellbeingHomeScreenState extends State<WellbeingHomeScreen> {
       appBar: AppBar(
         title: const Text('Bienestar'),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: _showActivitiesInfo,
             tooltip: 'Información de actividades',
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refreshPoints,
-            tooltip: 'Actualizar puntos',
-          ),
         ],
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Card de puntos
-              BlocBuilder<WellbeingPointsBloc, WellbeingPointsState>(
-                builder: (context, state) {
-                  if (state is WellbeingPointsLoaded) {
-                    return _buildPointsCard(state.points.totalPoints);
-                  } else if (state is WellbeingPointsLoading) {
-                    return _buildPointsCard(0, loading: true);
-                  } else {
-                    return _buildPointsCard(0);
-                  }
-                },
-              ),
-              const SizedBox(height: 24),
-
-              const Text(
-                'Actividades de Mindfulness',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Elige una actividad para comenzar tu práctica',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: ListView(
-                  children: [
-                    _buildActivityCard(
-                      context,
-                      title: 'Escaneo Corporal',
-                      description: 'Viaje sensorial a través de tu cuerpo',
-                      icon: Icons.accessibility_new,
-                      color: Colors.blue,
-                      onTap: () async {
-                        await Navigator.pushNamed(context, AppRouter.bodyScan);
-                        // Recargar puntos al volver
-                        _refreshPoints();
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    _buildActivityCard(
-                      context,
-                      title: 'Juego de Respiración',
-                      description: 'Ejercicios de respiración guiada',
-                      icon: Icons.air,
-                      color: Colors.teal,
-                      onTap: () async {
-                        await Navigator.pushNamed(context, AppRouter.breathingGame);
-                        // Recargar puntos al volver
-                        _refreshPoints();
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    _buildActivityCard(
-                      context,
-                      title: 'Técnica 5-4-3-2-1',
-                      description: 'Grounding sensorial para calmar la ansiedad',
-                      icon: Icons.spa,
-                      color: Colors.indigo,
-                      onTap: () async {
-                        await Navigator.pushNamed(context, AppRouter.questMap);
-                        // Recargar puntos al volver
-                        _refreshPoints();
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPointsCard(int points, {bool loading = false}) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.purple[400]!, Colors.purple[600]!],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.stars,
-                size: 32,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Puntos de Bienestar',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
+      extendBodyBehindAppBar: false,
+      body: GradientBackground(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Actividades de Mindfulness',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: 4),
-                  loading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : Text(
-                          '$points ${points == 1 ? 'punto' : 'puntos'}',
-                          style: const TextStyle(
-                            fontSize: 28,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                '+1 por día',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
                 ),
-              ),
+                const SizedBox(height: 8),
+                Text(
+                  'Elige una actividad para comenzar tu práctica',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: ListView(
+                    children: [
+                      _buildActivityCard(
+                        context,
+                        title: 'Escaneo Corporal',
+                        description: 'Viaje sensorial a través de tu cuerpo',
+                        icon: Icons.accessibility_new,
+                        color: const Color(0xFFFF9999),
+                        onTap: () => Navigator.pushNamed(context, AppRouter.bodyScan),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildActivityCard(
+                        context,
+                        title: 'Juego de Respiración',
+                        description: 'Ejercicios de respiración guiada',
+                        icon: Icons.air,
+                        color: const Color(0xFFFFAA88),
+                        onTap: () => Navigator.pushNamed(context, AppRouter.breathingGame),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildActivityCard(
+                        context,
+                        title: 'Técnica 5-4-3-2-1',
+                        description: 'Grounding sensorial para calmar la ansiedad',
+                        icon: Icons.spa,
+                        color: const Color(0xFFFFBB99),
+                        onTap: () => Navigator.pushNamed(context, AppRouter.questMap),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -361,11 +226,17 @@ class _WellbeingHomeScreenState extends State<WellbeingHomeScreen> {
     required Color color,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Card(
-      elevation: 4,
+      elevation: 8,
+      shadowColor: color.withOpacity(0.3),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
+      color: isDark
+          ? Colors.grey[900]?.withOpacity(0.7)
+          : Colors.white.withOpacity(0.85),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),

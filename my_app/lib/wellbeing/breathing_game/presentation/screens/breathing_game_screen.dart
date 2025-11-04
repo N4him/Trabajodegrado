@@ -4,6 +4,7 @@ import '../../../../core/di/injector.dart';
 import '../blocs/breathing_game_bloc.dart';
 import '../blocs/breathing_game_event.dart';
 import '../blocs/breathing_game_state.dart';
+import '../../../presentation/widgets/gradient_background.dart';
 import 'mode_selection_view.dart';
 import 'breathing_phase_view.dart';
 import 'success_view.dart';
@@ -30,14 +31,18 @@ class _BreathingGameContent extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Ejercicio de Respiración'),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
-      body: BlocConsumer<BreathingGameBloc, BreathingGameState>(
+      extendBodyBehindAppBar: false,
+      body: GradientBackground(
+        child: BlocConsumer<BreathingGameBloc, BreathingGameState>(
         listener: (context, state) {
           if (state is BreathingError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
-                backgroundColor: Colors.red,
+                backgroundColor: const Color(0xFFFF6B6B),
               ),
             );
           }
@@ -97,6 +102,7 @@ class _BreathingGameContent extends StatelessWidget {
 
           return const Center(child: Text('Estado desconocido'));
         },
+        ),
       ),
     );
   }

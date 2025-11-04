@@ -315,9 +315,19 @@ class _SenseInputViewState extends State<SenseInputView> with SingleTickerProvid
               return Column(
                 children: [
                   if (isCurrent)
-                    const Text('🐰', style: TextStyle(fontSize: 32)),
+                    SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: Image.asset(
+                        'assets/images/pet.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Text('🐰', style: TextStyle(fontSize: 32));
+                        },
+                      ),
+                    ),
                   if (!isCurrent)
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 48),
                   const SizedBox(height: 8),
                   Container(
                     width: 24,

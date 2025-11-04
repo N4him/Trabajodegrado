@@ -34,15 +34,6 @@ import 'package:my_app/wellbeing/body_scan/domain/usecases/save_body_scan_sessio
 import 'package:my_app/wellbeing/body_scan/domain/usecases/get_weekly_sessions_usecase.dart';
 import 'package:my_app/wellbeing/body_scan/presentation/blocs/body_scan_bloc.dart';
 
-// ==============================================
-// WELLBEING POINTS (SHARED)
-// ==============================================
-import 'package:my_app/wellbeing/shared/data/datasources/wellbeing_points_remote_datasource.dart';
-import 'package:my_app/wellbeing/shared/data/repositories/wellbeing_points_repository_impl.dart';
-import 'package:my_app/wellbeing/shared/domain/repositories/wellbeing_points_repository.dart';
-import 'package:my_app/wellbeing/shared/domain/usecases/get_wellbeing_points_usecase.dart';
-import 'package:my_app/wellbeing/shared/domain/usecases/increment_wellbeing_points_usecase.dart';
-import 'package:my_app/wellbeing/presentation/blocs/wellbeing_points_bloc.dart';
 
 // ==============================================
 // BREATHING GAME (WELLBEING)
@@ -209,10 +200,6 @@ Future<void> setupDI() async {
     () => BodyScanFirestoreDataSource(firestore: getIt()),
   );
 
-  getIt.registerLazySingleton<WellbeingPointsDataSource>(
-    () => WellbeingPointsFirestoreDataSource(firestore: getIt()),
-  );
-
   getIt.registerLazySingleton<BreathingGameDataSource>(
     () => BreathingGameFirestoreDataSource(firestore: getIt()),
   );
@@ -274,10 +261,6 @@ Future<void> setupDI() async {
 
   getIt.registerLazySingleton<BodyScanRepository>(
     () => BodyScanRepositoryImpl(dataSource: getIt()),
-  );
-
-  getIt.registerLazySingleton<WellbeingPointsRepository>(
-    () => WellbeingPointsRepositoryImpl(dataSource: getIt()),
   );
 
   getIt.registerLazySingleton<BreathingGameRepository>(
@@ -436,15 +419,6 @@ getIt.registerLazySingleton<GetWeeklySessionsUseCase>(
   () => GetWeeklySessionsUseCase(repository: getIt()),
 );
 
-// Wellbeing Points Use Cases
-getIt.registerLazySingleton<GetWellbeingPointsUseCase>(
-  () => GetWellbeingPointsUseCase(repository: getIt()),
-);
-
-getIt.registerLazySingleton<IncrementWellbeingPointsUseCase>(
-  () => IncrementWellbeingPointsUseCase(repository: getIt()),
-);
-
 // Breathing Game Use Cases
 getIt.registerLazySingleton<SaveBreathingSessionUseCase>(
   () => SaveBreathingSessionUseCase(repository: getIt()),
@@ -530,25 +504,21 @@ getIt.registerLazySingleton<SaveQuestMapSessionUseCase>(
   getIt.registerFactory<BodyScanBloc>(
     () => BodyScanBloc(
       saveSessionUseCase: getIt(),
-      incrementPointsUseCase: getIt(),
+      updateModuloProgress: getIt(),
     ),
-  );
-
-  getIt.registerFactory<WellbeingPointsBloc>(
-    () => WellbeingPointsBloc(getPointsUseCase: getIt()),
   );
 
   getIt.registerFactory<BreathingGameBloc>(
     () => BreathingGameBloc(
       saveSessionUseCase: getIt(),
-      incrementPointsUseCase: getIt(),
+      updateModuloProgress: getIt(),
     ),
   );
 
   getIt.registerFactory<QuestMapBloc>(
     () => QuestMapBloc(
       saveSessionUseCase: getIt(),
-      incrementPointsUseCase: getIt(),
+      updateModuloProgress: getIt(),
     ),
   );
 

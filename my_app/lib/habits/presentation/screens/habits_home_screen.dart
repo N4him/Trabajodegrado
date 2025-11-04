@@ -6,6 +6,7 @@ import '../blocs/habit_bloc.dart';
 import '../blocs/habit_event.dart';
 import '../blocs/habit_state.dart';
 import '../widgets/habit_progress_card.dart';
+import '../widgets/habits_gradient_background.dart';
 import 'habit_detail_screen.dart';
 
 class HabitsHomeScreen extends StatefulWidget {
@@ -48,6 +49,8 @@ class _HabitsHomeScreenState extends State<HabitsHomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mis Hábitos'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -56,14 +59,16 @@ class _HabitsHomeScreenState extends State<HabitsHomeScreen> {
           ),
         ],
       ),
-      body: BlocConsumer<HabitBloc, HabitState>(
+      extendBodyBehindAppBar: false,
+      body: HabitsGradientBackground(
+        child: BlocConsumer<HabitBloc, HabitState>(
         listener: (context, state) {
           // Mostrar mensajes de éxito o error
           if (state is HabitActionSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
-                backgroundColor: Colors.green,
+                backgroundColor: const Color(0xFFFFAA88),
                 duration: const Duration(seconds: 2),
               ),
             );
@@ -71,7 +76,7 @@ class _HabitsHomeScreenState extends State<HabitsHomeScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.error),
-                backgroundColor: Colors.red,
+                backgroundColor: const Color(0xFFFF6B6B),
                 duration: const Duration(seconds: 3),
               ),
             );
@@ -87,12 +92,12 @@ class _HabitsHomeScreenState extends State<HabitsHomeScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const Icon(Icons.error_outline, size: 64, color: Color(0xFFFF6B6B)),
                   const SizedBox(height: 16),
                   Text(
                     'Error: ${state.error}',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.red),
+                    style: const TextStyle(color: Color(0xFFFF6B6B)),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
@@ -184,6 +189,7 @@ class _HabitsHomeScreenState extends State<HabitsHomeScreen> {
           // Estado inicial u otro estado desconocido
           return const Center(child: CircularProgressIndicator());
         },
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {

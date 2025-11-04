@@ -10,16 +10,16 @@ class ScanStepView extends StatelessWidget {
   final int emotionsReported;
   final VoidCallback onNext;
 
-  /// Claves que corresponden a los archivos highlight_{key}.svg en assets/highlights/
+  /// Claves que corresponden a los archivos de imágenes PNG en assets/images/
   static const partKeys = [
-    'feet',
-    'ankles_calves',
-    'knees_thighs',
-    'hips_pelvis',
-    'abdomen_lower_back',
-    'chest_shoulders',
-    'arms_hands',
-    'neck_jaw_head',
+    'Pies',
+    'Tobillos y pantorrillas',
+    'Rodillas y muslos',
+    'Cadera y pelvis',
+    'Abdomen y espalda baja',
+    'Pecho y hombros',
+    'Brazos y manos',
+    'Cuello, mandíbula y cabeza',
   ];
 
   const ScanStepView({
@@ -43,10 +43,12 @@ class ScanStepView extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDark ? Colors.grey[900] : Colors.grey[100],
+            color: isDark
+                ? const Color(0xFF2e1a1f).withOpacity(0.9)
+                : const Color(0xFFFFE8E8).withOpacity(0.9),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: const Color(0xFFFF9999).withOpacity(0.15),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -62,7 +64,9 @@ class ScanStepView extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey[700],
+                      color: isDark
+                          ? const Color(0xFFFFB6B6)
+                          : const Color(0xFFFF6B6B),
                     ),
                   ),
                   Container(
@@ -71,22 +75,22 @@ class ScanStepView extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
+                      color: const Color(0xFFFF9999).withOpacity(0.15),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.blue.withOpacity(0.3),
+                        color: const Color(0xFFFF9999).withOpacity(0.4),
                       ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.check_circle, size: 16, color: Colors.blue),
+                        const Icon(Icons.check_circle, size: 16, color: Color(0xFFFF6B6B)),
                         const SizedBox(width: 4),
                         Text(
                           '$emotionsReported registros',
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Colors.blue,
+                            color: Color(0xFFFF6B6B),
                           ),
                         ),
                       ],
@@ -100,8 +104,10 @@ class ScanStepView extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: progress,
                   minHeight: 8,
-                  backgroundColor: Colors.grey[300],
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+                  backgroundColor: isDark
+                      ? const Color(0xFFFF9999).withOpacity(0.2)
+                      : const Color(0xFFFFB6B6).withOpacity(0.3),
+                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF6B6B)),
                 ),
               ),
             ],
@@ -114,19 +120,60 @@ class ScanStepView extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                // Card con la silueta
+                // Card con la silueta y ajolote maestro
                 Card(
-                  elevation: 4,
+                  elevation: 8,
+                  shadowColor: const Color(0xFFFF9999).withOpacity(0.4),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(24),
                   ),
+                  color: isDark
+                      ? Colors.grey[850]?.withOpacity(0.8)
+                      : Colors.white.withOpacity(0.9),
                   child: Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: isDark
+                            ? [
+                                const Color(0xFFFF9999).withOpacity(0.05),
+                                const Color(0xFFFFAA88).withOpacity(0.05),
+                              ]
+                            : [
+                                const Color(0xFFFFB6B6).withOpacity(0.05),
+                                const Color(0xFFFFCC99).withOpacity(0.05),
+                              ],
+                      ),
+                    ),
                     child: Column(
                       children: [
-                        // Silueta del cuerpo con highlight
+                        // Título decorativo
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.location_on,
+                              color: const Color(0xFFFF6B6B),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Zona de enfoque',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFFFF6B6B),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        // Silueta del cuerpo con highlight y ajolote
                         SizedBox(
-                          height: 400,
+                          height: 450,
                           child: BodyPartHighlightView(partKey),
                         ),
                       ],
@@ -136,14 +183,34 @@ class ScanStepView extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // Card con instrucciones
+                // Card con instrucciones mejorada
                 Card(
-                  elevation: 2,
+                  elevation: 6,
+                  shadowColor: const Color(0xFFFFAA88).withOpacity(0.4),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
+                  color: isDark
+                      ? Colors.grey[850]?.withOpacity(0.8)
+                      : Colors.white.withOpacity(0.9),
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: isDark
+                            ? [
+                                const Color(0xFFFFAA88).withOpacity(0.05),
+                                const Color(0xFFFFBB99).withOpacity(0.05),
+                              ]
+                            : [
+                                const Color(0xFFFFCC99).withOpacity(0.05),
+                                const Color(0xFFFFDDCC).withOpacity(0.05),
+                              ],
+                      ),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -151,57 +218,86 @@ class ScanStepView extends StatelessWidget {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
+                                gradient: LinearGradient(
+                                  colors: [
+                                    const Color(0xFFFF9999).withOpacity(0.25),
+                                    const Color(0xFFFFAA88).withOpacity(0.25),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(
                                 Icons.spa,
-                                color: Colors.blue,
-                                size: 24,
+                                color: Color(0xFFFF6B6B),
+                                size: 28,
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 16),
                             Expanded(
                               child: Text(
                                 step.title,
                                 style: const TextStyle(
-                                  fontSize: 20,
+                                  fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
 
-                        // Instrucción
+                        // Instrucción con mejor diseño
                         Container(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(18),
                           decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(12),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: isDark
+                                  ? [
+                                      const Color(0xFFFF9999).withOpacity(0.12),
+                                      const Color(0xFFFFAA88).withOpacity(0.12),
+                                    ]
+                                  : [
+                                      const Color(0xFFFFB6B6).withOpacity(0.08),
+                                      const Color(0xFFFFCC99).withOpacity(0.08),
+                                    ],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: Colors.grey[200]!,
+                              color: isDark
+                                  ? const Color(0xFFFF9999).withOpacity(0.4)
+                                  : const Color(0xFFFF9999).withOpacity(0.3),
+                              width: 2,
                             ),
                           ),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.lightbulb_outline,
-                                color: Colors.amber[700],
-                                size: 20,
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.lightbulb,
+                                  color: Colors.amber[700],
+                                  size: 24,
+                                ),
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: 16),
                               Expanded(
                                 child: Text(
                                   step.instruction,
                                   style: TextStyle(
                                     fontSize: 16,
-                                    height: 1.5,
-                                    color: Colors.grey[800],
+                                    height: 1.6,
+                                    fontWeight: FontWeight.w500,
+                                    color: isDark ? Colors.white : Colors.grey[800],
+                                    letterSpacing: 0.3,
                                   ),
                                 ),
                               ),

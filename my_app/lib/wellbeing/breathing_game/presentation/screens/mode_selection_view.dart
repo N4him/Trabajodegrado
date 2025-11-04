@@ -23,7 +23,9 @@ class ModeSelectionView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: isDark ? Colors.grey[900] : Colors.purple[50],
+              color: isDark
+                  ? const Color(0xFF2e1a1f).withOpacity(0.9)
+                  : const Color(0xFFFFE8E8).withOpacity(0.9),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
@@ -31,7 +33,7 @@ class ModeSelectionView extends StatelessWidget {
                 Icon(
                   Icons.air,
                   size: 64,
-                  color: Colors.purple[400],
+                  color: const Color(0xFFFF9999),
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -89,7 +91,7 @@ class ModeSelectionView extends StatelessWidget {
             context,
             mode: BreathingMode.cyclicSighing,
             icon: Icons.self_improvement,
-            color: Colors.blue,
+            color: const Color(0xFFFF9999),
             settings: breathingModes[BreathingMode.cyclicSighing]!,
             isDark: isDark,
           ),
@@ -101,7 +103,7 @@ class ModeSelectionView extends StatelessWidget {
             context,
             mode: BreathingMode.boxBreathing,
             icon: Icons.crop_square,
-            color: Colors.teal,
+            color: const Color(0xFFFFAA88),
             settings: breathingModes[BreathingMode.boxBreathing]!,
             isDark: isDark,
           ),
@@ -113,7 +115,7 @@ class ModeSelectionView extends StatelessWidget {
             context,
             mode: BreathingMode.cyclicHyperventilation,
             icon: Icons.bolt,
-            color: Colors.orange,
+            color: const Color(0xFFFFBB99),
             settings: breathingModes[BreathingMode.cyclicHyperventilation]!,
             isDark: isDark,
           ),

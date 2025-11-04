@@ -3,18 +3,19 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/models/scan_steps_data.dart';
 import '../../domain/entities/body_scan_session_entity.dart';
 import '../../domain/usecases/save_body_scan_session_usecase.dart';
-import '../../../shared/domain/usecases/increment_wellbeing_points_usecase.dart';
+import '../../../../gamification/domain/usecases/update_modulo_progress.dart';
+import '../../../../gamification/domain/entities/modulo_progreso.dart';
 import 'body_scan_event.dart';
 import 'body_scan_state.dart';
 
 /// BLoC que gestiona el flujo del Viaje Sensorial (Escaneo Corporal).
 class BodyScanBloc extends Bloc<BodyScanEvent, BodyScanState> {
   final SaveBodyScanSessionUseCase saveSessionUseCase;
-  final IncrementWellbeingPointsUseCase incrementPointsUseCase;
+  final UpdateModuloProgress updateModuloProgress;
 
   BodyScanBloc({
     required this.saveSessionUseCase,
-    required this.incrementPointsUseCase,
+    required this.updateModuloProgress,
   }) : super(ScanInitial()) {
     on<StartScan>(_onStartScan);
     on<NextStep>(_onNextStep);
@@ -89,11 +90,14 @@ class BodyScanBloc extends Bloc<BodyScanEvent, BodyScanState> {
         return;
       }
 
-      // Sesión guardada exitosamente, ahora incrementar puntos
-      await incrementPointsUseCase.call(
-        IncrementPointsParams(
-          userId: userId,
-          activityKey: 'body_scan',
+      // Sesión guardada exitosamente, actualizar gamificación
+      await updateModuloProgress.call(
+        userId: userId,
+        moduloKey: 'equilibrio',
+        progreso: const ModuloProgreso(
+          sesionesCompletadas: 1,
+          diasCumplidos: 1,
+          puntosObtenidos: 1,
         ),
       );
 

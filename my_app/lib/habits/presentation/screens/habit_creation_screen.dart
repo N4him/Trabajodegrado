@@ -5,6 +5,7 @@ import 'package:my_app/config/app_router.dart';
 import '../blocs/habit_bloc.dart';
 import '../blocs/habit_event.dart';
 import '../blocs/habit_state.dart';
+import '../widgets/habits_gradient_background.dart';
 
 class HabitCreationScreen extends StatefulWidget {
   const HabitCreationScreen({super.key});
@@ -103,8 +104,14 @@ class _HabitCreationScreenState extends State<HabitCreationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Crear Hábito')),
-      body: BlocListener<HabitBloc, HabitState>(
+      appBar: AppBar(
+        title: const Text('Crear Hábito'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      extendBodyBehindAppBar: false,
+      body: HabitsGradientBackground(
+        child: BlocListener<HabitBloc, HabitState>(
         listener: (context, state) {
           if (state is HabitActionSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -239,6 +246,7 @@ class _HabitCreationScreenState extends State<HabitCreationScreen> {
               ),
             ],
           ),
+        ),
         ),
       ),
     );

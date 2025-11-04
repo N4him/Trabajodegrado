@@ -5,6 +5,7 @@ import '../blocs/body_scan_bloc.dart';
 import '../blocs/body_scan_event.dart';
 import '../blocs/body_scan_state.dart';
 import '../../domain/models/scan_steps_data.dart';
+import '../widgets/body_scan_gradient_background.dart';
 import 'scan_step_view.dart';
 import 'emotion_sheet.dart';
 import 'rating_view.dart';
@@ -24,7 +25,10 @@ class BodyScanScreen extends StatelessWidget {
             appBar: AppBar(
               title: const Text('Viaje Sensorial'),
               centerTitle: true,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
             ),
+            extendBodyBehindAppBar: false,
             floatingActionButton: state is ScanInProgress
                 ? FloatingActionButton.extended(
                     onPressed: () =>
@@ -33,7 +37,8 @@ class BodyScanScreen extends StatelessWidget {
                     label: const Text('Siguiente'),
                   )
                 : null,
-            body: BlocConsumer<BodyScanBloc, BodyScanState>(
+            body: BodyScanGradientBackground(
+              child: BlocConsumer<BodyScanBloc, BodyScanState>(
               listener: (context, state) {
                 if (state is ScanNeedsEmotionReport) {
                   EmotionSheet.show(
@@ -45,7 +50,7 @@ class BodyScanScreen extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(state.message),
-                      backgroundColor: Colors.red,
+                      backgroundColor: const Color(0xFFFF6B6B),
                     ),
                   );
                 }
@@ -85,12 +90,12 @@ class BodyScanScreen extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                        const Icon(Icons.error_outline, size: 64, color: Color(0xFFFF6B6B)),
                         const SizedBox(height: 16),
                         Text(
                           state.message,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.red),
+                          style: const TextStyle(color: Color(0xFFFF6B6B)),
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
@@ -103,6 +108,7 @@ class BodyScanScreen extends StatelessWidget {
                 }
                 return const SizedBox.shrink();
               },
+              ),
             ),
           );
         },

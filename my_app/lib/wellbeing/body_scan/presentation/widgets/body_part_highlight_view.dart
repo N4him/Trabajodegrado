@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class BodyPartHighlightView extends StatelessWidget {
   final String partKey;
@@ -8,23 +7,28 @@ class BodyPartHighlightView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        // Silueta base en SVG (o PNG si prefieres)
-        SvgPicture.asset(
-          'assets/silhouette.svg',
-          width: 300,
-          height: 600,
+    return Center(
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFF9999).withOpacity(0.25),
+              blurRadius: 20,
+              spreadRadius: 5,
+            ),
+          ],
         ),
-        // Highlight específico como SVG
-        SvgPicture.asset(
-          'assets/highlights/highlight_$partKey.svg',
-          width: 300,
-          height: 600,
-          color: Theme.of(context).primaryColor.withOpacity(0.4),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Image.asset(
+            'assets/images/$partKey.png',
+            width: 380,
+            height: 450,
+            fit: BoxFit.cover,
+          ),
         ),
-      ],
+      ),
     );
   }
 }

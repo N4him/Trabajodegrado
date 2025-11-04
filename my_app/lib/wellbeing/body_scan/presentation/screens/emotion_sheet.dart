@@ -21,12 +21,12 @@ class EmotionSheet {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: const Color(0xFFFF9999).withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
                     Icons.self_improvement,
-                    color: Colors.blue,
+                    color: Color(0xFFFF6B6B),
                     size: 24,
                   ),
                 ),
@@ -97,7 +97,7 @@ class EmotionSheet {
                     emoji: '😌',
                     label: 'Relajado',
                     description: 'Sin tensión\no malestar',
-                    color: Colors.green,
+                    color: const Color(0xFFFFAA88),
                     onTap: () {
                       Navigator.pop(context);
                       onSelect(true);
@@ -111,7 +111,7 @@ class EmotionSheet {
                     emoji: '😣',
                     label: 'Tenso',
                     description: 'Con tensión\no malestar',
-                    color: Colors.orange,
+                    color: const Color(0xFFFF9999),
                     onTap: () {
                       Navigator.pop(context);
                       onSelect(false);
