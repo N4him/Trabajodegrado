@@ -290,27 +290,7 @@ class _HomeContentState extends State<HomeContent> {
           ),
         ),
         // Botón de debug - SOLO VISIBLE EN DEBUG MODE
-        if (kDebugMode)
-          Positioned(
-            top: 100,
-            right: 16,
-            child: FloatingActionButton.small(
-              backgroundColor: Colors.red.withOpacity(0.8),
-              onPressed: () async {
-                print('🔄 Reseteando showcases...');
-                await ShowCasePreferences.resetAllShowCases();
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Showcases reseteados. Reinicia la app.'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                }
-              },
-              child: const Icon(Icons.refresh, size: 20),
-            ),
-          ),
+
       ],
     );
   }

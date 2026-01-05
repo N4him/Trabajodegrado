@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:my_app/login/presentation/blocs/login_state.dart';
-import 'package:my_app/login/presentation/blocs/login_event.dart';
+import 'package:my_app/library/login/presentation/blocs/login_state.dart';
+import 'package:my_app/library/login/presentation/blocs/login_event.dart';
 import 'package:my_app/widgets/custom_snackbar.dart';
 import '../blocs/login_bloc.dart';
 

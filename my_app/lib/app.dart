@@ -18,10 +18,10 @@ import 'package:showcaseview/showcaseview.dart';
 import 'core/di/injector.dart';
 import 'config/app_router.dart';
 import 'splash/bloc/splash_bloc.dart';
-import 'login/presentation/blocs/login_bloc.dart';
+import 'library/login/presentation/blocs/login_bloc.dart';
 import 'register/presentation/blocs/register_bloc.dart';
 import 'profile/presentation/bloc/profile_bloc.dart';
-import 'login/domain/usecases/login_user.dart';
+import 'library/login/domain/usecases/login_user.dart';
 import 'register/domain/usecases/register_user.dart';
 import 'profile/domain/repositories/profile_repository.dart';
 

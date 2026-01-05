@@ -324,7 +324,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
               const SizedBox(width: 4),
               Text(
-                'rachaActual',
+                '2',
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,

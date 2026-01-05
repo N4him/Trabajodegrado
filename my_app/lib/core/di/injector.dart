@@ -96,11 +96,11 @@ import 'package:my_app/library/domain/usescases/watch_reading_progress_usecase.d
 // ==============================================
 // LOGIN
 // ==============================================
-import '../../login/data/datasources/login_remote_datasource.dart';
-import '../../login/data/repositories/login_repository_impl.dart';
-import '../../login/domain/repositories/login_repository.dart';
-import '../../login/domain/usecases/login_user.dart';
-import '../../login/presentation/blocs/login_bloc.dart';
+import '../../library/login/data/datasources/login_remote_datasource.dart';
+import '../../library/login/data/repositories/login_repository_impl.dart';
+import '../../library/login/domain/repositories/login_repository.dart';
+import '../../library/login/domain/usecases/login_user.dart';
+import '../../library/login/presentation/blocs/login_bloc.dart';
 
 // ==============================================
 // REGISTER
