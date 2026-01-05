@@ -6,7 +6,6 @@ import '../blocs/habit_bloc.dart';
 import '../blocs/habit_event.dart';
 import '../blocs/habit_state.dart';
 import '../widgets/habit_progress_card.dart';
-import '../widgets/habits_gradient_background.dart';
 import 'habit_detail_screen.dart';
 
 class HabitsHomeScreen extends StatefulWidget {
@@ -47,9 +46,10 @@ class _HabitsHomeScreenState extends State<HabitsHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFCDB290),
       appBar: AppBar(
         title: const Text('Mis Hábitos'),
-        backgroundColor: Colors.transparent,
+        backgroundColor: const Color(0xFFCDB290),
         elevation: 0,
         actions: [
           IconButton(
@@ -59,9 +59,7 @@ class _HabitsHomeScreenState extends State<HabitsHomeScreen> {
           ),
         ],
       ),
-      extendBodyBehindAppBar: false,
-      body: HabitsGradientBackground(
-        child: BlocConsumer<HabitBloc, HabitState>(
+      body: BlocConsumer<HabitBloc, HabitState>(
         listener: (context, state) {
           // Mostrar mensajes de éxito o error
           if (state is HabitActionSuccess) {
@@ -84,7 +82,11 @@ class _HabitsHomeScreenState extends State<HabitsHomeScreen> {
         },
         builder: (context, state) {
           if (state is HabitLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(
+                color: Colors.white,
+              ),
+            );
           }
 
           if (state is HabitFailure) {
@@ -104,6 +106,10 @@ class _HabitsHomeScreenState extends State<HabitsHomeScreen> {
                     onPressed: _loadHabits,
                     icon: const Icon(Icons.refresh),
                     label: const Text('Reintentar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFFCDB290),
+                    ),
                   ),
                 ],
               ),
@@ -119,14 +125,15 @@ class _HabitsHomeScreenState extends State<HabitsHomeScreen> {
                     Icon(
                       Icons.self_improvement,
                       size: 80,
-                      color: Colors.grey[400],
+                      color: Colors.white.withOpacity(0.7),
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'No tienes hábitos registrados',
                       style: TextStyle(
                         fontSize: 18,
-                        color: Colors.grey[600],
+                        color: Colors.white.withOpacity(0.9),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -134,7 +141,7 @@ class _HabitsHomeScreenState extends State<HabitsHomeScreen> {
                       'Crea tu primer hábito para comenzar',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[500],
+                        color: Colors.white.withOpacity(0.7),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -145,6 +152,8 @@ class _HabitsHomeScreenState extends State<HabitsHomeScreen> {
                       icon: const Icon(Icons.add),
                       label: const Text('Crear Hábito'),
                       style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFFCDB290),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
                           vertical: 12,
@@ -161,6 +170,7 @@ class _HabitsHomeScreenState extends State<HabitsHomeScreen> {
                 _loadHabits();
                 await Future.delayed(const Duration(milliseconds: 500));
               },
+              color: Colors.white,
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: state.habitsProgress.length,
@@ -187,9 +197,12 @@ class _HabitsHomeScreenState extends State<HabitsHomeScreen> {
           }
 
           // Estado inicial u otro estado desconocido
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: CircularProgressIndicator(
+              color: Colors.white,
+            ),
+          );
         },
-        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
@@ -199,6 +212,8 @@ class _HabitsHomeScreenState extends State<HabitsHomeScreen> {
         },
         icon: const Icon(Icons.add),
         label: const Text('Crear Hábito'),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFFCDB290),
       ),
     );
   }

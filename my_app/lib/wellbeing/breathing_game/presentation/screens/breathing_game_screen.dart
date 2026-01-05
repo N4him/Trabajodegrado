@@ -4,7 +4,6 @@ import '../../../../core/di/injector.dart';
 import '../blocs/breathing_game_bloc.dart';
 import '../blocs/breathing_game_event.dart';
 import '../blocs/breathing_game_state.dart';
-import '../../../presentation/widgets/gradient_background.dart';
 import 'mode_selection_view.dart';
 import 'breathing_phase_view.dart';
 import 'success_view.dart';
@@ -27,16 +26,20 @@ class _BreathingGameContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Color principal
+    const primaryColor = Color(0xFFAFB99B);
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ejercicio de Respiración'),
         centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        backgroundColor: primaryColor,
+        elevation: 2,
+        foregroundColor: Colors.white,
+        shadowColor: primaryColor.withOpacity(0.5),
       ),
-      extendBodyBehindAppBar: false,
-      body: GradientBackground(
-        child: BlocConsumer<BreathingGameBloc, BreathingGameState>(
+      backgroundColor: const Color(0xFFF5F7F3), // Mismo color de fondo que WellbeingHomeScreen
+      body: BlocConsumer<BreathingGameBloc, BreathingGameState>(
         listener: (context, state) {
           if (state is BreathingError) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -92,17 +95,30 @@ class _BreathingGameContent extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(),
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+                  ),
                   SizedBox(height: 16),
-                  Text('Guardando sesión...'),
+                  Text(
+                    'Guardando sesión...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: primaryColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ],
               ),
             );
           }
 
-          return const Center(child: Text('Estado desconocido'));
+          return const Center(
+            child: Text(
+              'Estado desconocido',
+              style: TextStyle(fontSize: 16),
+            ),
+          );
         },
-        ),
       ),
     );
   }

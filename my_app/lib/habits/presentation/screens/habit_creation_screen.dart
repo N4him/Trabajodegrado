@@ -5,7 +5,6 @@ import 'package:my_app/config/app_router.dart';
 import '../blocs/habit_bloc.dart';
 import '../blocs/habit_event.dart';
 import '../blocs/habit_state.dart';
-import '../widgets/habits_gradient_background.dart';
 
 class HabitCreationScreen extends StatefulWidget {
   const HabitCreationScreen({super.key});
@@ -35,6 +34,18 @@ class _HabitCreationScreenState extends State<HabitCreationScreen> {
       initialDate: _startDate,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFFCDB290),
+              onPrimary: Colors.white,
+              surface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null && picked != _startDate) {
       setState(() {
@@ -47,6 +58,18 @@ class _HabitCreationScreenState extends State<HabitCreationScreen> {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: _reminderTime ?? TimeOfDay.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFFCDB290),
+              onPrimary: Colors.white,
+              surface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       setState(() {
@@ -104,18 +127,20 @@ class _HabitCreationScreenState extends State<HabitCreationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFCDB290),
       appBar: AppBar(
         title: const Text('Crear Hábito'),
-        backgroundColor: Colors.transparent,
+        backgroundColor: const Color(0xFFCDB290),
         elevation: 0,
       ),
-      extendBodyBehindAppBar: false,
-      body: HabitsGradientBackground(
-        child: BlocListener<HabitBloc, HabitState>(
+      body: BlocListener<HabitBloc, HabitState>(
         listener: (context, state) {
           if (state is HabitActionSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.green,
+              ),
             );
             // Limpiar formulario después de éxito
             _nameController.clear();
@@ -127,7 +152,10 @@ class _HabitCreationScreenState extends State<HabitCreationScreen> {
             });
           } else if (state is HabitFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error: ${state.error}')),
+              SnackBar(
+                content: Text('Error: ${state.error}'),
+                backgroundColor: Colors.red,
+              ),
             );
           }
         },
@@ -139,10 +167,16 @@ class _HabitCreationScreenState extends State<HabitCreationScreen> {
               // Campo: Nombre del Hábito
               TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Nombre del Hábito',
                   hintText: 'Ej: Hacer ejercicio',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
+                  labelStyle: const TextStyle(color: Color(0xFF8B7355)),
+                  focusedBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFFCDB290), width: 2),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -150,13 +184,19 @@ class _HabitCreationScreenState extends State<HabitCreationScreen> {
               // Campo: Frecuencia
               const Text(
                 'Frecuencia',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<int>(
                 value: _frequencyDays,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
                 ),
                 items: const [
                   DropdownMenuItem(value: 7, child: Text('Diario (7 días/semana)')),
@@ -178,7 +218,11 @@ class _HabitCreationScreenState extends State<HabitCreationScreen> {
               // Campo: Fecha de Inicio
               const Text(
                 'Fecha de Inicio',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(height: 8),
               InkWell(
@@ -186,7 +230,9 @@ class _HabitCreationScreenState extends State<HabitCreationScreen> {
                 child: InputDecorator(
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.calendar_today),
+                    suffixIcon: Icon(Icons.calendar_today, color: Color(0xFFCDB290)),
+                    filled: true,
+                    fillColor: Colors.white,
                   ),
                   child: Text(
                     '${_startDate.day}/${_startDate.month}/${_startDate.year}',
@@ -199,7 +245,11 @@ class _HabitCreationScreenState extends State<HabitCreationScreen> {
               // Campo: Hora de Recordatorio (Opcional)
               const Text(
                 'Hora de Recordatorio (Opcional)',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(height: 8),
               InkWell(
@@ -207,8 +257,10 @@ class _HabitCreationScreenState extends State<HabitCreationScreen> {
                 child: InputDecorator(
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.access_time),
+                    suffixIcon: Icon(Icons.access_time, color: Color(0xFFCDB290)),
                     hintText: 'Seleccionar hora',
+                    filled: true,
+                    fillColor: Colors.white,
                   ),
                   child: Text(
                     _reminderTime != null
@@ -229,16 +281,25 @@ class _HabitCreationScreenState extends State<HabitCreationScreen> {
                 child: BlocBuilder<HabitBloc, HabitState>(
                   builder: (context, state) {
                     if (state is HabitLoading) {
-                      return const Center(child: CircularProgressIndicator());
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                        ),
+                      );
                     }
                     return ElevatedButton(
                       onPressed: () => _dispatchCreateEvent(context),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFFCDB290),
                       ),
                       child: const Text(
                         'Guardar Hábito',
-                        style: TextStyle(fontSize: 16),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     );
                   },
@@ -246,7 +307,6 @@ class _HabitCreationScreenState extends State<HabitCreationScreen> {
               ),
             ],
           ),
-        ),
         ),
       ),
     );

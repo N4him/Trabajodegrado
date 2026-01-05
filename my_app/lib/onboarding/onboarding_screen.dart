@@ -15,46 +15,46 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
-  final List<OnboardingData> _pages = [
+final List<OnboardingData> _pages = [
     OnboardingData(
       imagePath: 'assets/images/onboard1 (1).png',
-      title: "Bienvenido a nuestra App",
-      description: "Descubre una nueva forma de gestionar tu día a día de manera simple y eficiente.",
+      title: "Bienvenido a tu espacio de calma",
+      description: "Herramientas de bienestar emocional y primeros auxilios psicológicos siempre contigo.",
       backgroundColor: Color.fromARGB(255, 172, 187, 160),
       cardColor: Color.fromARGB(255, 172, 187, 160),
     ),
     OnboardingData(
       imagePath: 'assets/images/board-2 (2).png',
-      title: "Seguridad Garantizada",
-      description: "Tus datos están protegidos con la mejor tecnología Firebase de Google.",
+      title: "Aprende y Crece",
+      description: "Accede a contenido educativo sobre salud mental y técnicas de autocuidado emocional.",
       backgroundColor: Color.fromARGB(255, 172, 187, 160),
       cardColor: Color.fromARGB(255, 172, 187, 160),
     ),
     OnboardingData(
       imagePath: 'assets/images/board-3 (2).png',
-      title: "Rápido y Fácil",
-      description: "Interfaz intuitiva diseñada para que puedas empezar a usar la app inmediatamente.",
+      title: "Ejercicios de Bienestar",
+      description: "Técnicas de mindfulness y respiración para calmar la ansiedad en momentos difíciles.",
       backgroundColor: Color.fromARGB(255, 172, 187, 160),
       cardColor: Color.fromARGB(255, 172, 187, 160),
     ),
     OnboardingData(
       imagePath: 'assets/images/board-4 (1).png',
-      title: "Rápido y Fácil",
-      description: "Interfaz intuitiva diseñada para que puedas empezar a usar la app inmediatamente.",
+      title: "Comunidad de Apoyo",
+      description: "Comparte tus experiencias y encuentra apoyo en una comunidad segura y empática.",
       backgroundColor: Color.fromARGB(255, 172, 187, 160),
       cardColor: Color.fromARGB(255, 172, 187, 160),
     ),
     OnboardingData(
       imagePath: 'assets/images/board-5.png',
-      title: "Rápido y Fácil",
-      description: "Interfaz intuitiva diseñada para que puedas empezar a usar la app inmediatamente.",
+      title: "Construye Hábitos Saludables",
+      description: "Crea y da seguimiento a hábitos que mejoren tu bienestar emocional día a día.",
       backgroundColor: Color.fromARGB(255, 172, 187, 160),
       cardColor: Color.fromARGB(255, 172, 187, 160),
     ),
     OnboardingData(
       imagePath: 'assets/images/board-6.png',
-      title: "Rápido y Fácil",
-      description: "Interfaz intuitiva diseñada para que puedas empezar a usar la app inmediatamente.",
+      title: "¡Comienza Tu Camino!",
+      description: "Únete a miles de personas que ya están cuidando su salud mental. Tu bienestar es importante.",
       backgroundColor: Color.fromARGB(255, 172, 187, 160),
       cardColor: Color.fromARGB(255, 172, 187, 160),
     ),

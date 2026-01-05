@@ -4,7 +4,6 @@ import '../../../../core/di/injector.dart';
 import '../blocs/quest_map_bloc.dart';
 import '../blocs/quest_map_event.dart';
 import '../blocs/quest_map_state.dart';
-import '../../../presentation/widgets/gradient_background.dart';
 import 'intro_view.dart';
 import 'sense_input_view.dart';
 import 'breathing_pause_view.dart';
@@ -28,16 +27,20 @@ class _QuestMapContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Color principal
+    const primaryColor = Color(0xFFAFB99B);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Técnica 5-4-3-2-1'),
         centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        backgroundColor: primaryColor,
+        elevation: 2,
+        foregroundColor: Colors.white,
+        shadowColor: primaryColor.withOpacity(0.5),
       ),
-      extendBodyBehindAppBar: false,
-      body: GradientBackground(
-        child: BlocConsumer<QuestMapBloc, QuestMapState>(
+      backgroundColor: const Color(0xFFF5F7F3), // Mismo color de fondo que WellbeingHomeScreen
+      body: BlocConsumer<QuestMapBloc, QuestMapState>(
         listener: (context, state) {
           if (state is QuestMapError) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -74,9 +77,18 @@ class _QuestMapContent extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(),
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+                  ),
                   SizedBox(height: 16),
-                  Text('Guardando tu sesión...'),
+                  Text(
+                    'Guardando tu sesión...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: primaryColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ],
               ),
             );
@@ -84,7 +96,6 @@ class _QuestMapContent extends StatelessWidget {
 
           return const Center(child: Text('Estado desconocido'));
         },
-        ),
       ),
     );
   }

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../domain/models/breathing_mode.dart';
 
+// Color principal
+const Color primaryColor = Color(0xFFAFB99B);
+
 /// Vista para seleccionar el modo de respiración
 class ModeSelectionView extends StatelessWidget {
   final Function(BreathingMode) onModeSelected;
@@ -14,114 +17,119 @@ class ModeSelectionView extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? const Color(0xFF2e1a1f).withOpacity(0.9)
-                  : const Color(0xFFFFE8E8).withOpacity(0.9),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.air,
-                  size: 64,
-                  color: const Color(0xFFFF9999),
+    return Container(
+      color: const Color(0xFFF5F7F3), // Mismo color de fondo que WellbeingHomeScreen
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(isDark ? 0.2 : 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: primaryColor.withOpacity(0.3),
+                  width: 2,
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  'Ejercicios de Respiración',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.grey[800],
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.air,
+                    size: 64,
+                    color: primaryColor,
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Técnicas basadas en mindfullness',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Instrucciones
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.amber.withOpacity(0.1),
-              border: Border.all(color: Colors.amber.withOpacity(0.3)),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.stars, color: Colors.amber[800]),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Durante el ejercicio aparecerán partículas flotantes. Recolecta las que puedas, pero recuerda: lo importante es respirar conscientemente.',
+                  const SizedBox(height: 12),
+                  Text(
+                    'Ejercicios de Respiración',
                     style: TextStyle(
-                      fontSize: 13,
-                      color: isDark ? Colors.amber[200] : Colors.amber[900],
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.grey[800],
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text(
+                    'Técnicas basadas en mindfullness',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
             ),
-          ),
 
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-          // Cyclic Sighing
-          _buildModeCard(
-            context,
-            mode: BreathingMode.cyclicSighing,
-            icon: Icons.self_improvement,
-            color: const Color(0xFFFF9999),
-            settings: breathingModes[BreathingMode.cyclicSighing]!,
-            isDark: isDark,
-          ),
+            // Instrucciones
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.1),
+                border: Border.all(color: primaryColor.withOpacity(0.3)),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.stars, color: primaryColor),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Durante el ejercicio aparecerán partículas flotantes. Recolecta las que puedas, pero recuerda: lo importante es respirar conscientemente.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark ? primaryColor.withOpacity(0.9) : const Color(0xFF7A8468),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-          const SizedBox(height: 12),
+            const SizedBox(height: 20),
 
-          // Box Breathing
-          _buildModeCard(
-            context,
-            mode: BreathingMode.boxBreathing,
-            icon: Icons.crop_square,
-            color: const Color(0xFFFFAA88),
-            settings: breathingModes[BreathingMode.boxBreathing]!,
-            isDark: isDark,
-          ),
+            // Cyclic Sighing
+            _buildModeCard(
+              context,
+              mode: BreathingMode.cyclicSighing,
+              icon: Icons.self_improvement,
+              color: primaryColor,
+              settings: breathingModes[BreathingMode.cyclicSighing]!,
+              isDark: isDark,
+            ),
 
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
 
-          // Cyclic Hyperventilation
-          _buildModeCard(
-            context,
-            mode: BreathingMode.cyclicHyperventilation,
-            icon: Icons.bolt,
-            color: const Color(0xFFFFBB99),
-            settings: breathingModes[BreathingMode.cyclicHyperventilation]!,
-            isDark: isDark,
-          ),
+            // Box Breathing
+            _buildModeCard(
+              context,
+              mode: BreathingMode.boxBreathing,
+              icon: Icons.crop_square,
+              color: const Color(0xFF9CA986), // Variación más oscura
+              settings: breathingModes[BreathingMode.boxBreathing]!,
+              isDark: isDark,
+            ),
 
-          const SizedBox(height: 24),
-        ],
+            const SizedBox(height: 12),
+
+            // Cyclic Hyperventilation
+            _buildModeCard(
+              context,
+              mode: BreathingMode.cyclicHyperventilation,
+              icon: Icons.bolt,
+              color: const Color(0xFFC5D1B0), // Variación más clara
+              settings: breathingModes[BreathingMode.cyclicHyperventilation]!,
+              isDark: isDark,
+            ),
+
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }
@@ -147,7 +155,13 @@ class ModeSelectionView extends StatelessWidget {
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: color.withOpacity(0.3),
+          width: 2,
+        ),
+      ),
       child: InkWell(
         onTap: () => onModeSelected(mode),
         borderRadius: BorderRadius.circular(12),
@@ -160,8 +174,12 @@ class ModeSelectionView extends StatelessWidget {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: color.withOpacity(0.4),
+                    width: 2,
+                  ),
                 ),
                 child: Icon(icon, color: color, size: 32),
               ),
@@ -204,6 +222,10 @@ class ModeSelectionView extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: color.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: color.withOpacity(0.3),
+                              width: 1,
+                            ),
                           ),
                           child: Text(
                             '${settings.cycles} ciclos',
@@ -215,13 +237,13 @@ class ModeSelectionView extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                        Icon(Icons.access_time, size: 14, color: color.withOpacity(0.7)),
                         const SizedBox(width: 4),
                         Text(
                           durationText,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: color.withOpacity(0.8),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -232,7 +254,7 @@ class ModeSelectionView extends StatelessWidget {
               ),
               Icon(
                 Icons.arrow_forward_ios,
-                color: isDark ? Colors.grey[600] : Colors.grey[400],
+                color: color.withOpacity(0.6),
                 size: 16,
               ),
             ],

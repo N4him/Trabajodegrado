@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:async';
+import 'dart:math' as math;
 import '../blocs/quest_map_bloc.dart';
 import '../blocs/quest_map_event.dart';
 import '../blocs/quest_map_state.dart';
@@ -19,6 +20,12 @@ class SenseInputView extends StatefulWidget {
 }
 
 class _SenseInputViewState extends State<SenseInputView> with SingleTickerProviderStateMixin {
+  // Colores de la paleta de bienestar
+  final Color primaryColor = const Color(0xFFAFB99B);
+  final Color secondaryColor = const Color(0xFF9CA986);
+  final Color tertiaryColor = const Color(0xFFC5D1B0);
+  final Color accentColor = const Color(0xFF8B9A7E);
+
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   Timer? _hintTimer;
@@ -83,189 +90,205 @@ class _SenseInputViewState extends State<SenseInputView> with SingleTickerProvid
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final senseColor = _getSenseColor(widget.state.currentSense);
 
-    return Stack(
-      children: [
-        // Contenido principal
-        SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Progreso del conejito
-              _buildBunnyProgress(),
+    return Container(
+      color: const Color(0xFFF5F7F3), // Mismo color de fondo que WellbeingHomeScreen
+      child: Stack(
+        children: [
+          // Contenido principal
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Progreso del conejito
+                _buildBunnyProgress(),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Pregunta del sentido
-              Card(
-                color: senseColor.withOpacity(0.1),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      Icon(
-                        _getSenseIcon(widget.state.currentSense),
-                        size: 48,
-                        color: senseColor,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        widget.state.currentSense.question,
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.grey[800],
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Nombra ${widget.state.currentSense.requiredAnswers} ${widget.state.currentSense.requiredAnswers == 1 ? "cosa" : "cosas"}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Círculos de progreso
-              _buildProgressCircles(senseColor),
-
-              const SizedBox(height: 24),
-
-              // Campo de entrada
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _textController,
-                      focusNode: _focusNode,
-                      decoration: InputDecoration(
-                        hintText: 'Escribe tu respuesta...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: senseColor.withOpacity(0.3)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: senseColor, width: 2),
-                        ),
-                      ),
-                      onSubmitted: (_) => _addAnswer(),
-                      enabled: !widget.state.isCurrentSenseComplete,
+                // Pregunta del sentido
+                Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: senseColor.withOpacity(0.3),
+                      width: 1.5,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  FloatingActionButton(
-                    onPressed: widget.state.isCurrentSenseComplete ? null : _addAnswer,
-                    backgroundColor: senseColor,
-                    child: const Icon(Icons.add, color: Colors.white),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // Hint si se quedan atascados
-              if (_showHint && widget.state.currentAnswers.isEmpty)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.lightbulb, color: Colors.blue[700], size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          widget.state.currentSense.hint,
+                  color: senseColor.withOpacity(0.1),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        Icon(
+                          _getSenseIcon(widget.state.currentSense),
+                          size: 48,
+                          color: senseColor,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          widget.state.currentSense.question,
                           style: TextStyle(
-                            fontSize: 13,
-                            color: isDark ? Colors.blue[200] : Colors.blue[900],
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.grey[800],
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Nombra ${widget.state.currentSense.requiredAnswers} ${widget.state.currentSense.requiredAnswers == 1 ? "cosa" : "cosas"}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-
-              const SizedBox(height: 24),
-
-              // Lista de respuestas
-              if (widget.state.currentAnswers.isNotEmpty) ...[
-                Text(
-                  'Tus respuestas:',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.grey[800],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ...List.generate(
-                  widget.state.currentAnswers.length,
-                  (index) => _buildAnswerCard(
-                    widget.state.currentAnswers[index],
-                    index,
-                    senseColor,
-                    isDark,
-                  ),
-                ),
-              ],
-
-              const SizedBox(height: 24),
-
-              // Botón continuar
-              if (widget.state.isCurrentSenseComplete)
-                ElevatedButton.icon(
-                  onPressed: () {
-                    context.read<QuestMapBloc>().add(CompleteSense());
-                  },
-                  icon: const Icon(Icons.arrow_forward),
-                  label: Text(
-                    widget.state.currentSense == SenseType.taste
-                        ? 'Finalizar'
-                        : 'Continuar',
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: senseColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      ],
                     ),
                   ),
                 ),
 
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
+                const SizedBox(height: 24),
 
-        // Efecto de partículas
-        if (_particleAnimation.value > 0)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: CustomPaint(
-                painter: ParticlePainter(
-                  animation: _particleAnimation.value,
-                  color: senseColor,
+                // Círculos de progreso
+                _buildProgressCircles(senseColor),
+
+                const SizedBox(height: 24),
+
+                // Campo de entrada
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _textController,
+                        focusNode: _focusNode,
+                        decoration: InputDecoration(
+                          hintText: 'Escribe tu respuesta...',
+                          filled: true,
+                          fillColor: isDark ? Colors.grey[850] : Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: senseColor.withOpacity(0.3), width: 1.5),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: senseColor, width: 2),
+                          ),
+                        ),
+                        onSubmitted: (_) => _addAnswer(),
+                        enabled: !widget.state.isCurrentSenseComplete,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FloatingActionButton(
+                      onPressed: widget.state.isCurrentSenseComplete ? null : _addAnswer,
+                      backgroundColor: senseColor,
+                      elevation: 3,
+                      child: const Icon(Icons.add, color: Colors.white),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // Hint si se quedan atascados
+                if (_showHint && widget.state.currentAnswers.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: accentColor.withOpacity(0.1),
+                      border: Border.all(color: accentColor.withOpacity(0.3)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.lightbulb, color: accentColor, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            widget.state.currentSense.hint,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark ? tertiaryColor : accentColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                const SizedBox(height: 24),
+
+                // Lista de respuestas
+                if (widget.state.currentAnswers.isNotEmpty) ...[
+                  Text(
+                    'Tus respuestas:',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.grey[800],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ...List.generate(
+                    widget.state.currentAnswers.length,
+                    (index) => _buildAnswerCard(
+                      widget.state.currentAnswers[index],
+                      index,
+                      senseColor,
+                      isDark,
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 24),
+
+                // Botón continuar
+                if (widget.state.isCurrentSenseComplete)
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      context.read<QuestMapBloc>().add(CompleteSense());
+                    },
+                    icon: const Icon(Icons.arrow_forward),
+                    label: Text(
+                      widget.state.currentSense == SenseType.taste
+                          ? 'Finalizar'
+                          : 'Continuar',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: senseColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 3,
+                    ),
+                  ),
+
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+
+          // Efecto de partículas
+          if (_particleAnimation.value > 0)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(
+                  painter: ParticlePainter(
+                    animation: _particleAnimation.value,
+                    color: senseColor,
+                  ),
                 ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -299,7 +322,7 @@ class _SenseInputViewState extends State<SenseInputView> with SingleTickerProvid
             child: Container(
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.green,
+                color: primaryColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -334,11 +357,11 @@ class _SenseInputViewState extends State<SenseInputView> with SingleTickerProvid
                     height: 24,
                     decoration: BoxDecoration(
                       color: isCompleted || isCurrent
-                          ? Colors.green
+                          ? primaryColor
                           : Colors.grey[300],
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isCurrent ? Colors.green[700]! : Colors.transparent,
+                        color: isCurrent ? accentColor : Colors.transparent,
                         width: 2,
                       ),
                     ),
@@ -381,6 +404,10 @@ class _SenseInputViewState extends State<SenseInputView> with SingleTickerProvid
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: isFilled ? color : Colors.grey[300],
+              border: Border.all(
+                color: isFilled ? color.withOpacity(0.6) : Colors.grey[400]!,
+                width: 2,
+              ),
               boxShadow: isFilled
                   ? [
                       BoxShadow(
@@ -412,6 +439,14 @@ class _SenseInputViewState extends State<SenseInputView> with SingleTickerProvid
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: color.withOpacity(0.3),
+            width: 1.5,
+          ),
+        ),
         color: color.withOpacity(0.1),
         child: ListTile(
           leading: CircleAvatar(
@@ -429,7 +464,7 @@ class _SenseInputViewState extends State<SenseInputView> with SingleTickerProvid
             ),
           ),
           trailing: IconButton(
-            icon: const Icon(Icons.close),
+            icon: Icon(Icons.close, color: color),
             onPressed: widget.state.isCurrentSenseComplete
                 ? null
                 : () => context.read<QuestMapBloc>().add(RemoveAnswer(index)),
@@ -442,15 +477,15 @@ class _SenseInputViewState extends State<SenseInputView> with SingleTickerProvid
   Color _getSenseColor(SenseType sense) {
     switch (sense) {
       case SenseType.sight:
-        return Colors.blue;
+        return primaryColor; // Verde oliva principal
       case SenseType.touch:
-        return Colors.green;
+        return secondaryColor; // Verde oliva más oscuro
       case SenseType.sound:
-        return Colors.orange;
+        return tertiaryColor; // Verde oliva más claro
       case SenseType.smell:
-        return Colors.purple;
+        return accentColor; // Verde oliva oscuro
       case SenseType.taste:
-        return Colors.pink;
+        return const Color(0xFF9CA986); // Variación
     }
   }
 
@@ -488,10 +523,10 @@ class ParticlePainter extends CustomPainter {
 
     // Dibujar partículas que se expanden
     for (int i = 0; i < 12; i++) {
-      final angle = (i / 12) * 2 * 3.14159;
+      final angle = (i / 12) * 2 * math.pi;
       final distance = animation * 100;
-      final x = centerX + distance * cos(angle);
-      final y = centerY + distance * sin(angle);
+      final x = centerX + distance * math.cos(angle);
+      final y = centerY + distance * math.sin(angle);
       final radius = 4 * (1 - animation);
 
       canvas.drawCircle(Offset(x, y), radius, paint);
@@ -500,17 +535,4 @@ class ParticlePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-
-  double cos(double radians) => radians.cos();
-  double sin(double radians) => radians.sin();
-}
-
-extension on double {
-  double cos() {
-    return (this == 0) ? 1 : 0; // Simplified for demo
-  }
-
-  double sin() {
-    return (this == 0) ? 0 : 1; // Simplified for demo
-  }
 }

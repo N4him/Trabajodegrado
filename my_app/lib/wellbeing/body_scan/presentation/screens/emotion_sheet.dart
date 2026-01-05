@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 /// Muestra un BottomSheet con opciones para reportar el estado emocional de la zona corporal.
 class EmotionSheet {
+  // Color principal
+  static const Color primaryColor = Color(0xFFAFB99B);
+
   /// @param onSelect: callback con true si el usuario se siente relajado (😌), o false si tenso (😣).
   static void show(BuildContext context, {required Function(bool) onSelect}) {
     showModalBottomSheet(
@@ -21,12 +24,12 @@ class EmotionSheet {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF9999).withOpacity(0.15),
+                    color: primaryColor.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
                     Icons.self_improvement,
-                    color: Color(0xFFFF6B6B),
+                    color: primaryColor,
                     size: 24,
                   ),
                 ),
@@ -60,17 +63,17 @@ class EmotionSheet {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.amber.withOpacity(0.1),
+                color: primaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.amber.withOpacity(0.3),
+                  color: primaryColor.withOpacity(0.3),
                 ),
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.info_outline,
-                    color: Colors.amber[800],
+                    color: primaryColor.withOpacity(0.8),
                     size: 20,
                   ),
                   const SizedBox(width: 8),
@@ -97,7 +100,7 @@ class EmotionSheet {
                     emoji: '😌',
                     label: 'Relajado',
                     description: 'Sin tensión\no malestar',
-                    color: const Color(0xFFFFAA88),
+                    color: primaryColor,
                     onTap: () {
                       Navigator.pop(context);
                       onSelect(true);
@@ -111,7 +114,7 @@ class EmotionSheet {
                     emoji: '😣',
                     label: 'Tenso',
                     description: 'Con tensión\no malestar',
-                    color: const Color(0xFFFF9999),
+                    color: primaryColor.withOpacity(0.7),
                     onTap: () {
                       Navigator.pop(context);
                       onSelect(false);

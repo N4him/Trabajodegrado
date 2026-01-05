@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 class BodyPartHighlightView extends StatelessWidget {
   final String partKey;
 
+  // Color principal
+  static const Color primaryColor = Color(0xFFAFB99B);
+
   const BodyPartHighlightView(this.partKey, {super.key});
 
   @override
@@ -13,7 +16,7 @@ class BodyPartHighlightView extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFFF9999).withOpacity(0.25),
+              color: primaryColor.withOpacity(0.25),
               blurRadius: 20,
               spreadRadius: 5,
             ),

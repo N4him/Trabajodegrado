@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/habit_progress.dart';
 import '../widgets/weekly_trend_chart.dart';
-import '../widgets/habits_gradient_background.dart';
 
 class HabitDetailScreen extends StatelessWidget {
   final HabitProgress progress;
@@ -14,9 +13,10 @@ class HabitDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFCDB290),
       appBar: AppBar(
         title: Text(progress.habit.name),
-        backgroundColor: Colors.transparent,
+        backgroundColor: const Color(0xFFCDB290),
         elevation: 0,
         actions: [
           IconButton(
@@ -34,9 +34,7 @@ class HabitDetailScreen extends StatelessWidget {
           ),
         ],
       ),
-      extendBodyBehindAppBar: false,
-      body: HabitsGradientBackground(
-        child: SingleChildScrollView(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,7 +55,6 @@ class HabitDetailScreen extends StatelessWidget {
             _buildDetailedStats(context),
           ],
         ),
-        ),
       ),
     );
   }
@@ -65,6 +62,7 @@ class HabitDetailScreen extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     return Card(
       elevation: 2,
+      color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -180,6 +178,7 @@ class HabitDetailScreen extends StatelessWidget {
   Widget _buildDetailedStats(BuildContext context) {
     return Card(
       elevation: 2,
+      color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -319,6 +318,7 @@ class _MetricCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
+      color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

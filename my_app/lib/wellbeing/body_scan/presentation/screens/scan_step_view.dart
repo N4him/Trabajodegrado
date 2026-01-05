@@ -10,6 +10,9 @@ class ScanStepView extends StatelessWidget {
   final int emotionsReported;
   final VoidCallback onNext;
 
+  // Color principal
+  static const Color primaryColor = Color(0xFFAFB99B);
+
   /// Claves que corresponden a los archivos de imágenes PNG en assets/images/
   static const partKeys = [
     'Pies',
@@ -44,11 +47,11 @@ class ScanStepView extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: isDark
-                ? const Color(0xFF2e1a1f).withOpacity(0.9)
-                : const Color(0xFFFFE8E8).withOpacity(0.9),
+                ? Colors.grey[850]
+                : primaryColor.withOpacity(0.1),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFFF9999).withOpacity(0.15),
+                color: primaryColor.withOpacity(0.15),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -64,9 +67,7 @@ class ScanStepView extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? const Color(0xFFFFB6B6)
-                          : const Color(0xFFFF6B6B),
+                      color: primaryColor,
                     ),
                   ),
                   Container(
@@ -75,22 +76,22 @@ class ScanStepView extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFF9999).withOpacity(0.15),
+                      color: primaryColor.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: const Color(0xFFFF9999).withOpacity(0.4),
+                        color: primaryColor.withOpacity(0.4),
                       ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.check_circle, size: 16, color: Color(0xFFFF6B6B)),
+                        Icon(Icons.check_circle, size: 16, color: primaryColor),
                         const SizedBox(width: 4),
                         Text(
                           '$emotionsReported registros',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFFFF6B6B),
+                            color: primaryColor,
                           ),
                         ),
                       ],
@@ -104,10 +105,8 @@ class ScanStepView extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: progress,
                   minHeight: 8,
-                  backgroundColor: isDark
-                      ? const Color(0xFFFF9999).withOpacity(0.2)
-                      : const Color(0xFFFFB6B6).withOpacity(0.3),
-                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF6B6B)),
+                  backgroundColor: primaryColor.withOpacity(0.2),
+                  valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
                 ),
               ),
             ],
@@ -120,10 +119,10 @@ class ScanStepView extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                // Card con la silueta y ajolote maestro
+                // Card con la silueta
                 Card(
                   elevation: 8,
-                  shadowColor: const Color(0xFFFF9999).withOpacity(0.4),
+                  shadowColor: primaryColor.withOpacity(0.4),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24),
                   ),
@@ -134,19 +133,7 @@ class ScanStepView extends StatelessWidget {
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(24),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: isDark
-                            ? [
-                                const Color(0xFFFF9999).withOpacity(0.05),
-                                const Color(0xFFFFAA88).withOpacity(0.05),
-                              ]
-                            : [
-                                const Color(0xFFFFB6B6).withOpacity(0.05),
-                                const Color(0xFFFFCC99).withOpacity(0.05),
-                              ],
-                      ),
+                      color: primaryColor.withOpacity(0.03),
                     ),
                     child: Column(
                       children: [
@@ -156,7 +143,7 @@ class ScanStepView extends StatelessWidget {
                           children: [
                             Icon(
                               Icons.location_on,
-                              color: const Color(0xFFFF6B6B),
+                              color: primaryColor,
                               size: 20,
                             ),
                             const SizedBox(width: 8),
@@ -165,13 +152,13 @@ class ScanStepView extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFFFF6B6B),
+                                color: primaryColor,
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 16),
-                        // Silueta del cuerpo con highlight y ajolote
+                        // Silueta del cuerpo con highlight
                         SizedBox(
                           height: 450,
                           child: BodyPartHighlightView(partKey),
@@ -186,7 +173,7 @@ class ScanStepView extends StatelessWidget {
                 // Card con instrucciones mejorada
                 Card(
                   elevation: 6,
-                  shadowColor: const Color(0xFFFFAA88).withOpacity(0.4),
+                  shadowColor: primaryColor.withOpacity(0.4),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -197,19 +184,7 @@ class ScanStepView extends StatelessWidget {
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: isDark
-                            ? [
-                                const Color(0xFFFFAA88).withOpacity(0.05),
-                                const Color(0xFFFFBB99).withOpacity(0.05),
-                              ]
-                            : [
-                                const Color(0xFFFFCC99).withOpacity(0.05),
-                                const Color(0xFFFFDDCC).withOpacity(0.05),
-                              ],
-                      ),
+                      color: primaryColor.withOpacity(0.03),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,17 +195,12 @@ class ScanStepView extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    const Color(0xFFFF9999).withOpacity(0.25),
-                                    const Color(0xFFFFAA88).withOpacity(0.25),
-                                  ],
-                                ),
+                                color: primaryColor.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.spa,
-                                color: Color(0xFFFF6B6B),
+                                color: primaryColor,
                                 size: 28,
                               ),
                             ),
@@ -252,24 +222,10 @@ class ScanStepView extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(18),
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: isDark
-                                  ? [
-                                      const Color(0xFFFF9999).withOpacity(0.12),
-                                      const Color(0xFFFFAA88).withOpacity(0.12),
-                                    ]
-                                  : [
-                                      const Color(0xFFFFB6B6).withOpacity(0.08),
-                                      const Color(0xFFFFCC99).withOpacity(0.08),
-                                    ],
-                            ),
+                            color: primaryColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: isDark
-                                  ? const Color(0xFFFF9999).withOpacity(0.4)
-                                  : const Color(0xFFFF9999).withOpacity(0.3),
+                              color: primaryColor.withOpacity(0.3),
                               width: 2,
                             ),
                           ),
@@ -279,12 +235,12 @@ class ScanStepView extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: Colors.amber.withOpacity(0.15),
+                                  color: primaryColor.withOpacity(0.2),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Icon(
                                   Icons.lightbulb,
-                                  color: Colors.amber[700],
+                                  color: primaryColor,
                                   size: 24,
                                 ),
                               ),

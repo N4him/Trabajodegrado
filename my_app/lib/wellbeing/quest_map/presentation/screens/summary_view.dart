@@ -6,6 +6,12 @@ import '../blocs/quest_map_state.dart';
 class SummaryView extends StatelessWidget {
   final QuestMapSessionSaved state;
 
+  // Colores de la paleta de bienestar
+  final Color primaryColor = const Color(0xFFAFB99B);
+  final Color secondaryColor = const Color(0xFF9CA986);
+  final Color tertiaryColor = const Color(0xFFC5D1B0);
+  final Color accentColor = const Color(0xFF8B9A7E);
+
   const SummaryView({
     super.key,
     required this.state,
@@ -15,182 +21,203 @@ class SummaryView extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 20),
+    return Container(
+      color: const Color(0xFFF5F7F3), // Mismo color de fondo que WellbeingHomeScreen
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 20),
 
-          // Icono de éxito
-          Center(
-            child: Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.check_circle,
-                size: 60,
-                color: Colors.green[600],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Título
-          Text(
-            '¡Sesión completada!',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.grey[800],
-            ),
-            textAlign: TextAlign.center,
-          ),
-
-          const SizedBox(height: 8),
-
-          Text(
-            'Has ganado 1 punto de bienestar',
-            style: TextStyle(
-              fontSize: 16,
-              color: isDark ? Colors.grey[400] : Colors.grey[600],
-            ),
-            textAlign: TextAlign.center,
-          ),
-
-          const SizedBox(height: 32),
-
-          // Duración
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.timer_outlined, color: Colors.purple[600]),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Duración: ${_formatDuration(state.durationSeconds)}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Mensaje motivacional
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.blue.withOpacity(0.2),
-                  Colors.purple.withOpacity(0.2),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.blue.withOpacity(0.3)),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.auto_awesome, color: Colors.blue[700], size: 32),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    'Has explorado tus 5 sentidos y te has reconectado con el presente. ¡Excelente trabajo!',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: isDark ? Colors.white : Colors.grey[800],
-                    ),
+            // Icono de éxito
+            Center(
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: primaryColor.withOpacity(0.4),
+                    width: 3,
                   ),
                 ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 32),
-
-          // Título de resumen
-          Text(
-            'Resumen de tu exploración sensorial',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.grey[800],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Respuestas por sentido
-          _buildSenseSection(
-            'Vista',
-            Icons.visibility,
-            Colors.blue,
-            state.sightAnswers,
-            isDark,
-          ),
-          _buildSenseSection(
-            'Tacto',
-            Icons.touch_app,
-            Colors.green,
-            state.touchAnswers,
-            isDark,
-          ),
-          _buildSenseSection(
-            'Oído',
-            Icons.hearing,
-            Colors.orange,
-            state.soundAnswers,
-            isDark,
-          ),
-          _buildSenseSection(
-            'Olfato',
-            Icons.air,
-            Colors.purple,
-            state.smellAnswers,
-            isDark,
-          ),
-          _buildSenseSection(
-            'Gusto',
-            Icons.restaurant,
-            Colors.pink,
-            state.tasteAnswers,
-            isDark,
-          ),
-
-          const SizedBox(height: 32),
-
-          // Botón para volver
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            icon: const Icon(Icons.home),
-            label: const Text('Volver al inicio'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green[600],
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                child: Icon(
+                  Icons.check_circle,
+                  size: 60,
+                  color: primaryColor,
+                ),
               ),
             ),
-          ),
 
-          const SizedBox(height: 20),
-        ],
+            const SizedBox(height: 24),
+
+            // Título
+            Text(
+              '¡Sesión completada!',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.grey[800],
+              ),
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: 8),
+
+            Text(
+              'Has ganado 1 punto de bienestar',
+              style: TextStyle(
+                fontSize: 16,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: 32),
+
+            // Duración
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: primaryColor.withOpacity(0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.timer_outlined, color: accentColor),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Duración: ${_formatDuration(state.durationSeconds)}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Mensaje motivacional
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    primaryColor.withOpacity(0.15),
+                    tertiaryColor.withOpacity(0.1),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: primaryColor.withOpacity(0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.auto_awesome, color: accentColor, size: 32),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      'Has explorado tus 5 sentidos y te has reconectado con el presente. ¡Excelente trabajo!',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.white : Colors.grey[800],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // Título de resumen
+            Text(
+              'Resumen de tu exploración sensorial',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.grey[800],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Respuestas por sentido
+            _buildSenseSection(
+              'Vista',
+              Icons.visibility,
+              primaryColor,
+              state.sightAnswers,
+              isDark,
+            ),
+            _buildSenseSection(
+              'Tacto',
+              Icons.touch_app,
+              secondaryColor,
+              state.touchAnswers,
+              isDark,
+            ),
+            _buildSenseSection(
+              'Oído',
+              Icons.hearing,
+              tertiaryColor,
+              state.soundAnswers,
+              isDark,
+            ),
+            _buildSenseSection(
+              'Olfato',
+              Icons.air,
+              accentColor,
+              state.smellAnswers,
+              isDark,
+            ),
+            _buildSenseSection(
+              'Gusto',
+              Icons.restaurant,
+              const Color(0xFF9CA986),
+              state.tasteAnswers,
+              isDark,
+            ),
+
+            const SizedBox(height: 32),
+
+            // Botón para volver
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              icon: const Icon(Icons.home),
+              label: const Text('Volver al inicio'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 3,
+              ),
+            ),
+
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }
@@ -205,6 +232,14 @@ class SummaryView extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: color.withOpacity(0.3),
+            width: 1.5,
+          ),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -218,6 +253,10 @@ class SummaryView extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: color.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: color.withOpacity(0.4),
+                        width: 1.5,
+                      ),
                     ),
                     child: Icon(icon, color: color, size: 24),
                   ),
@@ -236,6 +275,10 @@ class SummaryView extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: color.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: color.withOpacity(0.4),
+                        width: 1,
+                      ),
                     ),
                     child: Text(
                       '${answers.length}',
@@ -262,6 +305,10 @@ class SummaryView extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: color.withOpacity(0.3),
                           shape: BoxShape.circle,
+                          border: Border.all(
+                            color: color.withOpacity(0.5),
+                            width: 1.5,
+                          ),
                         ),
                         child: Center(
                           child: Text(
