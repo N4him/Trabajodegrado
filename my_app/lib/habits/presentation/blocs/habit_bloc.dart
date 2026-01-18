@@ -10,18 +10,21 @@ import '../../domain/usecases/get_habits_by_user_usecase.dart';
 import '../../domain/usecases/get_habit_progress_usecase.dart';
 import '../../domain/entities/habit_entity.dart';
 import '../../domain/entities/completion_record_entity.dart';
+import '../../../services/notification_service.dart';
 
 class HabitBloc extends Bloc<HabitEvent, HabitState> {
   final CreateHabitUseCase createHabitUseCase;
   final RegisterCompletionUseCase registerCompletionUseCase;
   final GetHabitsByUserUseCase getHabitsByUserUseCase;
   final GetHabitProgressUseCase getHabitProgressUseCase;
+  final NotificationService? notificationService;
 
   HabitBloc({
     required this.createHabitUseCase,
     required this.registerCompletionUseCase,
     required this.getHabitsByUserUseCase,
     required this.getHabitProgressUseCase,
+    this.notificationService,
   }) : super(HabitInitial()) {
 
     // Configuración de los handlers de eventos
@@ -58,6 +61,16 @@ class HabitBloc extends Bloc<HabitEvent, HabitState> {
 
         // 3. Emitir Éxito REAL después de que el Use Case retorne
         print('>>> 5. BLoC ÉXITO. Hábito guardado en DB.');
+
+        // DIAGNÓSTICO: Verificar notificaciones pendientes
+        if (notificationService != null) {
+          final pending = await notificationService!.getPendingNotifications();
+          print('>>> 🔔 DIAGNÓSTICO: ${pending.length} notificaciones programadas');
+          for (var n in pending) {
+            print('    - ${n.title} (ID: ${n.id})');
+          }
+        }
+
         emit(HabitActionSuccess(message: 'Hábito "${event.name}" guardado exitosamente.'));
 
     } catch (e) {
@@ -102,6 +115,13 @@ class HabitBloc extends Bloc<HabitEvent, HabitState> {
     try {
       final habits = await getHabitsByUserUseCase.call(event.userId);
       print('>>> BLoC: ${habits.length} hábitos cargados exitosamente');
+
+      // Sincronizar notificaciones con los hábitos cargados
+      if (notificationService != null && habits.isNotEmpty) {
+        await notificationService!.syncAllNotifications(habits);
+        print('>>> BLoC: Notificaciones sincronizadas para ${habits.length} hábitos');
+      }
+
       emit(HabitsLoaded(habits: habits));
     } catch (e) {
       print('>>> ❌ BLoC: Error al obtener hábitos: $e');

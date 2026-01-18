@@ -4,9 +4,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:rive/rive.dart';
-import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:workmanager/workmanager.dart';
 import 'core/di/injector.dart';
+import 'services/notification_service.dart';
 import 'app.dart';
 
 // Callback para tareas en segundo plano
@@ -30,14 +30,19 @@ void callbackDispatcher() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   await Firebase.initializeApp();
   await setupDI();
   CachedNetworkImage.logLevel = CacheManagerLogLevel.none;
-  
-  // Inicializar timezone
-  tzdata.initializeTimeZones();
-  
+
+  // IMPORTANTE: No inicializar timezones aquí - el NotificationService lo hace
+  // tzdata.initializeTimeZones(); // <-- COMENTADO
+
+  // Inicializar NotificationService (este inicializa las timezones correctamente)
+  final notificationService = getIt<NotificationService>();
+  await notificationService.initialize();
+  await notificationService.requestPermissions();
+
   // Obtener el tema guardado previamente
   await RiveFile.initialize();
 

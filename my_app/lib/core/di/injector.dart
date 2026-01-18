@@ -141,6 +141,11 @@ import 'package:my_app/gamification/domain/usecases/check_and_unlock_insignias.d
 import 'package:my_app/gamification/domain/usecases/get_user_insignias.dart';
 import 'package:my_app/gamification/presentation/bloc/gamificacion_bloc.dart';
 
+// ==============================================
+// NOTIFICATION SERVICE
+// ==============================================
+import 'package:my_app/services/notification_service.dart';
+
 final getIt = GetIt.instance;
 
 Future<void> setupDI() async {
@@ -149,6 +154,11 @@ Future<void> setupDI() async {
   // ==============================================
   getIt.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
   getIt.registerLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
+
+  // ==============================================
+  // SERVICES
+  // ==============================================
+  getIt.registerLazySingleton<NotificationService>(() => NotificationService());
 
   // ==============================================
   // DATA SOURCES
@@ -395,7 +405,10 @@ Future<void> setupDI() async {
   );
 
 getIt.registerLazySingleton<CreateHabitUseCase>(
-  () => CreateHabitUseCase(repository: getIt()),
+  () => CreateHabitUseCase(
+    repository: getIt(),
+    notificationService: getIt<NotificationService>(),
+  ),
 );
 
 getIt.registerLazySingleton<RegisterCompletionUseCase>(
@@ -498,6 +511,7 @@ getIt.registerLazySingleton<SaveQuestMapSessionUseCase>(
       registerCompletionUseCase: getIt(),
       getHabitsByUserUseCase: getIt(),
       getHabitProgressUseCase: getIt(),
+      notificationService: getIt<NotificationService>(),
     ),
   );
 
