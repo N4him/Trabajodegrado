@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/entities/habit_progress.dart';
 import '../widgets/weekly_trend_chart.dart';
+import '../blocs/habit_bloc.dart';
+import '../blocs/habit_event.dart';
+import '../blocs/habit_state.dart';
 
 class HabitDetailScreen extends StatelessWidget {
   final HabitProgress progress;
@@ -10,10 +15,74 @@ class HabitDetailScreen extends StatelessWidget {
     required this.progress,
   });
 
+  void _showDeleteConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Eliminar Hábito'),
+        content: Text(
+          '¿Estás seguro de que deseas eliminar "${progress.habit.name}"?\n\nEsta acción eliminará el hábito y todo su historial de forma permanente.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              _deleteHabit(context);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteHabit(BuildContext context) {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId != null) {
+      context.read<HabitBloc>().add(
+        DeleteHabitStarted(
+          habitId: progress.habit.id,
+          userId: userId,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFCDB290),
+    return BlocListener<HabitBloc, HabitState>(
+      listener: (context, state) {
+        if (state is HabitActionSuccess) {
+          // Mostrar mensaje de éxito
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          // Volver a la pantalla anterior indicando que hubo cambios
+          Navigator.pop(context, true);
+        } else if (state is HabitFailure) {
+          // Mostrar error
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.error),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFCDB290),
       appBar: AppBar(
         title: Text(progress.habit.name),
         backgroundColor: const Color(0xFFCDB290),
@@ -31,6 +100,11 @@ class HabitDetailScreen extends StatelessWidget {
               );
             },
             tooltip: 'Editar hábito',
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () => _showDeleteConfirmation(context),
+            tooltip: 'Eliminar hábito',
           ),
         ],
       ),
@@ -55,6 +129,7 @@ class HabitDetailScreen extends StatelessWidget {
             _buildDetailedStats(context),
           ],
         ),
+      ),
       ),
     );
   }

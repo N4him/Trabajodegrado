@@ -64,4 +64,17 @@ class HabitRepositoryImpl implements HabitRepository {
     final recordModels = await dataSource.fetchCompletionRecordsForHabit(habitId, userId);
     return recordModels.map((model) => model.toEntity()).toList();
   }
+
+  // ✅ 6. IMPLEMENTACIÓN COMPLETA: deleteHabit
+  @override
+  Future<void> deleteHabit(String habitId, String userId) async {
+    try {
+      print('>>> Repositorio: Eliminando hábito $habitId');
+      await dataSource.deleteHabit(habitId, userId);
+      print('>>> Repositorio: Hábito eliminado exitosamente');
+    } catch (e) {
+      print('>>> ❌ FALLO EN REPOSITORY: Error al eliminar: $e');
+      throw e;
+    }
+  }
 }

@@ -10,7 +10,8 @@ abstract class HabitDataSource {
   Future<List<HabitModel>> fetchHabitsByUserId(String userId);
   Future<void> saveCompletionRecord(CompletionRecordModel record);
   // Requiere ambos IDs para la ruta anidada
-  Future<List<CompletionRecordModel>> fetchCompletionRecordsForHabit(String habitId, String userId); 
+  Future<List<CompletionRecordModel>> fetchCompletionRecordsForHabit(String habitId, String userId);
+  Future<void> deleteHabit(String habitId, String userId);
 }
 
 class HabitFirestoreDataSource implements HabitDataSource {
@@ -87,11 +88,32 @@ class HabitFirestoreDataSource implements HabitDataSource {
       final data = doc.data() as Map<String, dynamic>?;
 
       if (data == null) {
-        return null; 
+        return null;
       }
       return CompletionRecordModel.fromMap(data, doc.id);
     })
     .whereType<CompletionRecordModel>() // Filtra cualquier resultado nulo
     .toList();
+  }
+
+  // --- 5. Eliminar Hábito (users/{userId}/habits/{habitId}) ---
+  @override
+  Future<void> deleteHabit(String habitId, String userId) async {
+    print('>>> FIREBASE: Eliminando hábito $habitId del usuario $userId');
+
+    // Primero eliminar todos los registros de completitud
+    final recordsSnapshot = await _getRecordsCollectionRef(userId, habitId).get();
+
+    // Eliminar cada registro
+    for (var doc in recordsSnapshot.docs) {
+      await doc.reference.delete();
+    }
+
+    print('>>> FIREBASE: ${recordsSnapshot.docs.length} registros eliminados');
+
+    // Luego eliminar el hábito
+    await _getHabitsCollectionRef(userId).doc(habitId).delete();
+
+    print('>>> FIREBASE: Hábito eliminado exitosamente');
   }
 }

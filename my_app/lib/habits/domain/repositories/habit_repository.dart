@@ -8,6 +8,7 @@ abstract class HabitRepository {
   Future<void> createHabit(HabitEntity habit);
   Future<List<HabitEntity>> getHabitsByUserId(String userId);
   Future<void> updateHabit(HabitEntity habit);
+  Future<void> deleteHabit(String habitId, String userId);
 
   // Operaciones de Registro
   Future<void> registerCompletion(CompletionRecordEntity record);

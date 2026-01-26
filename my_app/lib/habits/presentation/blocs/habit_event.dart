@@ -63,3 +63,17 @@ class FetchHabitsProgressStarted extends HabitEvent {
   @override
   List<Object> get props => [userId];
 }
+
+// 5. Evento para eliminar un hábito
+class DeleteHabitStarted extends HabitEvent {
+  final String habitId;
+  final String userId;
+
+  const DeleteHabitStarted({
+    required this.habitId,
+    required this.userId,
+  });
+
+  @override
+  List<Object> get props => [habitId, userId];
+}

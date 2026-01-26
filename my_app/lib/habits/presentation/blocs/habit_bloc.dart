@@ -8,23 +8,30 @@ import '../../domain/usecases/create_habit_usecase.dart';
 import '../../domain/usecases/register_completion_usecase.dart';
 import '../../domain/usecases/get_habits_by_user_usecase.dart';
 import '../../domain/usecases/get_habit_progress_usecase.dart';
+import '../../domain/usecases/delete_habit_usecase.dart';
 import '../../domain/entities/habit_entity.dart';
 import '../../domain/entities/completion_record_entity.dart';
 import '../../../services/notification_service.dart';
+import '../../../gamification/domain/usecases/update_modulo_progress.dart';
+import '../../../gamification/domain/entities/modulo_progreso.dart';
 
 class HabitBloc extends Bloc<HabitEvent, HabitState> {
   final CreateHabitUseCase createHabitUseCase;
   final RegisterCompletionUseCase registerCompletionUseCase;
   final GetHabitsByUserUseCase getHabitsByUserUseCase;
   final GetHabitProgressUseCase getHabitProgressUseCase;
+  final DeleteHabitUseCase deleteHabitUseCase;
   final NotificationService? notificationService;
+  final UpdateModuloProgress updateModuloProgress;
 
   HabitBloc({
     required this.createHabitUseCase,
     required this.registerCompletionUseCase,
     required this.getHabitsByUserUseCase,
     required this.getHabitProgressUseCase,
+    required this.deleteHabitUseCase,
     this.notificationService,
+    required this.updateModuloProgress,
   }) : super(HabitInitial()) {
 
     // Configuración de los handlers de eventos
@@ -32,6 +39,7 @@ class HabitBloc extends Bloc<HabitEvent, HabitState> {
     on<RegisterCompletionStarted>(_onRegisterCompletion);
     on<FetchHabitsStarted>(_onFetchHabits);
     on<FetchHabitsProgressStarted>(_onFetchHabitsProgress);
+    on<DeleteHabitStarted>(_onDeleteHabit);
   }
 
   // --- Handlers de Eventos (Lógica Pendiente) ---
@@ -84,7 +92,7 @@ class HabitBloc extends Bloc<HabitEvent, HabitState> {
     RegisterCompletionStarted event,
     Emitter<HabitState> emit,
   ) async {
-    print('>>> BLoC: Registrando completitud para hábito ${event.habitId}');
+    print('>>> [HABITOS] Registrando completitud para hábito ${event.habitId}');
     emit(HabitLoading());
 
     try {
@@ -97,7 +105,25 @@ class HabitBloc extends Bloc<HabitEvent, HabitState> {
         date: now,
       );
 
-      print('>>> BLoC: Completitud registrada exitosamente');
+      print('>>> [HABITOS] ✅ Completitud registrada exitosamente');
+
+      // Actualizar gamificación
+      print('>>> [HABITOS] Actualizando gamificación: módulo=habitos, +1 día, +1 punto');
+      try {
+        await updateModuloProgress.call(
+          userId: event.userId,
+          moduloKey: 'habitos',
+          progreso: const ModuloProgreso(
+            diasCumplidos: 1,
+            puntosObtenidos: 1,
+          ),
+        );
+        print('>>> [HABITOS] ✅ Gamificación actualizada exitosamente');
+      } catch (e) {
+        print('>>> [HABITOS] ⚠️ Error al actualizar gamificación: $e');
+        // No bloqueamos el flujo si falla la gamificación
+      }
+
       emit(HabitActionSuccess(message: 'Hábito marcado como completado'));
     } catch (e) {
       print('>>> ❌ BLoC: Error al registrar completitud: $e');
@@ -145,6 +171,34 @@ class HabitBloc extends Bloc<HabitEvent, HabitState> {
     } catch (e) {
       print('>>> ❌ BLoC: Error al obtener progreso: $e');
       emit(HabitFailure(error: 'Error al cargar progreso: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _onDeleteHabit(
+    DeleteHabitStarted event,
+    Emitter<HabitState> emit,
+  ) async {
+    print('>>> [HABITOS] Eliminando hábito ${event.habitId}');
+    emit(HabitLoading());
+
+    try {
+      // Cancelar notificación si existe
+      if (notificationService != null) {
+        await notificationService!.cancelNotification(event.habitId);
+        print('>>> [HABITOS] Notificación cancelada');
+      }
+
+      // Eliminar hábito del repositorio
+      await deleteHabitUseCase.call(
+        habitId: event.habitId,
+        userId: event.userId,
+      );
+
+      print('>>> [HABITOS] ✅ Hábito eliminado exitosamente');
+      emit(HabitActionSuccess(message: 'Hábito eliminado correctamente'));
+    } catch (e) {
+      print('>>> ❌ BLoC: Error al eliminar hábito: $e');
+      emit(HabitFailure(error: 'Error al eliminar hábito: ${e.toString()}'));
     }
   }
 }

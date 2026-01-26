@@ -99,9 +99,25 @@ Future<void> updateModuloProgress(
         ? ModuloProgreso()
         : ModuloProgreso.fromMap(progresoActualMap);
 
+    // Verificar si necesitamos incrementar diasCumplidos
+    // Solo incrementar si no se ha registrado actividad HOY
+    final lastActivityDate = progresoActualMap['ultima_actividad'] as Timestamp?;
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+
+    bool isFirstActivityToday = true;
+    if (lastActivityDate != null) {
+      final lastDate = lastActivityDate.toDate();
+      final lastDateOnly = DateTime(lastDate.year, lastDate.month, lastDate.day);
+      isFirstActivityToday = !todayDate.isAtSameMomentAs(lastDateOnly);
+    }
+
+    // Calcular incremento de diasCumplidos
+    final diasCumplidosIncrement = isFirstActivityToday && progreso.diasCumplidos > 0 ? 1 : 0;
+
     // Sumar los nuevos valores con los actuales
     final progresoActualizado = progresoActual.copyWith(
-      diasCumplidos: progresoActual.diasCumplidos + progreso.diasCumplidos,
+      diasCumplidos: progresoActual.diasCumplidos + diasCumplidosIncrement,
       rachaActual: progresoActual.rachaActual + progreso.rachaActual,
       publicaciones: progresoActual.publicaciones + progreso.publicaciones,
       puntosObtenidos: progresoActual.puntosObtenidos + progreso.puntosObtenidos,
@@ -110,9 +126,13 @@ Future<void> updateModuloProgress(
       sesionesCompletadas: progresoActual.sesionesCompletadas + progreso.sesionesCompletadas,
     );
 
+    // Crear el mapa actualizado con la fecha de última actividad
+    final updatedMap = progresoActualizado.toMap();
+    updatedMap['ultima_actividad'] = FieldValue.serverTimestamp();
+
     // Actualizar con los valores sumados
     await docRef.update({
-      'modulos.$moduloKey': progresoActualizado.toMap(),
+      'modulos.$moduloKey': updatedMap,
     });
   } catch (e) {
     throw Exception('Error al actualizar progreso del módulo: $e');

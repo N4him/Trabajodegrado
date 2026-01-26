@@ -22,6 +22,7 @@ import 'package:my_app/habits/domain/usecases/create_habit_usecase.dart';
 import 'package:my_app/habits/domain/usecases/register_completion_usecase.dart';
 import 'package:my_app/habits/domain/usecases/get_habits_by_user_usecase.dart';
 import 'package:my_app/habits/domain/usecases/get_habit_progress_usecase.dart';
+import 'package:my_app/habits/domain/usecases/delete_habit_usecase.dart';
 import 'package:my_app/habits/presentation/blocs/habit_bloc.dart';
 
 // ==============================================
@@ -423,6 +424,10 @@ getIt.registerLazySingleton<GetHabitProgressUseCase>(
   () => GetHabitProgressUseCase(repository: getIt()),
 );
 
+getIt.registerLazySingleton<DeleteHabitUseCase>(
+  () => DeleteHabitUseCase(getIt()),
+);
+
 // Body Scan Use Cases
 getIt.registerLazySingleton<SaveBodyScanSessionUseCase>(
   () => SaveBodyScanSessionUseCase(repository: getIt()),
@@ -511,7 +516,9 @@ getIt.registerLazySingleton<SaveQuestMapSessionUseCase>(
       registerCompletionUseCase: getIt(),
       getHabitsByUserUseCase: getIt(),
       getHabitProgressUseCase: getIt(),
+      deleteHabitUseCase: getIt(),
       notificationService: getIt<NotificationService>(),
+      updateModuloProgress: getIt(),
     ),
   );
 
