@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_app/gamification/domain/usecases/get_gamificacion_data.dart';
+import 'package:my_app/gamification/domain/usecases/update_estado_general.dart';
 import 'package:my_app/gamification/domain/usecases/update_modulo_progress.dart';
 import 'package:my_app/gamification/domain/usecases/add_event_to_historial.dart';
 import 'package:my_app/gamification/domain/usecases/check_and_unlock_insignias.dart';
@@ -13,6 +14,7 @@ class GamificacionBloc extends Bloc<GamificacionEvent, GamificacionState> {
   final AddEventToHistorial addEventToHistorial;
   final CheckAndUnlockInsignias checkAndUnlockInsignias;
   final GetUserInsignias getUserInsignias;
+  final UpdateEstadoGeneral updateEstadoGeneral;
 
   GamificacionBloc({
     required this.getGamificacionData,
@@ -20,13 +22,17 @@ class GamificacionBloc extends Bloc<GamificacionEvent, GamificacionState> {
     required this.addEventToHistorial,
     required this.checkAndUnlockInsignias,
     required this.getUserInsignias,
+    required this.updateEstadoGeneral,
+    
   }) : super(const GamificacionInitial()) {
     on<LoadGamificacionData>(_onLoadGamificacionData);
     on<UpdateModuloProgressEvent>(_onUpdateModuloProgress);
     on<AddEventToHistorialEvent>(_onAddEventToHistorial);
+    on<UpdateEstadoGeneralEvent>(_onUpdateEstadoGeneral);
     on<CheckAndUnlockInsigniasEvent>(_onCheckAndUnlockInsignias);
     on<LoadUserInsignias>(_onLoadUserInsignias);
     on<RefreshGamificacionData>(_onRefreshGamificacionData);
+    
   }
 
   Future<void> _onLoadGamificacionData(
@@ -239,6 +245,51 @@ class GamificacionBloc extends Bloc<GamificacionEvent, GamificacionState> {
       emit(GamificacionError(
         message: 'Error al refrescar datos: ${e.toString()}',
         previousGamificacion: previousData,
+        previousInsignias: previousInsignias,
+      ));
+    }
+  }
+
+    Future<void> _onUpdateEstadoGeneral(
+    UpdateEstadoGeneralEvent event,
+    Emitter<GamificacionState> emit,
+  ) async {
+    try {
+      // Mantener datos anteriores mientras se actualiza
+      if (state is GamificacionLoaded) {
+        final currentState = state as GamificacionLoaded;
+        emit(GamificacionUpdating(
+          gamificacion: currentState.gamificacion,
+          insignias: currentState.insignias,
+        ));
+      }
+
+      // Usar el use case
+      await updateEstadoGeneral(
+        userId: event.userId,
+        estadoGeneral: event.estadoGeneral,
+      );
+
+      // Recargar datos actualizados
+      final updatedGamificacion = await getGamificacionData(event.userId);
+
+      emit(GamificacionLoaded(
+        gamificacion: updatedGamificacion,
+        insignias: (state is GamificacionLoaded) 
+            ? (state as GamificacionLoaded).insignias 
+            : null,
+      ));
+    } catch (e) {
+      final previousGamificacion = state is GamificacionLoaded
+          ? (state as GamificacionLoaded).gamificacion
+          : null;
+      final previousInsignias = state is GamificacionLoaded
+          ? (state as GamificacionLoaded).insignias
+          : null;
+
+      emit(GamificacionError(
+        message: e.toString(),
+        previousGamificacion: previousGamificacion,
         previousInsignias: previousInsignias,
       ));
     }

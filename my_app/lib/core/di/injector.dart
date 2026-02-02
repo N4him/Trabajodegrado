@@ -11,6 +11,7 @@ import 'package:my_app/forum/domain/usescases/like_forum_post.dart';
 import 'package:my_app/forum/domain/usescases/reply_forum_post.dart';
 import 'package:my_app/forum/domain/usescases/search_forum_posts.dart';
 import 'package:my_app/gamification/data/repositories/insignia_repository_impl.dart';
+import 'package:my_app/gamification/domain/usecases/update_estado_general.dart';
 
 // ==============================================
 // HABITS
@@ -390,6 +391,10 @@ Future<void> setupDI() async {
     () => UpdateModuloProgress(repository: getIt<GamificacionRepository>()),
   );
 
+  getIt.registerLazySingleton<UpdateEstadoGeneral>(
+    () => UpdateEstadoGeneral(repository: getIt<GamificacionRepository>()),
+  );
+
   getIt.registerLazySingleton<AddEventToHistorial>(
     () => AddEventToHistorial(repository: getIt<GamificacionRepository>()),
   );
@@ -496,6 +501,7 @@ getIt.registerLazySingleton<SaveQuestMapSessionUseCase>(
       getUserForumPostsUseCase: getIt<GetUserForumPosts>(),
       getForumPostsByCategoryUseCase: getIt<GetForumPostsByCategory>(),
       getPopularForumPostsUseCase: getIt<GetPopularForumPosts>(),
+      gamificacionBloc: getIt<GamificacionBloc>(),
     ),
   );
 
@@ -507,6 +513,7 @@ getIt.registerLazySingleton<SaveQuestMapSessionUseCase>(
       addEventToHistorial: getIt<AddEventToHistorial>(),
       checkAndUnlockInsignias: getIt<CheckAndUnlockInsignias>(),
       getUserInsignias: getIt<GetUserInsignias>(),
+      updateEstadoGeneral: getIt<UpdateEstadoGeneral>(),
     ),
   );
 
@@ -519,6 +526,9 @@ getIt.registerLazySingleton<SaveQuestMapSessionUseCase>(
       deleteHabitUseCase: getIt(),
       notificationService: getIt<NotificationService>(),
       updateModuloProgress: getIt(),
+      updateEstadoGeneral: getIt(),
+      getGamificacionData: getIt(),
+      gamificacionBloc: getIt<GamificacionBloc>(),
     ),
   );
 

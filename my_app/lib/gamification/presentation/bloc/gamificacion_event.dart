@@ -1,4 +1,5 @@
   import 'package:equatable/equatable.dart';
+import 'package:my_app/gamification/domain/entities/gamificacion.dart';
   import 'package:my_app/gamification/domain/entities/modulo_progreso.dart';
 
   abstract class GamificacionEvent extends Equatable {
@@ -17,6 +18,21 @@
     @override
     List<Object?> get props => [userId];
   }
+
+  // 2. Agregar evento en gamificacion_event.dart (ya lo tienes, pero aquí está completo)
+
+class UpdateEstadoGeneralEvent extends GamificacionEvent {
+  final String userId;
+  final EstadoGeneral estadoGeneral;
+
+  const UpdateEstadoGeneralEvent({
+    required this.userId,
+    required this.estadoGeneral,
+  });
+
+  @override
+  List<Object?> get props => [userId, estadoGeneral];
+}
 
   /// Evento para actualizar el progreso de un módulo específico
   class UpdateModuloProgressEvent extends GamificacionEvent {

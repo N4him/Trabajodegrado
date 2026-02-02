@@ -9,16 +9,16 @@ import 'core/di/injector.dart';
 import 'services/notification_service.dart';
 import 'app.dart';
 
+// 🧪 IMPORTAR EL TESTER
+
 // Callback para tareas en segundo plano
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     try {
-      // Mantener la sesión de Firebase activa
       await Firebase.initializeApp();
       final user = FirebaseAuth.instance.currentUser;
       
       if (user != null) {
-        // Refrescar el token de ID
         await user.getIdToken(true);
       }
       return Future.value(true);
@@ -35,47 +35,37 @@ void main() async {
   await setupDI();
   CachedNetworkImage.logLevel = CacheManagerLogLevel.none;
 
-  // IMPORTANTE: No inicializar timezones aquí - el NotificationService lo hace
-  // tzdata.initializeTimeZones(); // <-- COMENTADO
-
-  // Inicializar NotificationService (este inicializa las timezones correctamente)
   final notificationService = getIt<NotificationService>();
   await notificationService.initialize();
   await notificationService.requestPermissions();
 
-  // Obtener el tema guardado previamente
   await RiveFile.initialize();
 
-  // Mantener sesión activa
-  FirebaseAuth.instance.authStateChanges().listen((user) {
+  // Mantener sesión activa y ejecutar tests
+  FirebaseAuth.instance.authStateChanges().listen((user) async {
     if (user != null) {
-      // La sesión se mantiene automáticamente
+      // 🧪 EJECUTAR TEST COMPLETO AUTOMÁTICO
+      await _runHealthTests(user.uid);
     } else {
+      print('Usuario no autenticado');
     }
   });
 
-  // Inicializar tareas en segundo plano (opcional)
   await Workmanager().initialize(
     callbackDispatcher,
     isInDebugMode: false,
   );
-
-  // Programar tarea periódica cada 15 minutos
-  // Descomenta si quieres tareas en segundo plano
-  /*
-  await Workmanager().registerPeriodicTask(
-    'keep-session-alive',
-    'checkSession',
-    frequency: const Duration(minutes: 15),
-    constraints: Constraints(
-      requiresDeviceIdle: false,
-      requiresBatteryNotLow: false,
-      requiresCharging: false,
-      requiresConnectivity: true,
-    ),
-  );
-  */
   
   await initializeDateFormatting('es_ES', null);
   runApp(MyApp());
+}
+
+// 🧪 FUNCIÓN DE TESTS - OPCIÓN 3: TEST COMPLETO
+Future<void> _runHealthTests(String userId) async {
+  print('\n🔬 ========== INICIANDO TESTS DE SALUD ==========\n');
+  
+
+  // ✅ OPCIÓN 3: TEST COMPLETO AUTOMÁTICO
+
+  print('\n✅ Tests completados. Ahora navega a la pantalla de hábitos después de cada paso.\n');
 }

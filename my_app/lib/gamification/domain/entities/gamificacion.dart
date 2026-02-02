@@ -33,12 +33,16 @@ class EstadoGeneral {
   final int salud;
   final String etapa;
   final DateTime ultimaActualizacion;
+    final DateTime? ultimaPenalizacion; // <-- agregar esto
+
 
   const EstadoGeneral({
     required this.plantaValor,
     required this.salud,
     required this.etapa,
     required this.ultimaActualizacion,
+        this.ultimaPenalizacion, // <-- agregar esto
+
   });
 
   EstadoGeneral copyWith({
@@ -46,12 +50,16 @@ class EstadoGeneral {
     int? salud,
     String? etapa,
     DateTime? ultimaActualizacion,
+        DateTime? ultimaPenalizacion, // <-- agregar esto
+
   }) {
     return EstadoGeneral(
       plantaValor: plantaValor ?? this.plantaValor,
       salud: salud ?? this.salud,
       etapa: etapa ?? this.etapa,
       ultimaActualizacion: ultimaActualizacion ?? this.ultimaActualizacion,
+            ultimaPenalizacion: ultimaPenalizacion ?? this.ultimaPenalizacion,
+
     );
   }
 }

@@ -13,15 +13,52 @@ class ReadingProgressRepositoryImpl implements ReadingProgressRepository {
   ReadingProgressRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<Either<Failure, void>> saveProgress(ReadingProgressEntity progress) async {
+  Future<Either<Failure, Map<String, dynamic>>> saveProgress(
+      ReadingProgressEntity progress) async {
     try {
+      // Obtener el progreso anterior para verificar si se completó
+      final previousProgress = await remoteDataSource.getProgress(
+        progress.bookId,
+        progress.userId,
+      );
+
+      // Guardar el nuevo progreso
       await remoteDataSource.saveProgress(progress as ReadingProgressModel);
-      return const Right(null);
+
+      // Verificar si el libro acaba de completarse
+      final wasNotCompleted = previousProgress == null || 
+          previousProgress.currentPage < previousProgress.totalPages;
+      final isNowCompleted = progress.currentPage >= progress.totalPages;
+
+      // Retornar información sobre si se completó el libro
+      return Right({
+        'success': true,
+        'bookCompleted': wasNotCompleted && isNowCompleted,
+        'points': wasNotCompleted && isNowCompleted 
+            ? _calculateCompletionPoints(progress) 
+            : 0,
+      });
     } on ServerException {
       return const Left(ServerFailure('Error al guardar el progreso'));
     } catch (e) {
       return Left(ServerFailure('Error inesperado: ${e.toString()}'));
     }
+  }
+
+  // Calcular puntos basados en el libro
+  int _calculateCompletionPoints(ReadingProgressEntity progress) {
+    int basePoints = 50; // Puntos base por completar cualquier libro
+    
+    // Puntos adicionales por número de páginas
+    if (progress.totalPages > 500) {
+      basePoints += 30; // Libro largo
+    } else if (progress.totalPages > 300) {
+      basePoints += 20; // Libro mediano
+    } else if (progress.totalPages > 100) {
+      basePoints += 10; // Libro corto
+    }
+    
+    return basePoints;
   }
 
   @override

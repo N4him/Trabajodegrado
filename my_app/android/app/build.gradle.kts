@@ -60,4 +60,7 @@ dependencies {
 
   // Core library desugaring para flutter_local_notifications
   coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+
+  implementation("com.google.firebase:firebase-appcheck-debug")
+
 }

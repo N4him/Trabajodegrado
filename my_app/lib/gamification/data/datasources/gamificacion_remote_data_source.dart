@@ -93,29 +93,25 @@ Future<void> updateModuloProgress(
     final data = doc.data() as Map<String, dynamic>;
     final modulos = data['modulos'] as Map<String, dynamic>? ?? {};
 
-    // Obtener el progreso actual del módulo (o crear uno nuevo con valores por defecto)
     final progresoActualMap = modulos[moduloKey] as Map<String, dynamic>? ?? {};
     final progresoActual = progresoActualMap.isEmpty
         ? ModuloProgreso()
         : ModuloProgreso.fromMap(progresoActualMap);
 
-    // Verificar si necesitamos incrementar diasCumplidos
-    // Solo incrementar si no se ha registrado actividad HOY
     final lastActivityDate = progresoActualMap['ultima_actividad'] as Timestamp?;
-    final today = DateTime.now();
+    final today = DateTime.now(); // ← Usa la fecha del DISPOSITIVO
     final todayDate = DateTime(today.year, today.month, today.day);
 
     bool isFirstActivityToday = true;
     if (lastActivityDate != null) {
       final lastDate = lastActivityDate.toDate();
-      final lastDateOnly = DateTime(lastDate.year, lastDate.month, lastDate.day);
-      isFirstActivityToday = !todayDate.isAtSameMomentAs(lastDateOnly);
+      isFirstActivityToday = (today.year != lastDate.year ||
+          today.month != lastDate.month ||
+          today.day != lastDate.day);
     }
 
-    // Calcular incremento de diasCumplidos
     final diasCumplidosIncrement = isFirstActivityToday && progreso.diasCumplidos > 0 ? 1 : 0;
 
-    // Sumar los nuevos valores con los actuales
     final progresoActualizado = progresoActual.copyWith(
       diasCumplidos: progresoActual.diasCumplidos + diasCumplidosIncrement,
       rachaActual: progresoActual.rachaActual + progreso.rachaActual,
@@ -126,11 +122,11 @@ Future<void> updateModuloProgress(
       sesionesCompletadas: progresoActual.sesionesCompletadas + progreso.sesionesCompletadas,
     );
 
-    // Crear el mapa actualizado con la fecha de última actividad
     final updatedMap = progresoActualizado.toMap();
-    updatedMap['ultima_actividad'] = FieldValue.serverTimestamp();
+    
+    // ✅ CAMBIA ESTO: Usa DateTime.now() en lugar de serverTimestamp
+    updatedMap['ultima_actividad'] = Timestamp.fromDate(DateTime.now());
 
-    // Actualizar con los valores sumados
     await docRef.update({
       'modulos.$moduloKey': updatedMap,
     });
@@ -155,26 +151,41 @@ Future<void> updateModuloProgress(
     }
   }
 
-  @override
-  Future<void> updateEstadoGeneral(String userId, EstadoGeneral estado) async {
-    try {
-      await firestore
-          .collection('users')
-          .doc(userId)
-          .collection('gamificacion')
-          .doc('data')
-          .update({
-        'estado_general': {
-          'planta_valor': estado.plantaValor,
-          'salud': estado.salud,
-          'etapa': estado.etapa,
-          'ultima_actualizacion': Timestamp.fromDate(estado.ultimaActualizacion),
-        },
-      });
-    } catch (e) {
-      throw Exception('Error al actualizar estado general: $e');
-    }
+@override
+Future<void> updateEstadoGeneral(String userId, EstadoGeneral estado) async {
+  print('🔥 [DATA SOURCE] Iniciando updateEstadoGeneral');
+  print('🔥 [DATA SOURCE] userId: $userId');
+  print('🔥 [DATA SOURCE] plantaValor: ${estado.plantaValor}');
+  print('🔥 [DATA SOURCE] salud: ${estado.salud}');
+  print('🔥 [DATA SOURCE] etapa: ${estado.etapa}');
+  
+  try {
+    final docRef = firestore
+        .collection('users')
+        .doc(userId)
+        .collection('gamificacion')
+        .doc('data');
+    
+    print('🔥 [DATA SOURCE] Ruta: users/$userId/gamificacion/data');
+    
+    await docRef.update({
+      'estado_general': {
+        'planta_valor': estado.plantaValor,
+        'salud': estado.salud,
+        'etapa': estado.etapa,
+        'ultima_actualizacion': Timestamp.fromDate(estado.ultimaActualizacion),
+        'ultima_penalizacion': estado.ultimaPenalizacion != null
+        ? Timestamp.fromDate(estado.ultimaPenalizacion!)
+        : null
+      },
+    });
+    
+    print('✅ [DATA SOURCE] Actualización exitosa en Firestore');
+  } catch (e) {
+    print('❌ [DATA SOURCE] Error: $e');
+    throw Exception('Error al actualizar estado general: $e');
   }
+}
 
   @override
   Future<void> addInsigniaToUser(String userId, String insigniaId) async {

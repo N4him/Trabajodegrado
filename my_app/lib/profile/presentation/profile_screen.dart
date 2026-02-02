@@ -304,15 +304,19 @@ class _ProfileScreenState extends State<ProfileScreen>
     return 0;
   }
 
-  Widget _buildGamificationStatsCompact() {
+Widget _buildGamificationStatsCompact() {
     return BlocBuilder<GamificacionBloc, GamificacionState>(
-      buildWhen: (previous, current) =>
-          previous is! GamificacionLoaded || current is! GamificacionLoaded ||
-          previous.gamificacion.insigniasUsuario.length !=
-              current.gamificacion.insigniasUsuario.length,
+      buildWhen: (previous, current) {
+        if (previous is! GamificacionLoaded || current is! GamificacionLoaded) return true;
+        return previous.gamificacion.insigniasUsuario.length !=
+                    current.gamificacion.insigniasUsuario.length ||
+               (previous.gamificacion.modulos['habitos']?.diasCumplidos ?? 0) !=
+                    (current.gamificacion.modulos['habitos']?.diasCumplidos ?? 0);
+      },
       builder: (context, state) {
         if (state is GamificacionLoaded) {
           final insigniasCount = state.gamificacion.insigniasUsuario.length;
+          final diasCumplidos = state.gamificacion.modulos['habitos']?.diasCumplidos ?? 0;
 
           return Row(
             mainAxisSize: MainAxisSize.min,
@@ -324,7 +328,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
               const SizedBox(width: 4),
               Text(
-                '2',
+                '$diasCumplidos',
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,

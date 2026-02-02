@@ -40,9 +40,9 @@ class _ForumScreenState extends State<ForumScreen> {
   static const List<String> categories = [
     'Popular',
     'General',
-    'Help',
-    'Discussion',
-    'Announcement',
+    'Ayuda',
+    'Discusión',
+    'Anuncio',
   ];
 
   @override
@@ -1116,10 +1116,19 @@ void _showCreatePostDialog(BuildContext context) {
                             userId: user.uid,
                             moduloKey: 'foro',
                             progreso: ModuloProgreso(
-                              publicaciones: 1,
+                              puntosObtenidos: 1,
                             ),
                           ),
                         );
+                        
+                    screenContext.read<GamificacionBloc>().add(
+                          AddEventToHistorialEvent(
+                            userId: user.uid,
+                            fecha: DateTime.now(),
+
+                          ),
+                        );
+
 
                     Navigator.pop(screenContext);
                     Navigator.pop(dialogContext);

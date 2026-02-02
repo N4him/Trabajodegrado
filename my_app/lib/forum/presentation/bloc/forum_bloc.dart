@@ -8,6 +8,9 @@ import 'package:my_app/forum/domain/usescases/get_user_forum_posts.dart';
 import 'package:my_app/forum/domain/usescases/like_forum_post.dart';
 import 'package:my_app/forum/domain/usescases/reply_forum_post.dart';
 import 'package:my_app/forum/domain/usescases/search_forum_posts.dart';
+import 'package:my_app/gamification/presentation/bloc/gamificacion_bloc.dart';
+import 'package:my_app/gamification/presentation/bloc/gamificacion_event.dart';
+
 
 import 'forum_event.dart';
 import 'forum_state.dart';
@@ -20,9 +23,9 @@ class ForumBloc extends Bloc<ForumEvent, ForumState> {
   final LikeForumPost likeForumPostUseCase;
   final ReplyForumPost replyForumPostUseCase;
   final DeleteForumPost deleteForumPostUseCase;
-    final GetPopularForumPosts getPopularForumPostsUseCase; // ➕ Agregar
-
+  final GetPopularForumPosts getPopularForumPostsUseCase;
   final GetForumPostsByCategory getForumPostsByCategoryUseCase;
+  final GamificacionBloc gamificacionBloc; // ➕ Agregar
 
   // Mantener el estado del último filtro aplicado
   String? _currentCategory;
@@ -39,7 +42,8 @@ class ForumBloc extends Bloc<ForumEvent, ForumState> {
     required this.replyForumPostUseCase,
     required this.deleteForumPostUseCase,
     required this.getForumPostsByCategoryUseCase,
-    required this.getPopularForumPostsUseCase, // ➕ Agregar
+    required this.getPopularForumPostsUseCase,
+    required this.gamificacionBloc, // ➕ Agregar
   }) : super(ForumInitial()) {
     on<LoadForumPostsEvent>(_onLoadForumPosts);
     on<SearchForumPostsEvent>(_onSearchForumPosts);
@@ -85,7 +89,7 @@ class ForumBloc extends Bloc<ForumEvent, ForumState> {
     );
   }
 
-   Future<void> _onLoadPopularForumPosts( // ➕ Agregar nuevo método
+  Future<void> _onLoadPopularForumPosts(
     LoadPopularForumPostsEvent event,
     Emitter<ForumState> emit,
   ) async {
@@ -173,6 +177,17 @@ class ForumBloc extends Bloc<ForumEvent, ForumState> {
     result.fold(
       (failure) => emit(ForumError(failure.toString())),
       (forumId) {
+        // ➕ Agregar evento al historial
+        try {
+          gamificacionBloc.add(AddEventToHistorialEvent(
+            userId: event.authorId,
+            fecha: DateTime.now(),
+          ));
+          print('>>> [FORUM] 📅 Evento agregado al historial para crear post');
+        } catch (e) {
+          print('>>> [FORUM] ⚠️ Error al agregar evento al historial: $e');
+        }
+
         emit(ForumPostCreated(forumId));
         // Recargar con el filtro actual en lugar de LoadForumPostsEvent()
         _reloadWithCurrentFilter();
@@ -192,6 +207,19 @@ class ForumBloc extends Bloc<ForumEvent, ForumState> {
     result.fold(
       (failure) => emit(ForumError(failure.toString())),
       (_) {
+        // ➕ Agregar evento al historial solo si se está dando like (no quitando)
+        if (event.isLiked) {
+          try {
+            gamificacionBloc.add(AddEventToHistorialEvent(
+              userId: event.userId,
+              fecha: DateTime.now(),
+            ));
+            print('>>> [FORUM] 📅 Evento agregado al historial para like');
+          } catch (e) {
+            print('>>> [FORUM] ⚠️ Error al agregar evento al historial: $e');
+          }
+        }
+
         emit(ForumPostLiked());
         // Recargar con el filtro actual
         _reloadWithCurrentFilter();
@@ -213,6 +241,17 @@ class ForumBloc extends Bloc<ForumEvent, ForumState> {
     result.fold(
       (failure) => emit(ForumError(failure.toString())),
       (replyId) {
+        // ➕ Agregar evento al historial
+        try {
+          gamificacionBloc.add(AddEventToHistorialEvent(
+            userId: event.authorId,
+            fecha: DateTime.now(),
+          ));
+          print('>>> [FORUM] 📅 Evento agregado al historial para respuesta');
+        } catch (e) {
+          print('>>> [FORUM] ⚠️ Error al agregar evento al historial: $e');
+        }
+
         emit(ForumPostReplied(replyId));
         // Recargar con el filtro actual
         _reloadWithCurrentFilter();

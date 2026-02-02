@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:my_app/config/app_router.dart';
+import 'package:my_app/gamification/presentation/bloc/gamificacion_bloc.dart';
+import 'package:my_app/gamification/presentation/bloc/gamificacion_event.dart';
+import 'package:my_app/gamification/presentation/bloc/gamificacion_state.dart';
 import '../blocs/habit_bloc.dart';
 import '../blocs/habit_event.dart';
 import '../blocs/habit_state.dart';
@@ -30,18 +33,14 @@ class _HabitsHomeScreenState extends State<HabitsHomeScreen> {
     }
   }
 
-  void _markAsCompleted(String habitId) async {
-    final userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId != null) {
-      context.read<HabitBloc>().add(
-        RegisterCompletionStarted(habitId: habitId, userId: userId),
-      );
-
-      // Esperar un momento y recargar el progreso
-      await Future.delayed(const Duration(milliseconds: 500));
-      _loadHabits();
-    }
+void _markAsCompleted(String habitId) {
+  final userId = FirebaseAuth.instance.currentUser?.uid;
+  if (userId != null) {
+    context.read<HabitBloc>().add(
+      RegisterCompletionStarted(habitId: habitId, userId: userId),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -60,26 +59,26 @@ class _HabitsHomeScreenState extends State<HabitsHomeScreen> {
         ],
       ),
       body: BlocConsumer<HabitBloc, HabitState>(
-        listener: (context, state) {
-          // Mostrar mensajes de éxito o error
-          if (state is HabitActionSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: const Color(0xFFFFAA88),
-                duration: const Duration(seconds: 2),
-              ),
-            );
-          } else if (state is HabitFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.error),
-                backgroundColor: const Color(0xFFFF6B6B),
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          }
-        },
+listener: (context, state) {
+  if (state is HabitActionSuccess) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(state.message),
+        backgroundColor: const Color(0xFFFFAA88),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+    _loadHabits(); // <-- se agrega aquí
+  } else if (state is HabitFailure) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(state.error),
+        backgroundColor: const Color(0xFFFF6B6B),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+},
         builder: (context, state) {
           if (state is HabitLoading) {
             return const Center(
@@ -145,21 +144,7 @@ class _HabitsHomeScreenState extends State<HabitsHomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pushNamed(context, AppRouter.habitCreation);
-                      },
-                      icon: const Icon(Icons.add),
-                      label: const Text('Crear Hábito'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFFCDB290),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
+
                   ],
                 ),
               );

@@ -43,25 +43,25 @@ class GamificacionModel extends Gamificacion {
       historialEventos: [],
     );
   }
-
-  static EstadoGeneral _parseEstadoGeneral(dynamic data) {
-    if (data == null) {
-      return EstadoGeneral(
-        plantaValor: 0.0,
-        salud: 100,
-        etapa: 'semilla',
-        ultimaActualizacion: DateTime.now(),
-      );
-    }
-
-    final map = data as Map<String, dynamic>;
+static EstadoGeneral _parseEstadoGeneral(dynamic data) {
+  if (data == null) {
     return EstadoGeneral(
-      plantaValor: (map['planta_valor'] ?? 0.0).toDouble(),
-      salud: map['salud'] ?? 100,
-      etapa: map['etapa'] ?? 'semilla',
-      ultimaActualizacion: (map['ultima_actualizacion'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      plantaValor: 0.0,
+      salud: 100,
+      etapa: 'semilla',
+      ultimaActualizacion: DateTime.now(),
     );
   }
+
+  final map = data as Map<String, dynamic>;
+  return EstadoGeneral(
+    plantaValor: (map['planta_valor'] ?? 0.0).toDouble(),
+    salud: map['salud'] ?? 100,
+    etapa: map['etapa'] ?? 'semilla',
+    ultimaActualizacion: (map['ultima_actualizacion'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    ultimaPenalizacion: (map['ultima_penalizacion'] as Timestamp?)?.toDate(),
+  );
+}
 
   static Map<String, ModuloProgreso> _parseModulos(dynamic data) {
     if (data == null) {
@@ -89,6 +89,9 @@ class GamificacionModel extends Gamificacion {
         'salud': estadoGeneral.salud,
         'etapa': estadoGeneral.etapa,
         'ultima_actualizacion': Timestamp.fromDate(estadoGeneral.ultimaActualizacion),
+          'ultima_penalizacion': estadoGeneral.ultimaPenalizacion != null
+      ? Timestamp.fromDate(estadoGeneral.ultimaPenalizacion!)
+      : null,
       },
       'modulos': {
         'habitos': modulos['habitos']?.toMap() ?? {},
