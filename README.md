@@ -1,4 +1,4 @@
-# my_app — Trabajo de Grado
+Trabajo de Grado
 
 Aplicación móvil en **Flutter** orientada al **bienestar personal y la formación de hábitos saludables**, con un sistema de **gamificación** (una planta virtual que crece según tu progreso), foro de la comunidad, biblioteca de lectura con seguimiento de progreso y seguimiento de hábitos con rachas y estadísticas.
 
